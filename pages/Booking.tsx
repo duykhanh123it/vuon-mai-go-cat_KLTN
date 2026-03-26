@@ -13,7 +13,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
  * - Nếu bạn muốn nhận lại "mã đặt lịch" từ server, mình sẽ đưa phương án iframe+postMessage.
  */
 
-const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyK7xt7TfHzhpoqOQIl66232zcAEh-f3AUGvGiAXnOFoG4ngx36c-DCFHeT89c2hySh/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
+const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
 
 type BookingForm = {
   name: string;

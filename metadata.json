@@ -1,0 +1,8 @@
+
+{
+  "name": "Vườn Mai Gò Cát",
+  "description": "Website giới thiệu và tham quan Vườn Mai Gò Cát.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

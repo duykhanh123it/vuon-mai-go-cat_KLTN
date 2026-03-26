@@ -1,0 +1,5438 @@
+[
+  {
+    "Mã Cây": "BS 820",
+    "Giá Thuê (triệu)": 32,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.65,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 66,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 602",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 55,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 604",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.28,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 814",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.32,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 57,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 815",
+    "Giá Thuê (triệu)": 32,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.55,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 56,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 819",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 56,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 838A",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 220,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 61,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 142",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 190,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 817",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 64,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 453",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 60,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 454",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 811",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS373",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS352",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.46,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS365",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 812",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 170,
+    "Cao_m": 2,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS347",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 170,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS368",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 170,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 48,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 816",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 77,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 813",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 821",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.45,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS392",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 1.77,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 826",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.4,
+    "Ngang_m": null,
+    "Hoành_cm": 45,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 834",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 837",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS359",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.4,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS427",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 605",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.93,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 62,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 521",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 60,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 539",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 505",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 56,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 513",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 507",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS379",
+    "Giá Thuê (triệu)": 22,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 506",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS380",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS422",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.07,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS358",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 839",
+    "Giá Thuê (triệu)": 26,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 632",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.11,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS354",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS362",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS355",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.17,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS366",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.13,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS375",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS412",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS348",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 135,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 829",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 135,
+    "Cao_m": 2.23,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS360",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 135,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 573",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS363",
+    "Giá Thuê (triệu)": 17,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.07,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 827",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.14,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 835A",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS420",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 536",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS357",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.27,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS371",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS356",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.13,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS361",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 644",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS436",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 823A",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.17,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 74,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 489",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 608",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 57,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 485",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2,
+    "Ngang_m": 1.33,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 637",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 578",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS430",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 48,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 541",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS316",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 480",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 832",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.88,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS403",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS414",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS411",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS413",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 540",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 831",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.12,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS409",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.93,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS431",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 42,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS432",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS372",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 629",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.11,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS408",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.07,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS381",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS405",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS416",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS393",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 110,
+    "Cao_m": 2.07,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS415",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 110,
+    "Cao_m": 2.08,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS402",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 110,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 562",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 60,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 482",
+    "Giá Thuê (triệu)": 22,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 56,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 579",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 56,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 449",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 450",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 447",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 51,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 543",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 549",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 475",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 583",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS364",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 474",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 46,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 484",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.33,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 825",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 448",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 451",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 512",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 633",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 481",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 477",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.38,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 479",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 581",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS379A",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.13,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS382",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.93,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS437",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 30,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS383",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 459",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 95,
+    "Cao_m": 2,
+    "Ngang_m": 1.23,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 487",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 95,
+    "Cao_m": 2,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 599",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 545",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 560",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 593",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 483",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 582",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 452",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 510",
+    "Giá Thuê (triệu)": 17,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 458",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 457",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 508",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 580",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS439",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 46,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 828",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 456",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 577",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 515",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS418",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS374",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 2.07,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS390",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 568",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 612",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 444",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 563",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 460",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 478",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 586",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 527",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 600",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2,
+    "Ngang_m": 1.12,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 603",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 488",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 564",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 455",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 538",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 511",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 518",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 461",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 490",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS378",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS400",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS370",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS376",
+    "Giá Thuê (triệu)": 11,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS377",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 141",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 173",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 647",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 55,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 699",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.73,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 501",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 611",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 613",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 646",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.66,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 446",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 514",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 526",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 517",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 575",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 596",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 597",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 833",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 473",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 533",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 471",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 509",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 470",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 588",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 561",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.73,
+    "Ngang_m": 1.23,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 149",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS440",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 2,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 145",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 443",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 65,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 442",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 65,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 467",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 520",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 530",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 691",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 711",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.78,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 589",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 491",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 492",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 48,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 730",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.83,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 463",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 465",
+    "Giá Thuê (triệu)": 17,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 498",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 660",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 522",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.78,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 590",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 824",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 2,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 472",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 607",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 823",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 464",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 502",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 42,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 519",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 504",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 657",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 703",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.61,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 468",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.28,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 469",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 534",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 822",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 523",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 567",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 182",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 185",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 194",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 635",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS235",
+    "Giá Thuê (triệu)": 24,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS299",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 643",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 55,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 642",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 55,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 677",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 55,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 503",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 529",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 615",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 620",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 598",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 2,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 701",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 493",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 499",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 496",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 524",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 830",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 702",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.58,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 591",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 617",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 735",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 576",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 630",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.92,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 631",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 2.12,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 494",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 495",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 445",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 466",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 565",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 48,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 692",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.53,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 51,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 638",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 640",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.57,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 727",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.75,
+    "Ngang_m": 1,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 690",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 645",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 146",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 174",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 179",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS319",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS435",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 45,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 665",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.78,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 59,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 682",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.48,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 733",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.7,
+    "Ngang_m": 1,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 664",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.36,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 655",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 738",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 592",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 700",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 715",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 721",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 500",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 587",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 722",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 595",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 653",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 689",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.48,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 601",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 614",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 2.03,
+    "Ngang_m": null,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 661",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.58,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 712",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 525",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 542",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 619",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.62,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 641",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 656",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.61,
+    "Ngang_m": 1.18,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 686",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.64,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 566",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 584",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 585",
+    "Giá Thuê (triệu)": 13,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 172",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 175",
+    "Giá Thuê (triệu)": 15,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 186",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 193",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS300",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS329",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 40,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 695",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.18,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 717",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 709",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.78,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 726",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 713",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 716",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.71,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 570",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 704",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.48,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 594",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 618",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 724",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 537",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 102",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 124",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 634",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS304",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 35,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 666",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.56,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 732",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 667",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.53,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 670",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.38,
+    "Ngang_m": 0.9,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 710",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 723",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.72,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 650",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 737",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.7,
+    "Ngang_m": 1,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 621",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 649",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.74,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 714",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 636",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.72,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 652",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.72,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 680",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.58,
+    "Ngang_m": 1,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 462",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 544",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 569",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 624",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 616",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 104",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 169",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS225",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS296",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS384",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 651",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 719",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.7,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 622",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 681",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.56,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 609",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 610",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.88,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 531",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 547",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.73,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 441A",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 628",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 2.12,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 648",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 654",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 497",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 31,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 532",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 30,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 105",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 167",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 705",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.66,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 694",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.61,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 687",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.48,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 625",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 31,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 663",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.48,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 31,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 107",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 162",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 685",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 16,
+    "Cao_m": 1.61,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 548",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 15,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS387",
+    "Giá Thuê (triệu)": 6,
+    "Giá Bán (triệu)": 10,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 01",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.54,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 61,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS 574",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 57,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 571",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 675",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 676",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.58,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 201",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 51",
+    "Giá Thuê (triệu)": 100,
+    "Giá Bán (triệu)": 600,
+    "Cao_m": 2.95,
+    "Ngang_m": 3,
+    "Hoành_cm": 79,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS335",
+    "Giá Thuê (triệu)": 40,
+    "Giá Bán (triệu)": 500,
+    "Cao_m": 2.57,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 66,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS309",
+    "Giá Thuê (triệu)": 40,
+    "Giá Bán (triệu)": 500,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS336",
+    "Giá Thuê (triệu)": 40,
+    "Giá Bán (triệu)": 400,
+    "Cao_m": 2.54,
+    "Ngang_m": 2.15,
+    "Hoành_cm": 58,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 04",
+    "Giá Thuê (triệu)": 38,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.52,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 70,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 03",
+    "Giá Thuê (triệu)": 38,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.55,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 65,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS312",
+    "Giá Thuê (triệu)": 38,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.72,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 64,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS314",
+    "Giá Thuê (triệu)": 38,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 56,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 09",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.3,
+    "Ngang_m": 2,
+    "Hoành_cm": 55,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS318",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": 2.49,
+    "Ngang_m": 2.05,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 12",
+    "Giá Thuê (triệu)": 40,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 836",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "Cây bà Nội",
+    "Giá Thuê (triệu)": 45,
+    "Giá Bán (triệu)": 350,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 06",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": 75,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 32",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 73,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 05",
+    "Giá Thuê (triệu)": 38,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.55,
+    "Ngang_m": 1.95,
+    "Hoành_cm": 70,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS333",
+    "Giá Thuê (triệu)": 36,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.4,
+    "Ngang_m": 2.1,
+    "Hoành_cm": 68,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 02",
+    "Giá Thuê (triệu)": 35,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.45,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 64,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 54",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.6,
+    "Ngang_m": 2,
+    "Hoành_cm": 61,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS 29",
+    "Giá Thuê (triệu)": 32,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 55,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS313",
+    "Giá Thuê (triệu)": 36,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": 2.67,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 55,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 55",
+    "Giá Thuê (triệu)": 40,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS321",
+    "Giá Thuê (triệu)": 35,
+    "Giá Bán (triệu)": 300,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 63",
+    "Giá Thuê (triệu)": 35,
+    "Giá Bán (triệu)": 280,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 70",
+    "Giá Thuê (triệu)": 32,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.35,
+    "Ngang_m": 2.2,
+    "Hoành_cm": 65,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 25",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 08",
+    "Giá Thuê (triệu)": 29,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.4,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 14",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 48,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 66",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.55,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS317",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 11",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.5,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 31",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.13,
+    "Ngang_m": 1.57,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 07",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.95,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS322",
+    "Giá Thuê (triệu)": 35,
+    "Giá Bán (triệu)": 250,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS342",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 60,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 18",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.16,
+    "Ngang_m": 1.78,
+    "Hoành_cm": 55,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS341",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 1.97,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS346",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.45,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 51,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS315",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 20",
+    "Giá Thuê (triệu)": 35,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.25,
+    "Ngang_m": 2.1,
+    "Hoành_cm": 45,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS 65",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.42,
+    "Ngang_m": 2,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 30",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 41",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 200,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS343",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.68,
+    "Hoành_cm": 62,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 45",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 1.94,
+    "Ngang_m": 1.73,
+    "Hoành_cm": 54,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 26",
+    "Giá Thuê (triệu)": 30.4,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.15,
+    "Ngang_m": 2,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 19",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 51,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS 67",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.35,
+    "Ngang_m": 2.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 28",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS331",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": 180,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 22",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 160,
+    "Cao_m": 2.25,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 21",
+    "Giá Thuê (triệu)": 28,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 2.38,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 55,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 47",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS424",
+    "Giá Thuê (triệu)": 26,
+    "Giá Bán (triệu)": 150,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 50",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 140,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.85,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS339",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 130,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 77",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.15,
+    "Ngang_m": 1.8,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 143",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": 2.11,
+    "Ngang_m": 1.7,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS401",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 120,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS340",
+    "Giá Thuê (triệu)": 20,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS302",
+    "Giá Thuê (triệu)": 25,
+    "Giá Bán (triệu)": 100,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 486",
+    "Giá Thuê (triệu)": 16,
+    "Giá Bán (triệu)": 95,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS363A",
+    "Giá Thuê (triệu)": 18,
+    "Giá Bán (triệu)": 90,
+    "Cao_m": 1.83,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS320",
+    "Giá Thuê (triệu)": 15.2,
+    "Giá Bán (triệu)": 80,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 707",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 725",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 70,
+    "Cao_m": 1.71,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 693",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 696",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.76,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 688",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 60,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 706",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 55,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 736",
+    "Giá Thuê (triệu)": 14,
+    "Giá Bán (triệu)": 50,
+    "Cao_m": 1.77,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 671",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 30,
+    "Cao_m": 1.48,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 659",
+    "Giá Thuê (triệu)": 10,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": 1.51,
+    "Ngang_m": 1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS301",
+    "Giá Thuê (triệu)": 12,
+    "Giá Bán (triệu)": 25,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 662",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.4,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 29,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 658",
+    "Giá Thuê (triệu)": 8,
+    "Giá Bán (triệu)": 20,
+    "Cao_m": 1.4,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 28,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS35",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.94,
+    "Ngang_m": 1.65,
+    "Hoành_cm": 72,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 56",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.52,
+    "Ngang_m": 2.15,
+    "Hoành_cm": 71,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS332",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.22,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 68,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 53",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.3,
+    "Ngang_m": 1.6,
+    "Hoành_cm": 62,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS306",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.72,
+    "Ngang_m": 1.9,
+    "Hoành_cm": 61,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 27",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 60,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 46",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 59,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 44",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.02,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 58,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 697",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.83,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 53,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 572",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 0.9,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 750",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 789",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 52,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 43",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.77,
+    "Ngang_m": 1.55,
+    "Hoành_cm": 50,
+    "Chậu_m": 1
+  },
+  {
+    "Mã Cây": "BS 61",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.46,
+    "Ngang_m": 2.25,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 64",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.51,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 50,
+    "Chậu_m": 1.1
+  },
+  {
+    "Mã Cây": "BS 751",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 50,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 606",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 49,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 528",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 535",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 623",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 68",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.67,
+    "Ngang_m": 2.2,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 708",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.78,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 800",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1,
+    "Hoành_cm": 48,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 627",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.98,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 731",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.8,
+    "Ngang_m": 1,
+    "Hoành_cm": 47,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 678",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.64,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 728",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 755",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 769",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 773",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 780",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 784",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.8,
+    "Ngang_m": 0.9,
+    "Hoành_cm": 46,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS338",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 46,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 698",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.68,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 775",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 790",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 45,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 626",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.03,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 748",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 757",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 758",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 764",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 786",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 0.9,
+    "Hoành_cm": 44,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 768",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 43,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 516",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 62",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.5,
+    "Ngang_m": 2.05,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.95
+  },
+  {
+    "Mã Cây": "BS 718",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 734",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.63,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 749",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 752",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 756",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 765",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 799",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 42,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 838",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 42,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 720",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.81,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 742",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 754",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 763",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 782",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 41,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 796",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 41,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 672",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.73,
+    "Ngang_m": 1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 679",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.53,
+    "Ngang_m": 1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 684",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.88,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 729",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 759",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 761",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 762",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 785",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.9,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 791",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.8,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 792",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 793",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 40,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 743",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 753",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 774",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 781",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 788",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 795",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.1,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 798",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 39,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS417",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.2,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 39,
+    "Chậu_m": 0.8
+  },
+  {
+    "Mã Cây": "BS 476",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 668",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.48,
+    "Ngang_m": 1,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 674",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 0.95,
+    "Hoành_cm": 38,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 794",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 38,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 797",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 38,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 546",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 669",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.42,
+    "Ngang_m": 0.9,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 673",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.58,
+    "Ngang_m": 1,
+    "Hoành_cm": 37,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 801",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1,
+    "Hoành_cm": 37,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 739",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.85,
+    "Ngang_m": 1,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 746",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.25,
+    "Ngang_m": 1,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 767",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 770",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 779",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS337",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.75,
+    "Hoành_cm": 36,
+    "Chậu_m": 0.85
+  },
+  {
+    "Mã Cây": "BS 771",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 776",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 778",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 35,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 747",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 783",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 787",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 0.85,
+    "Hoành_cm": 34,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 772",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1,
+    "Hoành_cm": 33,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 777",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.3,
+    "Ngang_m": 0.86,
+    "Hoành_cm": 33,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 803",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 33,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 744",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.75
+  },
+  {
+    "Mã Cây": "BS 760",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 2.05,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS 766",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1,
+    "Hoành_cm": 32,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 804",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1,
+    "Hoành_cm": 32,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 741",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.6,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 31,
+    "Chậu_m": 0.9
+  },
+  {
+    "Mã Cây": "BS 745",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 29,
+    "Chậu_m": 0.7
+  },
+  {
+    "Mã Cây": "BS228",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.47,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 29,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 683",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.74,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 26,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 198",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.4,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 216",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 219",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 261",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.67,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 802",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 806",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS239",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS240",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS242",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS269",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS281",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 23,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 199",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 208",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 215",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.3,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 220",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.7,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.6
+  },
+  {
+    "Mã Cây": "BS 254",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 255",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 258",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.3,
+    "Ngang_m": 1.3,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 259",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.15,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS226",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.5,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS244",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS247",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS268",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS274",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.65,
+    "Ngang_m": 1.45,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS277",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.45,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 22,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 223",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 21,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 260",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.05,
+    "Hoành_cm": 21,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS241",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.75,
+    "Ngang_m": 1.5,
+    "Hoành_cm": 21,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS270",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.55,
+    "Ngang_m": 1.35,
+    "Hoành_cm": 21,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS282",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.25,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 21,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 224",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.25,
+    "Ngang_m": 1.2,
+    "Hoành_cm": 20,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 808",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.25,
+    "Hoành_cm": 20,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 807",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.35,
+    "Ngang_m": 1.15,
+    "Hoành_cm": 18,
+    "Chậu_m": 0.65
+  },
+  {
+    "Mã Cây": "BS 835",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": 1.95,
+    "Ngang_m": 1.1,
+    "Hoành_cm": 0.38,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 250",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 550",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 551",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 552",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 553",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 554",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 555",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 556",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 557",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 558",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 559",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 639",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS 740",
+    "Giá Thuê (triệu)": null,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  },
+  {
+    "Mã Cây": "BS330",
+    "Giá Thuê (triệu)": 30,
+    "Giá Bán (triệu)": null,
+    "Cao_m": null,
+    "Ngang_m": null,
+    "Hoành_cm": null,
+    "Chậu_m": null
+  }
+]

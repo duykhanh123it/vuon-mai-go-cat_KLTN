@@ -1,0 +1,280 @@
+diff --git a/ProductList.tsx b/ProductList.tsx
+index 1111111..2222222 100644
+--- a/ProductList.tsx
++++ b/ProductList.tsx
+@@ -1,4 +1,4 @@
+ // ProductList.tsx
+ import React, { useEffect, useMemo, useRef, useState } from "react";
+ import { Product, Page } from "../types";
+ import { fetchProductsBundle, fetchProductsMeta } from "../utils/productsApi";
+@@
+ const ProductCard: React.FC<ProductCardProps> = ({ p, onOpenDetail }) => {
+   const { specs, desc } = splitSpecsFromDescription(p.description);
+   const canDetail = hasAnyPrice(p);
+   const hasRent = p.rentPrice != null;
+   const hasSell = p.price != null;
+ 
++  // card "Liên hệ" + ảnh thật?
++  const isContact = !canDetail;
++  const imgSrc = getImageSrc(p);
++  const hasRealImage = !isPlaceholderSrc(imgSrc);
++
+   // ✅ NEW: sold/rented
+   const isSold = !!p?.isSold;
+   const isRented = !!p?.isRented;
+ 
+   // ưu tiên SOLD nếu data bẩn (có cả 2)
+   const soldOrRentedLabel = isSold ? "ĐÃ BÁN" : isRented ? "ĐÃ CHO THUÊ" : "";
+   const dimmed = isSold || isRented;
+ 
+   // ===== Lightbox (y hệt ProductDetail) =====
++  const [viewerOpen, setViewerOpen] = useState(false);
+   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
+   const prevOverflowRef = useRef<string>("");
+ 
+   // Swipe-to-close (mobile)
+   const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+@@
+   const closeViewer = () => {
+     setViewerOpen(false);
+     setViewerSrc(null);
+     setViewerScale(1);
+     setViewerOrigin({ x: 50, y: 50 });
+     setViewerTranslate({ x: 0, y: 0 });
+   };
+ 
+   // ESC đóng + khóa scroll nền khi mở
+   useEffect(() => {
+     if (!viewerOpen) return;
+@@
+   return (
+     <div
+       role="button"
+       tabIndex={0}
+       onClick={handleOpen}
+       onKeyDown={onKeyDown}
+       aria-label={`Xem chi tiết ${p?.name ?? "sản phẩm"}`}
+       className={`
+         bg-white rounded-2xl overflow-hidden shadow-sm
+         hover:shadow-xl transition-all group flex flex-col h-full
+         cursor-pointer select-none
+         active:scale-[0.99]
+         focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300
+         ${dimmed ? "opacity-60" : ""}
+       `}
+     >
+       <div className="relative aspect-[4/3] overflow-hidden">
+         <img
+           src={imgSrc}
+           onError={onImgError}
+           alt={p.name}
+           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+           draggable={false}
+           onClick={(e) => {
+             // ✅ Mobile/tablet: chỉ card liên hệ + ảnh thật => mở viewer
+             if (!(isContact && hasRealImage && isTouchDevice())) return;
+             e.stopPropagation(); // tránh click card => openContact
+             openViewer(e.currentTarget.currentSrc);
+           }}
+         />
+@@
+       </div>
+ 
+       <div className="p-5 flex flex-col flex-1">
+@@
+       </div>
++
++      {/* ===== Lightbox overlay (giống ProductDetail) ===== */}
++      {viewerOpen && viewerSrc && (
++        <div
++          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
++          style={{ touchAction: "none" }}
++          onClick={(e) => {
++            e.stopPropagation();
++            closeViewer();
++          }}
++          onTouchStart={(e) => {
++            // pinch (>=2 ngón) => bỏ swipe
++            if (e.touches.length >= 2) {
++              swipeIgnoreRef.current = true;
++              return;
++            }
++            const touch = e.touches[0];
++            if (!touch) return;
++
++            // edge-guard: vuốt sát mép trái/phải => để browser back/forward
++            const EDGE = 24;
++            const w = window.innerWidth || 0;
++            swipeIgnoreRef.current = touch.clientX <= EDGE || touch.clientX >= w - EDGE;
++
++            touchStartRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
++            touchLastRef.current = { x: touch.clientX, y: touch.clientY };
++            touchMovedRef.current = false;
++          }}
++          onTouchMove={(e) => {
++            // pinch => không can thiệp
++            if (e.touches.length >= 2) return;
++            if (!touchStartRef.current || swipeIgnoreRef.current) return;
++            const touch = e.touches[0];
++            if (!touch) return;
++
++            touchLastRef.current = { x: touch.clientX, y: touch.clientY };
++            const dx = touch.clientX - touchStartRef.current.x;
++            const dy = touch.clientY - touchStartRef.current.y;
++            if (Math.abs(dx) > 10) touchMovedRef.current = true;
++
++            // chỉ chặn scroll khi chắc là vuốt ngang
++            if (Math.abs(dx) > Math.abs(dy) * 1.2) e.preventDefault();
++          }}
++          onTouchEnd={() => {
++            const start = touchStartRef.current;
++            const last = touchLastRef.current;
++            touchStartRef.current = null;
++            touchLastRef.current = null;
++
++            const ignored = swipeIgnoreRef.current;
++            swipeIgnoreRef.current = false;
++
++            if (!start || !last) return;
++            if (ignored) return;
++            if (!touchMovedRef.current) return;
++            if (viewerScale > 1) return; // đang zoom => không swipe đóng
++
++            const dx = last.x - start.x;
++            const dy = last.y - start.y;
++            const dt = Date.now() - start.t;
++
++            const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.2;
++            const farEnough = Math.abs(dx) >= 70;
++            const fastEnough = dt <= 600;
++
++            if (isHorizontal && farEnough && fastEnough) closeViewer();
++          }}
++        >
++          <button
++            type="button"
++            className="absolute top-4 right-4 z-10 rounded-full bg-white/10 hover:bg-white/20 text-white w-11 h-11 flex items-center justify-center text-2xl"
++            onClick={(e) => {
++              e.stopPropagation();
++              closeViewer();
++            }}
++            aria-label="Đóng"
++          >
++            ×
++          </button>
++
++          <div
++            className="max-h-[90vh] max-w-[95vw] overflow-hidden rounded-2xl shadow-2xl"
++            onClick={(e) => e.stopPropagation()}
++            style={{ touchAction: "pinch-zoom" }}
++            // Zoom bằng wheel (desktop)
++            onWheel={(e) => {
++              e.preventDefault();
++              const img = viewerImgRef.current;
++              if (!img) return;
++
++              const rect = img.getBoundingClientRect();
++              const px = ((e.clientX - rect.left) / rect.width) * 100;
++              const py = ((e.clientY - rect.top) / rect.height) * 100;
++              const ox = Math.max(0, Math.min(100, px));
++              const oy = Math.max(0, Math.min(100, py));
++              setViewerOrigin({ x: ox, y: oy });
++
++              const direction = e.deltaY < 0 ? 1 : -1;
++              const step = 0.18;
++              setViewerScale((prev) => {
++                const next = Math.max(1, Math.min(4, Number((prev + direction * step).toFixed(3))));
++                if (next === 1) setViewerTranslate({ x: 0, y: 0 });
++                return next;
++              });
++            }}
++            // Pan (mobile) khi đã zoom
++            onTouchStart={(e) => {
++              if (e.touches.length >= 2) return; // pinch => để native zoom
++              if (viewerScale <= 1) return;
++              e.stopPropagation();
++
++              const t = e.touches[0];
++              if (!t) return;
++              touchPanRef.current = {
++                active: true,
++                startX: t.clientX,
++                startY: t.clientY,
++                baseX: viewerTranslate.x,
++                baseY: viewerTranslate.y,
++              };
++            }}
++            onTouchMove={(e) => {
++              if (e.touches.length >= 2) return;
++              const pz = touchPanRef.current;
++              if (!pz?.active) return;
++              e.preventDefault();
++              e.stopPropagation();
++
++              const t = e.touches[0];
++              if (!t) return;
++              const dx = t.clientX - pz.startX;
++              const dy = t.clientY - pz.startY;
++              setViewerTranslate({ x: pz.baseX + dx, y: pz.baseY + dy });
++            }}
++            onTouchEnd={(e) => {
++              const pz = touchPanRef.current;
++              if (!pz) return;
++              if (e.touches.length > 0) return;
++              touchPanRef.current = { ...pz, active: false };
++            }}
++            // Drag (desktop) khi zoom > 1
++            onMouseDown={(e) => {
++              if (viewerScale <= 1) return;
++              e.preventDefault();
++              dragRef.current = {
++                dragging: true,
++                startX: e.clientX,
++                startY: e.clientY,
++                baseX: viewerTranslate.x,
++                baseY: viewerTranslate.y,
++              };
++            }}
++            onMouseMove={(e) => {
++              const d = dragRef.current;
++              if (!d?.dragging) return;
++              e.preventDefault();
++              const dx = e.clientX - d.startX;
++              const dy = e.clientY - d.startY;
++              setViewerTranslate({ x: d.baseX + dx, y: d.baseY + dy });
++            }}
++            onMouseUp={() => {
++              const d = dragRef.current;
++              if (!d) return;
++              dragRef.current = { ...d, dragging: false };
++            }}
++            onMouseLeave={() => {
++              const d = dragRef.current;
++              if (!d) return;
++              dragRef.current = { ...d, dragging: false };
++            }}
++          >
++            <img
++              ref={viewerImgRef}
++              src={viewerSrc}
++              alt="Ảnh sản phẩm"
++              className="block max-h-[90vh] max-w-[95vw] object-contain select-none"
++              style={{
++                transformOrigin: `${viewerOrigin.x}% ${viewerOrigin.y}%`,
++                transform: `translate(${viewerTranslate.x}px, ${viewerTranslate.y}px) scale(${viewerScale})`,
++                transition: "transform 80ms linear",
++                cursor: viewerScale > 1 ? "grab" : "zoom-in",
++              }}
++              onDoubleClick={() => {
++                setViewerScale(1);
++                setViewerOrigin({ x: 50, y: 50 });
++                setViewerTranslate({ x: 0, y: 0 });
++              }}
++              draggable={false}
++            />
++          </div>
++        </div>
++      )}
+     </div>
+   );
+ };

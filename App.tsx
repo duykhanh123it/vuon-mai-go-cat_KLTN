@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Page, Product } from "./types";
+import { Page, Product, AuthUser } from "./types";
 import { fetchProductsBundle } from "./utils/productsApi";
 import { Navbar, Footer } from "./components/Layout";
 
@@ -8,6 +8,7 @@ import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import Booking from "./pages/Booking";
 import Contact from "./pages/Contact";
+import LoginModal from "./components/LoginModal";
 
 const FloatingCTAStyle = () => (
   <style>{`
@@ -196,6 +197,21 @@ const App: React.FC = () => {
   const [productsPage, setProductsPage] = useState<number>(1);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isResolvingDetail, setIsResolvingDetail] = useState(false);
+  // ================= AUTH =================
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+
+  // Load user từ localStorage khi app khởi động
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("vmgc_user");
+      if (raw) {
+        setAuthUser(JSON.parse(raw));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // ✅ Load products cho App (để F5 vào detail có thể tìm product)
   useEffect(() => {
@@ -291,6 +307,23 @@ const App: React.FC = () => {
    * - đổi tab (page)
    * - tự cuộn về đầu trang (khi user bấm menu)
    */
+
+  const handleLogin = (user: AuthUser) => {
+    setAuthUser(user);
+    localStorage.setItem("vmgc_user", JSON.stringify(user));
+    setShowLogin(false);
+  };
+
+  const handleLogout = () => {
+    setAuthUser(null);
+    localStorage.removeItem("vmgc_user");
+  };
+
+  const handleUpdateUser = (user: AuthUser) => {
+    setAuthUser(user);
+    localStorage.setItem("vmgc_user", JSON.stringify(user));
+  };
+
   const navigate = useCallback((page: Page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -479,7 +512,12 @@ const App: React.FC = () => {
         return <Contact setCurrentPage={navigate} />;
 
       case "booking":
-        return <Booking setCurrentPage={navigate} />;
+        return (
+          <Booking
+            setCurrentPage={navigate}
+            authUser={authUser}
+          />
+        );
 
       default:
         return <Home setCurrentPage={navigate} />;
@@ -489,21 +527,38 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <FloatingCTAStyle />
-      <Navbar currentPage={currentPage} setCurrentPage={navigate} />
+      <Navbar
+        currentPage={currentPage}
+        setCurrentPage={navigate}
+        authUser={authUser}
+        onOpenLogin={() => setShowLogin(true)}
+        onLogout={handleLogout}
+        onUpdateUser={handleUpdateUser}
+      />
 
       <main className="flex-grow">{renderPage()}</main>
 
       <Footer setCurrentPage={navigate} />
 
+      {showLogin && (
+        <LoginModal onClose={() => setShowLogin(false)} onLogin={handleLogin} />
+      )}
+
       {/* Overlay đóng menu khi click ra ngoài */}
       {chatOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setChatOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          onClick={() => setChatOpen(false)}
+        />
       )}
 
       {/* Floating actions (mobile) */}
       <div
-        className={`fixed bottom-6 right-6 z-50 md:hidden transition-all duration-300 ${isScrolling ? "opacity-30 pointer-events-none" : "opacity-100 pointer-events-auto"
-          }`}
+        className={`fixed bottom-6 right-6 z-50 md:hidden transition-all duration-300 ${
+          isScrolling
+            ? "opacity-30 pointer-events-none"
+            : "opacity-100 pointer-events-auto"
+        }`}
       >
         <div className="relative flex flex-col items-end gap-3">
           {/* Popover menu: Messenger / Zalo */}

@@ -106,7 +106,12 @@ const isFutureOrNowDateTime = (dateISO: string, timeHHmm: string) => {
 
 const toVNPhone = (s: string) => s.replace(/\s/g, "");
 
-const Booking: React.FC = () => {
+import { AuthUser } from "../types";
+
+const Booking: React.FC<{
+  authUser: AuthUser | null;
+  setCurrentPage: any;
+}> = ({ authUser }) => {
   const [timeOpen, setTimeOpen] = useState(false);
   const [timeDraft, setTimeDraft] = useState("07:00");
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -160,6 +165,17 @@ const Booking: React.FC = () => {
 
   const [history, setHistory] = useState<BookingHistoryItem[]>([]);
   useEffect(() => { setHistory(loadBookingHistory()); }, []);
+
+  // Autofill khi đã login
+  useEffect(() => {
+    if (!authUser) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || authUser.name || "",
+      email: prev.email || authUser.email || "",
+    }));
+  }, [authUser]);
 
   const unique = (arr: string[]) =>
     Array.from(new Set(arr.map((s) => s.trim()).filter(Boolean)));

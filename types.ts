@@ -50,3 +50,23 @@ export interface Product {
   isRented: boolean; // Đã thuê
   isSold: boolean;   // Đã bán
 }
+
+// ================= AUTH =================
+
+export interface AuthUser {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}

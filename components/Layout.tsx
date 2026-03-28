@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import LoginModal from "./LoginModal";
+import ProfileModal from "./ProfileModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 import { Page } from "../types";
 
 /**
@@ -6,17 +9,33 @@ import { Page } from "../types";
  * Navbar: Mobile có hamburger + sidebar drawer
  */
 
+import { AuthUser } from "../types";
+
 interface NavbarProps {
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
+  authUser: AuthUser | null;
+  onOpenLogin: () => void;
+  onLogout: () => void;
+  onUpdateUser: (user: AuthUser) => void;
 }
 
 
-export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  currentPage,
+  setCurrentPage,
+  authUser,
+  onOpenLogin,
+  onLogout,
+  onUpdateUser,
+}) => {
   const PHONE_NUMBER = "0922727277";
   const ZALO_LINK = `https://zalo.me/${PHONE_NUMBER}`;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -26,8 +45,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
   ];
 
   const handleCallClick = () => {
-    const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
-    const isMobile = /android|iphone|ipad|ipod|iemobile|blackberry|bada|tizen|mobile/i.test(ua);
+    const ua =
+      navigator.userAgent || (navigator as any).vendor || (window as any).opera;
+    const isMobile =
+      /android|iphone|ipad|ipod|iemobile|blackberry|bada|tizen|mobile/i.test(
+        ua,
+      );
 
     if (isMobile) {
       window.location.href = `tel:${PHONE_NUMBER}`;
@@ -40,32 +63,41 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
   const goPage = (page: Page) => {
     setCurrentPage(page);
     setDrawerOpen(false);
+    setUserMenuOpen(false);
   };
 
   // ESC để đóng + khóa scroll nền khi drawer mở
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setDrawerOpen(false);
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+        setUserMenuOpen(false);
+        setProfileOpen(false);
+      }
     };
 
     if (drawerOpen) {
-      document.addEventListener("keydown", onKeyDown);
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+    }
+
+    if (userMenuOpen || drawerOpen || profileOpen) {
+      document.addEventListener("keydown", onKeyDown);
     }
 
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
-  }, [drawerOpen]);
+  }, [drawerOpen, userMenuOpen, profileOpen]);
 
   const navBtnBase =
     "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 " +
     "cursor-pointer select-none focus:outline-none focus-visible:outline-none";
 
-  const navBtnActive = "border-2 border-slate-800 bg-amber-100 text-orange-600 shadow-sm";
+  const navBtnActive =
+    "border-2 border-slate-800 bg-amber-100 text-orange-600 shadow-sm";
   const navBtnInactive =
     "text-slate-600 hover:bg-slate-100/80 hover:text-amber-700 hover:backdrop-blur-sm";
 
@@ -102,8 +134,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
               />
 
               <div className="min-w-0 leading-tight text-left">
-                <div className="text-[14px] font-bold font-serif text-amber-900 whitespace-nowrap truncate">
-                  Vườn Mai Gò Cát
+                <div className="text-[14px] font-bold font-serif text-amber-900 leading-tight text-center">
+                  <span className="block sm:hidden">
+                    Vườn Mai
+                    <br />
+                    Gò Cát
+                  </span>
+                  <span className="hidden sm:block whitespace-nowrap">
+                    Vườn Mai Gò Cát
+                  </span>
                 </div>
                 {/* <div className="text-[10px] text-slate-500 uppercase tracking-wide whitespace-nowrap truncate">
                   Tinh hoa Mai Tết Miền Nam
@@ -111,12 +150,45 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
               </div>
             </button>
 
-            {/* Right: Spacer (giữ logo luôn ở giữa) */}
-            <div className="w-10 h-10" />
+            {/* Right: Cart + User */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Giỏ hàng"
+                className="
+      w-9 h-9 rounded-full
+      bg-slate-100 hover:bg-slate-200
+      flex items-center justify-center
+      text-base
+      active:scale-95
+    "
+              >
+                🛒
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (authUser) {
+                    onLogout();
+                  } else {
+                    onOpenLogin();
+                  }
+                }}
+                aria-label="Tài khoản người dùng"
+                className="
+      w-9 h-9 rounded-full
+      bg-slate-100 hover:bg-slate-200
+      flex items-center justify-center
+      text-base
+      active:scale-95
+    "
+              >
+                {authUser ? "👋" : "👤"}
+              </button>
+            </div>
           </div>
         </div>
-
-
 
         {/* Header row desktop: Logo - Menu - Gọi ngay (1 hàng) */}
         <div className="hidden md:flex items-center justify-between gap-6">
@@ -137,7 +209,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
             </div>
 
             <div className="leading-none">
-              <h1 className="text-lg font-bold font-serif text-amber-900">Vườn Mai Gò Cát</h1>
+              <h1 className="text-lg font-bold font-serif text-amber-900">
+                Vườn Mai Gò Cát
+              </h1>
               {/* <p className="text-[10px] text-slate-500 uppercase tracking-wide">
                 Tinh hoa Mai Tết Miền Nam
               </p> */}
@@ -149,12 +223,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
             {navItems.map((item) => {
               const isActive =
                 currentPage === item.id ||
-                (item.id === "products" && String(currentPage).toLowerCase().includes("product"));
+                (item.id === "products" &&
+                  String(currentPage).toLowerCase().includes("product"));
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setCurrentPage(item.id)}
+                  onClick={() => goPage(item.id)}
                   className={`${navBtnBase} ${isActive ? navBtnActive : navBtnInactive}`}
                 >
                   {item.label}
@@ -163,62 +238,96 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
             })}
           </div>
 
-          {/* Call (right) */}
-          <button
-            type="button"
-            onClick={handleCallClick}
-            aria-label={`Gọi ngay ${PHONE_NUMBER}`}
-            className="
-    group relative overflow-hidden
-    font-bold px-4 py-2 rounded-lg
-    flex items-center gap-2
-    text-white text-sm
-    shadow-md hover:shadow-lg
-    select-none whitespace-nowrap
-
-    transition-transform duration-200 ease-out
-    hover:scale-[1.04]
-    active:scale-[0.96]
-  "
-            style={{ background: "linear-gradient(to right, #3F6F4A, #E2B93B)" }}
-          >
-            {/* Icon */}
-            <span
-              aria-hidden="true"
+          {/* User + Cart (right) */}
+          <div className="flex items-center gap-3 relative">
+            {/* Cart */}
+            <button
+              type="button"
+              aria-label="Giỏ hàng"
               className="
-      inline-flex items-center justify-center
-      transition-transform duration-200 ease-out
-      group-hover:scale-110
+      w-10 h-10 rounded-full
+      bg-slate-100 hover:bg-slate-200
+      flex items-center justify-center
+      text-xl
+      transition-all duration-200
+      active:scale-95
     "
             >
-              📞
-            </span>
+              🛒
+            </button>
 
-            {/* Text */}
-            <span>Gọi ngay</span>
+            {/* User */}
+            <button
+              type="button"
+              onClick={() => {
+                if (authUser) {
+                  setUserMenuOpen((v) => !v);
+                } else {
+                  onOpenLogin();
+                }
+              }}
+              aria-label="Tài khoản người dùng"
+              className={`
+    flex items-center gap-2
+    px-4 py-2
+    rounded-full
+    font-semibold
+    transition-all duration-200
+    active:scale-95
+    ${
+      authUser
+        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+    }
+  `}
+            >
+              <span className="text-base">👤</span>
 
-            {/* Light sweep */}
-            <span
-              aria-hidden
-              className="
-      pointer-events-none
-      absolute inset-0
+              {authUser && (
+                <span className="text-sm whitespace-nowrap">
+                  {authUser.name.split(" ").slice(-1)[0]}
+                </span>
+              )}
+            </button>
 
-      bg-gradient-to-r
-      from-transparent
-      via-white/50
-      to-transparent
+            {authUser && userMenuOpen && (
+              <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    setProfileOpen(true);
+                  }}
+                >
+                  Hồ sơ của tôi
+                </button>
 
-      translate-x-[-140%]
-      group-hover:translate-x-[140%]
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition border-t border-slate-100"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    setChangePasswordOpen(true);
+                  }}
+                >
+                  Đổi mật khẩu
+                </button>
 
-      transition-transform duration-500 ease-out
-      blur-[2px]
-    "
-            />
-          </button>
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    onLogout();
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-
 
         {/* Menu desktop giữ nguyên kiểu cũ */}
         {/* <div className="hidden md:flex items-center justify-center gap-2 mt-3">
@@ -240,23 +349,35 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
 
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/40 transition-opacity duration-200 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
-        onClick={() => setDrawerOpen(false)}
+        className={`fixed inset-0 transition-opacity duration-200 ${
+          drawerOpen || userMenuOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        } ${drawerOpen ? "bg-black/40" : "bg-transparent"}`}
+        onClick={() => {
+          setDrawerOpen(false);
+          setUserMenuOpen(false);
+        }}
         aria-hidden="true"
       />
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[290px] bg-white shadow-2xl z-[60] transform transition-transform duration-200 ${drawerOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`fixed top-0 left-0 h-full w-[290px] bg-white shadow-2xl z-[60] transform transition-transform duration-200 ${
+          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
         role="dialog"
         aria-modal="true"
         aria-label="Menu điều hướng"
       >
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3 select-none">
-            <img src="/logo.jpg" alt="logo" className="w-10 h-10 rounded-full object-cover" draggable={false} />
+            <img
+              src="/logo.jpg"
+              alt="logo"
+              className="w-10 h-10 rounded-full object-cover"
+              draggable={false}
+            />
             <div className="leading-tight">
               <div className="font-bold text-amber-900">Vườn Mai Gò Cát</div>
               <div className="text-xs text-slate-500">Menu</div>
@@ -277,7 +398,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
           {navItems.map((item) => {
             const isActive =
               currentPage === item.id ||
-              (item.id === "products" && String(currentPage).toLowerCase().includes("product"));
+              (item.id === "products" &&
+                String(currentPage).toLowerCase().includes("product"));
             return (
               <button
                 key={item.id}
@@ -298,15 +420,39 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
           <div className="mt-4 pt-4 border-t">
             <button
               type="button"
-              onClick={handleCallClick}
-              className="hidden w-full font-bold px-4 py-3 rounded-xl text-white shadow-md hover:shadow-lg active:scale-[0.99] transition flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(to right, #3F6F4A, #E2B93B)" }}
+              onClick={() => {
+                setDrawerOpen(false);
+                if (authUser) {
+                  onLogout();
+                } else {
+                  onOpenLogin();
+                }
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700"
             >
-              📞 Gọi ngay
+              <span className="text-lg">{authUser ? "👋" : "👤"}</span>
+              <span className="font-semibold">
+                {authUser ? "Đăng xuất" : "Tài khoản"}
+              </span>
             </button>
           </div>
         </div>
       </aside>
+
+      {authUser && profileOpen && (
+        <ProfileModal
+          user={authUser}
+          onClose={() => setProfileOpen(false)}
+          onUpdateUser={onUpdateUser}
+        />
+      )}
+
+      {authUser && changePasswordOpen && (
+        <ChangePasswordModal
+          user={authUser}
+          onClose={() => setChangePasswordOpen(false)}
+        />
+      )}
     </nav>
   );
 };

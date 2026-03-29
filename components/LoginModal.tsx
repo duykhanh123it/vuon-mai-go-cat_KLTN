@@ -66,14 +66,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       setLoading(false);
       return;
     }
-    setError("");
-    setLoading(true);
-
-    if (!email || !password) {
-      setError("Vui lòng nhập email và mật khẩu");
-      setLoading(false);
-      return;
-    }
 
     if (mode === "register") {
       if (!name.trim()) {
@@ -118,6 +110,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
       // register - bước 1: gửi OTP
       if (!otpSent) {
+        const grecaptcha = (window as any).grecaptcha;
+        if (!grecaptcha) {
+          setError("reCAPTCHA chưa sẵn sàng");
+          setLoading(false);
+          return;
+        }
+
+        const recaptchaToken = await grecaptcha.execute(""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"", {
+          action: "sendOtp",
+        });
+
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -126,6 +129,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           body: JSON.stringify({
             api: "sendOtp",
             email,
+            recaptchaToken,
           }),
         });
 
@@ -144,54 +148,55 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       }
 
       // register - bước 2: verify OTP
+      if (!otpSent) {
+        setError("Bạn chưa gửi OTP");
+        setLoading(false);
+        return;
+      }
+
       if (!otp.trim()) {
         setError("Vui lòng nhập mã OTP");
         setLoading(false);
         return;
       }
 
-      const verifyRes = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify({
-          api: "verifyOtp",
-          email,
-          otp,
-        }),
-      });
-
-      const verifyData = await verifyRes.json();
-
-      if (!verifyData.ok) {
-        setError(verifyData.error || "OTP không hợp lệ");
+      // 🔐 LẤY reCAPTCHA token
+      const grecaptcha = (window as any).grecaptcha;
+      if (!grecaptcha) {
+        setError("reCAPTCHA chưa sẵn sàng");
         setLoading(false);
         return;
       }
 
-      const registerRes = await fetch(API_URL, {
+      const recaptchaToken = await grecaptcha.execute(""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"", {
+        action: "register",
+      });
+
+      // ✅ CALL 1 API DUY NHẤT
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "text/plain;charset=utf-8",
         },
         body: JSON.stringify({
-          api: "register",
+          api: "registerWithOtp",
           email,
           password,
           name,
+          otp,
+          recaptchaToken,
         }),
       });
 
-      const registerData = await registerRes.json();
+      const data = await res.json();
 
-      if (!registerData.ok) {
-        setError(registerData.error || "Đăng ký thất bại");
+      if (!data.ok) {
+        setError(data.error || "Đăng ký thất bại");
         setLoading(false);
         return;
       }
 
-      onLogin(registerData.user);
+      onLogin(data.user);
       setLoading(false);
     } catch (err: any) {
       setError("Không thể kết nối server");
@@ -315,6 +320,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                     setLoading(true);
 
                     try {
+                      const grecaptcha = (window as any).grecaptcha;
+                      if (!grecaptcha) {
+                        setError("reCAPTCHA chưa sẵn sàng");
+                        setLoading(false);
+                        return;
+                      }
+
+                      const recaptchaToken = await grecaptcha.execute(
+                        ""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"",
+                        { action: "sendOtp" },
+                      );
+
                       const res = await fetch(API_URL, {
                         method: "POST",
                         headers: {
@@ -323,6 +340,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                         body: JSON.stringify({
                           api: "sendOtp",
                           email,
+                          recaptchaToken,
                         }),
                       });
 

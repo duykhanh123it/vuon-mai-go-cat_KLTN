@@ -86,7 +86,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "text/plain;charset=utf-8",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             api: "login",
@@ -110,26 +110,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
       // register - bước 1: gửi OTP
       if (!otpSent) {
-        const grecaptcha = (window as any).grecaptcha;
-        if (!grecaptcha) {
-          setError("reCAPTCHA chưa sẵn sàng");
-          setLoading(false);
-          return;
-        }
-
-        const recaptchaToken = await grecaptcha.execute(""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"", {
-          action: "sendOtp",
-        });
-
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "text/plain;charset=utf-8",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             api: "sendOtp",
             email,
-            recaptchaToken,
           }),
         });
 
@@ -143,13 +131,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
         setOtpSent(true);
         setOtpCountdown(60);
-        setLoading(false);
-        return;
-      }
 
-      // register - bước 2: verify OTP
-      if (!otpSent) {
-        setError("Bạn chưa gửi OTP");
+        // reset captcha
+        (window as any).grecaptcha?.reset();
+
         setLoading(false);
         return;
       }
@@ -160,23 +145,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         return;
       }
 
-      // 🔐 LẤY reCAPTCHA token
-      const grecaptcha = (window as any).grecaptcha;
-      if (!grecaptcha) {
-        setError("reCAPTCHA chưa sẵn sàng");
-        setLoading(false);
-        return;
-      }
-
-      const recaptchaToken = await grecaptcha.execute(""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"", {
-        action: "register",
-      });
-
       // ✅ CALL 1 API DUY NHẤT
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "text/plain;charset=utf-8",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           api: "registerWithOtp",
@@ -184,7 +157,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           password,
           name,
           otp,
-          recaptchaToken,
         }),
       });
 
@@ -197,8 +169,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       }
 
       onLogin(data.user);
+
+      // reset captcha
+      (window as any).grecaptcha?.reset();
+
       setLoading(false);
     } catch (err: any) {
+      console.error("ERROR:", err);
       setError("Không thể kết nối server");
       setLoading(false);
     }
@@ -320,27 +297,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                     setLoading(true);
 
                     try {
-                      const grecaptcha = (window as any).grecaptcha;
-                      if (!grecaptcha) {
-                        setError("reCAPTCHA chưa sẵn sàng");
-                        setLoading(false);
-                        return;
-                      }
-
-                      const recaptchaToken = await grecaptcha.execute(
-                        ""6LeJX5ssAAAAANVyfKHNqs-9fVLe6ZJplisy5ERT"",
-                        { action: "sendOtp" },
-                      );
-
                       const res = await fetch(API_URL, {
                         method: "POST",
                         headers: {
-                          "Content-Type": "text/plain;charset=utf-8",
+                          "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
                           api: "sendOtp",
                           email,
-                          recaptchaToken,
                         }),
                       });
 
@@ -354,8 +318,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
                       setOtp("");
                       setOtpCountdown(60);
+
                       setLoading(false);
                     } catch (err) {
+                      console.error("ERROR:", err);
                       setError("Không thể kết nối server");
                       setLoading(false);
                     }

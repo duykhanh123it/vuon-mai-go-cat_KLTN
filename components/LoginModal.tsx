@@ -192,22 +192,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div
-        className="
-  relative z-10
-  w-full max-w-md
-  max-h-[90vh]
-  bg-white rounded-3xl
-  px-6 py-5
-  shadow-2xl
-  flex flex-col
-"
-      >
+      <div className="relative bg-white rounded-3xl px-5 py-4 w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Title */}
         <div className="shrink-0 pb-3 mb-2 text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-amber-900">
@@ -222,7 +212,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </p>
         </div>
 
-        <div className="overflow-y-auto pr-1 space-y-4 flex-1">
+        {/* Scroll Body */}
+        <div className="space-y-4 overflow-y-auto pr-1 flex-1">
           {/* Name (register only) */}
           {mode === "register" && (
             <div className="mb-4">
@@ -234,13 +225,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                 placeholder="Nhập họ tên..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
           )}
 
-          {/* Phone */}
-          {/* Email */}
           {/* Email */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2 text-slate-700">
@@ -251,7 +240,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
               placeholder="Nhập email..."
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+              className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
@@ -265,7 +254,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
               placeholder="Nhập mật khẩu..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+              className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
@@ -280,7 +269,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                 placeholder="Nhập lại mật khẩu..."
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
           )}
@@ -295,7 +284,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                 placeholder="Nhập mã OTP gồm 6 số..."
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
 
               <div className="mt-3 text-center">
@@ -414,8 +403,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </div>
         </div>
 
-        {/* Button */}
-        <div className="sticky bottom-0 bg-white pt-4">
+        {/* Button - Không bị trôi */}
+        <div className="mt-6 shrink-0">
           <button
             onClick={handleSubmit}
             disabled={loading}

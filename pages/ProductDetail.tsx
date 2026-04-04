@@ -13,7 +13,8 @@ const FALLBACK_IMG = "/notimg.jpg";
 
 // ===== Read products từ localStorage cache (đồng bộ với ProductList.tsx) =====
 type ProductsType = "All" | "BS" | "T";
-const PRODUCTS_CACHE_KEY = (type: ProductsType) => `vmgc_products_cache_v1_${type}`;
+const PRODUCTS_CACHE_KEY = (type: ProductsType) =>
+  `vmgc_products_cache_v1_${type}`;
 
 const readCachedProducts = (type: ProductsType): Product[] => {
   try {
@@ -59,7 +60,8 @@ const readAllCachedProducts = (): Product[] => {
 // VND -> triệu (để tính diff giá đúng, tránh diff VND làm điểm bị nát)
 const vndToMillion = (v: any): number | null => {
   if (v == null) return null;
-  const n = typeof v === "number" ? v : Number(String(v).replace(/[^\d.-]/g, ""));
+  const n =
+    typeof v === "number" ? v : Number(String(v).replace(/[^\d.-]/g, ""));
   if (!Number.isFinite(n) || n <= 0) return null;
   return n / 1_000_000;
 };
@@ -76,7 +78,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   setSelectedProduct,
 }) => {
   const [activeTab, setActiveTab] = useState<"specs" | "care">("specs");
-  const [mainImage, setMainImage] = useState<string>(product.image || FALLBACK_IMG);
+  const [mainImage, setMainImage] = useState<string>(
+    product.image || FALLBACK_IMG,
+  );
 
   const PHONE = "0922727277";
   const ZALO_LINK = "https://zalo.me/84922727277";
@@ -103,7 +107,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const prevOverflowRef = useRef<string>("");
 
   // Swipe-to-close (mobile)
-  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(
+    null,
+  );
   const touchLastRef = useRef<{ x: number; y: number } | null>(null);
   const touchMovedRef = useRef(false);
   const swipeIgnoreRef = useRef(false);
@@ -259,14 +265,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   };
 
   // ===== Related products (Bạn cũng có thể thích) =====
-  const RELATED_HISTORY_KEY = (pid: any) => `vmgc_related_history_v1:${extractCode(pid)}`;
+  const RELATED_HISTORY_KEY = (pid: any) =>
+    `vmgc_related_history_v1:${extractCode(pid)}`;
 
   const relatedProducts = useMemo(() => {
     const currentId = String(product.id || "").trim();
     const currentNorm = normId(currentId);
 
     // ✅ Ưu tiên danh sách từ App (đã revalidate). Nếu rỗng thì fallback cache
-    const all = Array.isArray(products) && products.length ? products : readAllCachedProducts();
+    const all =
+      Array.isArray(products) && products.length
+        ? products
+        : readAllCachedProducts();
 
     const targetRentM = vndToMillion(product.rentPrice);
     const targetSellM = vndToMillion(product.price);
@@ -277,7 +287,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       const raw = localStorage.getItem(RELATED_HISTORY_KEY(product.id));
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
       seen = new Set((arr || []).map((x) => String(x)));
-    } catch { }
+    } catch {}
 
     const candidates = all.filter((p: any) => {
       const id = String(p?.id ?? "").trim();
@@ -350,8 +360,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         if (id && !seen.has(id)) nextSeen.push(id);
       }
       const trimmed = nextSeen.slice(-80);
-      localStorage.setItem(RELATED_HISTORY_KEY(product.id), JSON.stringify(trimmed));
-    } catch { }
+      localStorage.setItem(
+        RELATED_HISTORY_KEY(product.id),
+        JSON.stringify(trimmed),
+      );
+    } catch {}
 
     return picked;
   }, [products, product.id, product.rentPrice, product.price]);
@@ -390,11 +403,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const goToProduct = (raw: any) => {
     const pid = normId(raw?.id);
 
-    const all = Array.isArray(products) && products.length ? products : readAllCachedProducts();
+    const all =
+      Array.isArray(products) && products.length
+        ? products
+        : readAllCachedProducts();
     const found = all.find((x: any) => normId(x?.id) === pid);
     const next = (found ?? raw) as Product;
 
-    const params = new URLSearchParams((window.location.hash.split("?")[1] || "").trim());
+    const params = new URLSearchParams(
+      (window.location.hash.split("?")[1] || "").trim(),
+    );
     const p = Math.max(1, Math.trunc(Number(params.get("p") || "1") || 1));
 
     // ✅ 1) set selected trước
@@ -412,7 +430,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   return (
     <div className="bg-slate-50 pb-20">
       {/* Breadcrumbs */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex gap-2 text-sm text-slate-400 select-none">
           <button
             onClick={() => setCurrentPage("home")}
@@ -432,16 +450,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
           <span className="cursor-default">/</span>
 
-          <span className="text-slate-900 font-medium truncate cursor-default">{product.name}</span>
+          <span className="text-slate-900 font-medium truncate cursor-default">
+            {product.name}
+          </span>
         </div>
       </div>
 
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-white rounded-3xl p-6 md:p-12 shadow-sm">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 bg-white rounded-3xl p-6 md:p-12 shadow-sm">
           {/* LEFT: Image Gallery */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-md bg-slate-100">
+            <div className="relative h-[250px] sm:h-[350px] lg:h-[500px] rounded-2xl overflow-hidden shadow-md bg-slate-100">
               <img
                 src={mainImage}
                 alt={product.name}
@@ -479,10 +499,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                       key={`${imgSrc}-${idx}`}
                       type="button"
                       onClick={() => setMainImage(imgSrc)}
-                      className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${isActive
-                        ? "border-amber-500 shadow-md"
-                        : "border-transparent hover:border-slate-300"
-                        }`}
+                      className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                        isActive
+                          ? "border-amber-500 shadow-md"
+                          : "border-transparent hover:border-slate-300"
+                      }`}
                     >
                       <img
                         src={imgSrc}
@@ -505,19 +526,27 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 Mã sản phẩm: {product.id}
               </p>
 
-              <h1 className="text-4xl font-bold font-serif text-slate-900 mb-4">{product.name}</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-serif text-slate-900 mb-4">
+                {product.name}
+              </h1>
 
               <div className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase mb-6">
                 {product.category}
               </div>
 
-              <p className="text-slate-600 leading-relaxed mb-8">{product.description}</p>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8">
+                {product.description}
+              </p>
 
               <div className="space-y-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                 <div className="flex justify-between items-end border-b border-slate-200 pb-4">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Giá cho thuê (5 - 10 ngày)</p>
-                    <p className="text-3xl font-bold text-amber-500">{formatVND(product.rentPrice)}</p>
+                    <p className="text-xs text-slate-400 mb-1">
+                      Giá cho thuê (5 - 10 ngày)
+                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-amber-500">
+                      {formatVND(product.rentPrice)}
+                    </p>
                     {locked && product.rentPrice != null && (
                       <p className="text-[10px] text-slate-500 mt-1 italic">
                         (Giá tham khảo – {statusText.toLowerCase()})
@@ -533,7 +562,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
                 <div className="pt-2">
                   <p className="text-xs text-slate-400 mb-1">Giá bán sở hữu</p>
-                  <p className="text-xl font-bold text-slate-700">{formatVND(product.price)}</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-700">
+                    {formatVND(product.price)}
+                  </p>
                   {locked && product.price != null && (
                     <p className="text-[10px] text-slate-500 mt-1 italic">
                       (Giá tham khảo – {statusText.toLowerCase()})
@@ -548,22 +579,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
               <button
                 onClick={() => setCurrentPage("contact")}
-                className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98]
-    ${locked
-                    ? "bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200"
-                    : "bg-amber-500 hover:bg-amber-600 text-amber-950 shadow-amber-100"
-                  }`}
+                className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98]
+    ${
+      locked
+        ? "bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200"
+        : "bg-amber-500 hover:bg-amber-600 text-amber-950 shadow-amber-100"
+    }`}
                 type="button"
               >
-                {locked ? `${statusText} – Liên hệ tư vấn cây khác` : "Liên Hệ Xem Cây"}
+                {locked
+                  ? `${statusText} – Liên hệ tư vấn cây khác`
+                  : "Liên Hệ Xem Cây"}
               </button>
 
               {locked && (
-                <p className="text-xs text-slate-500 -mt-2">
-                  Cây này hiện không còn khả dụng. Nhà vườn sẽ gợi ý cây tương tự theo ngân sách của bạn.
+                <p className="text-xs text-slate-500 -mt-2 sm:mt-0">
+                  Cây này hiện không còn khả dụng. Nhà vườn sẽ gợi ý cây tương
+                  tự theo ngân sách của bạn.
                 </p>
               )}
 
@@ -571,7 +606,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => setContactOpen(true)}
-                  className="w-full border-2 border-amber-400 text-amber-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-50 transition-all"
+                  className="w-full sm:w-auto px-6 py-3 border-2 border-amber-400 text-amber-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-50 transition-all"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -594,7 +629,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   href={ZALO_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full border-2 border-amber-400 text-amber-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-50 transition-all"
+                  className="w-full sm:w-auto px-6 py-3 border-2 border-amber-400 text-amber-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-50 transition-all"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -622,7 +657,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 </div>
                 <div>
                   <p className="font-bold">Vận Chuyển An Toàn</p>
-                  <p className="text-xs text-slate-400">Đội ngũ chuyên nghiệp</p>
+                  <p className="text-xs text-slate-400">
+                    Đội ngũ chuyên nghiệp
+                  </p>
                 </div>
               </div>
 
@@ -641,15 +678,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="container mx-auto px-4 mt-14">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-14">
         <div className="bg-white rounded-3xl p-6 md:p-12 shadow-sm">
           <div className="flex gap-4 mb-10">
             <button
               onClick={() => setActiveTab("specs")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "specs"
-                ? "bg-amber-500 text-amber-950 shadow-md"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                activeTab === "specs"
+                  ? "bg-amber-500 text-amber-950 shadow-md"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
               type="button"
             >
               Thông Số
@@ -657,10 +695,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
             <button
               onClick={() => setActiveTab("care")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "care"
-                ? "bg-amber-500 text-amber-950 shadow-md"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                activeTab === "care"
+                  ? "bg-amber-500 text-amber-950 shadow-md"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
               type="button"
             >
               Hướng Dẫn Chăm Sóc
@@ -689,20 +728,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           ) : (
             <div className="space-y-6 max-w-3xl text-slate-600 leading-relaxed">
               <div>
-                <p className="font-bold text-amber-700 flex items-center gap-2 mb-2">💧 Tưới Nước</p>
+                <p className="font-bold text-amber-700 flex items-center gap-2 mb-2">
+                  💧 Tưới Nước
+                </p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
                   <li>Tưới 1 lần/ngày vào buổi trưa.</li>
-                  <li>Tưới đều vào bầu đất trong chậu, không tưới trực tiếp lên hoa.</li>
-                  <li>Tưới đúng cách giúp hoa nở tươi lâu, hạn chế rụng hoa.</li>
+                  <li>
+                    Tưới đều vào bầu đất trong chậu, không tưới trực tiếp lên
+                    hoa.
+                  </li>
+                  <li>
+                    Tưới đúng cách giúp hoa nở tươi lâu, hạn chế rụng hoa.
+                  </li>
                 </ul>
               </div>
 
               <div>
-                <p className="font-bold text-red-700 flex items-center gap-2 mb-2">⚠️ Lưu ý quan trọng</p>
+                <p className="font-bold text-red-700 flex items-center gap-2 mb-2">
+                  ⚠️ Lưu ý quan trọng
+                </p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
                   <li>Không tưới nước nóng, nước đá.</li>
                   <li>
-                    Không tưới bia, rượu hoặc các loại hóa chất khác vì sẽ ảnh hưởng xấu đến cây mai.
+                    Không tưới bia, rượu hoặc các loại hóa chất khác vì sẽ ảnh
+                    hưởng xấu đến cây mai.
                   </li>
                 </ul>
               </div>
@@ -712,9 +761,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       </div>
 
       {/* Related Products */}
-      <div className="container mx-auto px-4 mt-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-20">
         <div className="bg-white rounded-3xl p-6 md:p-12 shadow-sm">
-          <h2 className="text-3xl font-bold font-serif mb-12">Bạn Cũng Có Thể Thích</h2>
+          <h2 className="text-3xl font-bold font-serif mb-12">
+            Bạn Cũng Có Thể Thích
+          </h2>
 
           <div className="px-2 sm:px-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -756,11 +807,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 w-full">
                           <div className="flex justify-between gap-2">
                             <span className="text-slate-400">Cao</span>
-                            <span className="font-semibold">{h != null ? `${h}m` : "---"}</span>
+                            <span className="font-semibold">
+                              {h != null ? `${h}m` : "---"}
+                            </span>
                           </div>
                           <div className="flex justify-between gap-2">
                             <span className="text-slate-400">Tán</span>
-                            <span className="font-semibold">{w != null ? `${w}m` : "---"}</span>
+                            <span className="font-semibold">
+                              {w != null ? `${w}m` : "---"}
+                            </span>
                           </div>
                           <div className="flex justify-between gap-2">
                             <span className="text-slate-400">Hoành</span>
@@ -770,7 +825,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                           </div>
                           <div className="flex justify-between gap-2">
                             <span className="text-slate-400">Chậu</span>
-                            <span className="font-semibold">{chau != null ? `${chau}m` : "---"}</span>
+                            <span className="font-semibold">
+                              {chau != null ? `${chau}m` : "---"}
+                            </span>
                           </div>
                         </div>
 
@@ -799,7 +856,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           >
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
 
-            <div className="text-center font-bold text-slate-800 mb-3">Liên hệ ngay</div>
+            <div className="text-center font-bold text-slate-800 mb-3">
+              Liên hệ ngay
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <a
@@ -849,9 +908,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
             const EDGE = 24;
             const w = window.innerWidth || 0;
-            swipeIgnoreRef.current = touch.clientX <= EDGE || touch.clientX >= w - EDGE;
+            swipeIgnoreRef.current =
+              touch.clientX <= EDGE || touch.clientX >= w - EDGE;
 
-            touchStartRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+            touchStartRef.current = {
+              x: touch.clientX,
+              y: touch.clientY,
+              t: Date.now(),
+            };
             touchLastRef.current = { x: touch.clientX, y: touch.clientY };
             touchMovedRef.current = false;
           }}
@@ -934,7 +998,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               const step = 0.18;
 
               setViewerScale((prev) => {
-                const next = Math.max(1, Math.min(4, Number((prev + direction * step).toFixed(3))));
+                const next = Math.max(
+                  1,
+                  Math.min(4, Number((prev + direction * step).toFixed(3))),
+                );
                 if (next === 1) setViewerTranslate({ x: 0, y: 0 });
                 return next;
               });

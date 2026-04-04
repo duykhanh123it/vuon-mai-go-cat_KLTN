@@ -8,10 +8,7 @@ type ContactProps = {
 const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
   const openGoogleMaps = () => {
     // Link chỉ đường đến địa chỉ (bạn có thể đổi query nếu muốn)
-    window.open(
-      "https://maps.app.goo.gl/peJCCfcFDsLrZ7UY7",
-      "_blank"
-    );
+    window.open("https://maps.app.goo.gl/peJCCfcFDsLrZ7UY7", "_blank");
   };
 
   return (
@@ -23,13 +20,17 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
           background: "linear-gradient(to right, #D4A017, #2F5D3A)",
         }}
       >
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold font-serif mb-4">Liên Hệ Tư Vấn</h1>
-          <p className="text-xl opacity-90">Đội ngũ chuyên gia sẵn sàng hỗ trợ bạn 24/7</p>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold font-serif mb-4">
+            Liên Hệ Tư Vấn
+          </h1>
+          <p className="text-sm sm:text-base lg:text-xl opacity-90">
+            Đội ngũ chuyên gia sẵn sàng hỗ trợ bạn 24/7
+          </p>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 mt-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {/* Advisor card */}
         <section className="mb-16">
           <div className="bg-white rounded-3xl shadow-xl p-10 max-w-5xl mx-auto text-center">
@@ -50,7 +51,9 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                   />
                 </div>
 
-                <h3 className="text-xl font-bold text-amber-800 mb-4">Anh Lê Minh Quý</h3>
+                <h3 className="text-xl font-bold text-amber-800 mb-4">
+                  Anh Lê Minh Quý
+                </h3>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto">
                   <a
@@ -84,7 +87,8 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                     loading="lazy"
                     onError={(e) => {
                       // fallback nếu thiếu ảnh
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
                     }}
                   />
                   {/* Fallback chữ cái nếu ảnh bị ẩn */}
@@ -93,7 +97,9 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-amber-800 mb-4">Chị Nguyễn Thị Kim Trang</h3>
+                <h3 className="text-xl font-bold text-amber-800 mb-4">
+                  Chị Nguyễn Thị Kim Trang
+                </h3>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto">
                   <a
@@ -121,8 +127,8 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
 
         {/* Mini Info & Map */}
         {/* Contact + Map (Synced with Contact page style) */}
-        <section className="py-20 container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-stretch">
+        <section className="py-20 container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-stretch">
             {/* Left: Contact info */}
             <div>
               <h3 className="text-3xl font-bold font-serif mb-10 border-l-4 border-amber-500 pl-4">
@@ -140,7 +146,8 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                       Địa chỉ vườn
                     </p>
                     <p className="text-slate-700 leading-snug">
-                      56 Đường 882, P. Long Trường, Thành phố Hồ Chí Minh, Việt Nam
+                      56 Đường 882, P. Long Trường, Thành phố Hồ Chí Minh, Việt
+                      Nam
                     </p>
                   </div>
                 </div>
@@ -154,7 +161,9 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                       Hotline
                     </p>
                     <p className="text-slate-700">0922 727 277: Lê Minh Quý</p>
-                    <p className="text-slate-700">0903 745 308: Nguyễn Thị Kim Trang</p>
+                    <p className="text-slate-700">
+                      0903 745 308: Nguyễn Thị Kim Trang
+                    </p>
                   </div>
                 </div>
 
@@ -166,7 +175,9 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                     <p className="font-bold text-amber-700 uppercase tracking-wide text-sm mb-1">
                       Giờ làm việc
                     </p>
-                    <p className="text-slate-700">Thứ 2 - Chủ Nhật: 7:00 - 18:00</p>
+                    <p className="text-slate-700">
+                      Thứ 2 - Chủ Nhật: 7:00 - 18:00
+                    </p>
                   </div>
                 </div>
               </div>
@@ -196,13 +207,14 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
                transition-opacity duration-500"
                 />
 
-                {/* Button */}
-                <div className="absolute inset-0 flex items-center justify-center">
+                {/* Button Google Maps */}
+                <div className="absolute inset-0 flex items-center justify-center p-4">
                   <a
                     href="https://www.google.com/maps?q=Vườn%20Mai%20Gò%20Cát"
                     target="_blank"
                     rel="noreferrer"
                     className="
+  w-full sm:w-auto
   bg-amber-400 text-amber-950
   px-6 py-3 rounded-xl font-bold shadow-lg
   transition-all duration-500
@@ -210,7 +222,6 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
   hover:bg-amber-500
   group-hover:-translate-y-0.5 group-hover:shadow-xl
 "
-
                   >
                     Mở Google Maps
                   </a>
@@ -230,12 +241,14 @@ const Contact: React.FC<ContactProps> = ({ setCurrentPage }) => {
           <div className="absolute inset-0 bg-black/10" />
 
           <div className="relative z-10 text-center text-white">
-            <h2 className="text-4xl md:text-5xl font-bold font-serif mb-6">Cần Tư Vấn Ngay?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold font-serif mb-6">
+              Cần Tư Vấn Ngay?
+            </h2>
             <p className="text-xl opacity-90 mb-12 max-w-2xl mx-auto font-light">
               Liên hệ hotline để được tư vấn và phục vụ tốt nhất cho mùa Tết này
             </p>
 
-            <div className="flex flex-col md:flex-row gap-6 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <a
                 href="tel:0922727277"
                 className="

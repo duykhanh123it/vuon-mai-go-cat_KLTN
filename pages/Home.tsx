@@ -1,36 +1,22 @@
-
-import React from 'react';
-import { Page } from '../types';
-import anhMai1 from '../img/anhmai1_tc.png';
-import anhMai2 from '../img/anhmai2_tc.png';
-import anhMai3 from '../img/anhmai3_tc.png';
-import anhMai4 from '../img/anhmai4_tc.png';
-import anhMai5 from '../img/anhmai5_tc.png';
-import anhMai6 from '../img/anhmai6_tc.png';
+import React from "react";
+import { Page } from "../types";
+import anhMai1 from "../img/anhmai1_tc.png";
+import anhMai2 from "../img/anhmai2_tc.png";
+import anhMai3 from "../img/anhmai3_tc.png";
+import anhMai4 from "../img/anhmai4_tc.png";
+import anhMai5 from "../img/anhmai5_tc.png";
+import anhMai6 from "../img/anhmai6_tc.png";
 import anhHero0 from "../img/anhHeRo.png";
 import anhHero1 from "../img/anhHeRo1.png";
 import anhHero2 from "../img/anhHeRo2.png";
 import anhHero3 from "../img/anhHeRo4.png";
 
-//import anhBiaHeadr from '../img/anhHeRo.png';
-
-
 interface HomeProps {
   setCurrentPage: (page: Page) => void;
 }
 
-const heroImages = [anhHero0, anhHero1, anhHero2, anhHero3];
-
 const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
-  const images = [
-    anhMai1,
-    anhMai2,
-    anhMai3,
-    anhMai4,
-    anhMai5,
-    anhMai6,
-  ];
-
+  const images = [anhMai1, anhMai2, anhMai3, anhMai4, anhMai5, anhMai6];
 
   const heroImages = [anhHero0, anhHero1, anhHero2, anhHero3];
 
@@ -41,8 +27,8 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   const groupRef = React.useRef<HTMLDivElement | null>(null);
 
-  const offsetRef = React.useRef(0);          // px
-  const baseSpeedRef = React.useRef(55);      // px/second (tốc độ tự trôi)
+  const offsetRef = React.useRef(0);
+  const baseSpeedRef = React.useRef(55);
   const isPointerDownRef = React.useRef(false);
 
   const startXRef = React.useRef(0);
@@ -52,7 +38,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
   const lastTsRef = React.useRef<number>(0);
   const groupWRef = React.useRef<number>(0);
 
-  // đo width của Group 1 để loop vô tận
   React.useEffect(() => {
     const el = groupRef.current;
     if (!el) return;
@@ -69,11 +54,10 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
     return () => ro.disconnect();
   }, [images.length]);
 
-  // animation loop: nếu không kéo thì tự trôi
   React.useEffect(() => {
     const tick = (ts: number) => {
       if (!lastTsRef.current) lastTsRef.current = ts;
-      const dt = (ts - lastTsRef.current) / 1000; // seconds
+      const dt = (ts - lastTsRef.current) / 1000;
       lastTsRef.current = ts;
 
       const w = groupWRef.current || 1;
@@ -82,7 +66,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
         offsetRef.current += baseSpeedRef.current * dt;
       }
 
-      // loop 0..w
       offsetRef.current = ((offsetRef.current % w) + w) % w;
 
       if (trackRef.current) {
@@ -98,18 +81,16 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
     };
   }, []);
 
-
   const nextIndex = (heroIndex + 1) % heroImages.length;
 
   React.useEffect(() => {
-    const intervalMs = 2500;     // 3s/ảnh
-    const slideMs = 650;         // thời gian trượt (đẹp, không nhanh)
+    const intervalMs = 2500;
+    const slideMs = 650;
 
     const t = window.setInterval(() => {
       setIsSliding(true);
 
       window.setTimeout(() => {
-        // Sau khi trượt xong: chốt ảnh mới, kéo track về vị trí ban đầu ngay lập tức
         setHeroIndex((prev) => (prev + 1) % heroImages.length);
         setIsSliding(false);
       }, slideMs);
@@ -143,7 +124,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
     <div>
       {marqueeStyle}
       {/* Hero Section */}
-      <section className="relative h-[600px] flex items-center justify-center text-white overflow-hidden">
+      <section className="relative min-h-[60vh] sm:min-h-[70vh] lg:min-h-[80vh] flex items-center justify-center text-white overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div
             className="h-full w-[200%] flex"
@@ -152,7 +133,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               transition: isSliding ? "transform 650ms ease-in-out" : "none",
             }}
           >
-            {/* Slide hiện tại */}
             <div className="relative w-1/2 h-full">
               <img
                 src={heroImages[heroIndex]}
@@ -162,7 +142,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               />
             </div>
 
-            {/* Slide kế tiếp */}
             <div className="relative w-1/2 h-full">
               <img
                 src={heroImages[nextIndex]}
@@ -177,7 +156,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           <h1
             className="
               font-serif font-bold text-white
-              text-[clamp(32px,8vw,52px)]
+              text-2xl sm:text-3xl lg:text-4xl
               leading-[1.1]
               drop-shadow
             "
@@ -188,9 +167,8 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           <p
             className="
               text-white/90
-              text-[clamp(17px,4.5vw,24px)]
+              text-sm sm:text-base lg:text-lg
               leading-[1.8]
-
               mt-3
             "
           >
@@ -198,7 +176,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           </p>
 
           <button
-            onClick={() => setCurrentPage('products')}
+            onClick={() => setCurrentPage("products")}
             className="mt-6 bg-amber-400 hover:bg-amber-500 text-amber-950 px-8 py-3 rounded-full font-bold text-lg transition-all shadow-lg active:scale-95"
           >
             Khám Phá Bộ Sưu Tập
@@ -216,7 +194,11 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
                   Hơn 30 Năm Khẳng Định Chất Lượng
                 </h2>
                 <p className="text-slate-600 leading-relaxed text-lg text-pretty tracking-tight">
-                  Vườn Mai Gò Cát tự hào là thương hiệu uy tín hàng đầu trong ngành Mai, chuyên cung cấp Mai chưng Tết trong và ngoài nước với hơn 30 năm kinh nghiệm. Chúng tôi cam kết mang đến cho quý khách những tác phẩm tấm huyết, đẹp nhất và ý nghĩa nhất. Góp phần tạo nên một mùa Tết trọn vẹn.
+                  Vườn Mai Gò Cát tự hào là thương hiệu uy tín hàng đầu trong
+                  ngành Mai, chuyên cung cấp Mai chưng Tết trong và ngoài nước
+                  với hơn 30 năm kinh nghiệm. Chúng tôi cam kết mang đến cho quý
+                  khách những tác phẩm tấm huyết, đẹp nhất và ý nghĩa nhất. Góp
+                  phần tạo nên một mùa Tết trọn vẹn.
                 </p>
               </div>
             </div>
@@ -224,18 +206,15 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
         </div>
       </section>
 
-
       {/* Gallery Marquee Section */}
       <section className="container mx-auto px-4 pt-2 pb-20">
         <div className="py-10">
           <h2 className="text-3xl font-bold font-serif text-center">
-            Khám phá Vườn Mai{" "}
-            <span className="block sm:inline">Gò Cát</span>
+            Khám phá Vườn Mai <span className="block sm:inline">Gò Cát</span>
           </h2>
         </div>
 
         <div className="relative overflow-hidden mt-10">
-          {/* Fade trái */}
           <div
             className="
               pointer-events-none absolute inset-y-0 left-0 z-10
@@ -246,7 +225,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
             "
           />
 
-          {/* Fade phải */}
           <div
             className="
               pointer-events-none absolute inset-y-0 right-0 z-10
@@ -257,8 +235,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
             "
           />
 
-          {/* Track (KHÔNG gap ở đây) */}
-          {/* Track (interactive) */}
           <div
             ref={trackRef}
             className="flex w-max cursor-grab active:cursor-grabbing select-none"
@@ -278,7 +254,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
 
               const dx = e.clientX - startXRef.current;
 
-              // kéo theo tay: drag sang phải => dải ảnh chạy sang phải
               offsetRef.current = startOffsetRef.current - dx;
 
               const w = groupWRef.current || 1;
@@ -295,12 +270,11 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               isPointerDownRef.current = false;
             }}
           >
-            {/* Group 1 (để đo width + làm “mẫu” loop) */}
             <div ref={groupRef} className="flex gap-6 pr-6">
               {images.map((img, i) => (
                 <div
                   key={`g1-${i}`}
-                  className="group w-64 h-40 flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
+                  className="group w-64 h-[220px] sm:h-[300px] lg:h-[500px] flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
                 >
                   <img
                     src={img}
@@ -312,12 +286,11 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               ))}
             </div>
 
-            {/* Group 2 (copy y hệt Group 1) */}
             <div className="flex gap-6 pr-6">
               {images.map((img, i) => (
                 <div
                   key={`g2-${i}`}
-                  className="group w-64 h-40 flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
+                  className="group w-64 h-[220px] sm:h-[300px] lg:h-[500px] flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
                 >
                   <img
                     src={img}
@@ -334,12 +307,11 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
 
       {/* Visit / Contact CTA Banner */}
       <section
-        className="relative overflow-hidden py-20 text-white"
+        className="relative overflow-hidden py-12 sm:py-16 lg:py-20 text-white"
         style={{
           background: "linear-gradient(to right, #2F5D3A, #D4A017)",
         }}
       >
-        {/* Gradient mask */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -350,7 +322,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           }}
         />
 
-        {/* Sparkle / bokeh */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -369,7 +340,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           }}
         />
 
-        {/* Noise */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -381,15 +351,14 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           }}
         />
 
-        {/* Content */}
         <div className="relative container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold font-serif mb-6">
-            Ghé Thăm{" "}
-            <span className="block sm:inline">Vườn Mai Gò Cát</span>
+            Ghé Thăm <span className="block sm:inline">Vườn Mai Gò Cát</span>
           </h2>
 
           <p className="text-xl mb-10 opacity-90 max-w-2xl mx-auto">
-            Quý khách có thể ghé thăm trực tiếp vườn để trải nghiệm không gian mai vàng rực rỡ và được tư vấn tận tình.
+            Quý khách có thể ghé thăm trực tiếp vườn để trải nghiệm không gian
+            mai vàng rực rỡ và được tư vấn tận tình.
           </p>
 
           <button
@@ -400,11 +369,10 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           </button>
         </div>
       </section>
-      
-      {/* Contact + Map (Synced with Contact page style) */}
-      <section className="py-20 container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-stretch">
-          {/* Left: Contact info */}
+
+      {/* Contact + Map */}
+      <section className="py-12 sm:py-16 lg:py-20 container mx-auto px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-12 items-stretch">
           <div>
             <h3 className="text-3xl font-bold font-serif mb-10 border-l-4 border-amber-500 pl-4">
               Thông Tin Liên Hệ
@@ -421,7 +389,8 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
                     Địa chỉ vườn
                   </p>
                   <p className="text-slate-700 leading-snug">
-                    56 Đường 882, P. Long Trường, Thành phố Hồ Chí Minh, Việt Nam
+                    56 Đường 882, P. Long Trường, Thành phố Hồ Chí Minh, Việt
+                    Nam
                   </p>
                 </div>
               </div>
@@ -435,7 +404,9 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
                     Hotline
                   </p>
                   <p className="text-slate-700">0922 727 277: Lê Minh Quý</p>
-                  <p className="text-slate-700">0903 745 308: Nguyễn Thị Kim Trang</p>
+                  <p className="text-slate-700">
+                    0903 745 308: Nguyễn Thị Kim Trang
+                  </p>
                 </div>
               </div>
 
@@ -447,19 +418,19 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
                   <p className="font-bold text-amber-700 uppercase tracking-wide text-sm mb-1">
                     Giờ làm việc
                   </p>
-                  <p className="text-slate-700">Thứ 2 - Chủ Nhật: 7:00 - 18:00</p>
+                  <p className="text-slate-700">
+                    Thứ 2 - Chủ Nhật: 7:00 - 18:00
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right: Map */}
           <div className="flex flex-col">
             <h3 className="text-3xl font-bold font-serif mb-10 border-l-4 border-amber-500 pl-4">
               Bản Đồ Đường Đi
             </h3>
 
-            {/* Map Image */}
             <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl group min-h-[220px] sm:min-h-[280px] md:min-h-0 md:flex-1">
               <img
                 src="/map.png"
@@ -470,14 +441,12 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
                 draggable={false}
               />
 
-              {/* Overlay */}
               <div
                 className="absolute inset-0 bg-black/30
                opacity-0 group-hover:opacity-100
                transition-opacity duration-500"
               />
 
-              {/* Button */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <a
                   href="https://www.google.com/maps?q=Vườn%20Mai%20Gò%20Cát"
@@ -491,7 +460,6 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
   hover:bg-amber-500
   group-hover:-translate-y-0.5 group-hover:shadow-xl
 "
-
                 >
                   Mở Google Maps
                 </a>
@@ -500,7 +468,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
           </div>
         </div>
       </section>
-    </div >
+    </div>
   );
 };
 

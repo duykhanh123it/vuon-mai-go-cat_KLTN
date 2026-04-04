@@ -20,7 +20,6 @@ interface NavbarProps {
   onUpdateUser: (user: AuthUser) => void;
 }
 
-
 export const Navbar: React.FC<NavbarProps> = ({
   currentPage,
   setCurrentPage,
@@ -36,6 +35,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+  // 🔥 thêm 2 state này
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -103,11 +106,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">
-      <div className="container mx-auto px-4 py-3">
-        {/* Header row: [☰] Logo [Gọi ngay] */}
-        {/* Header row (mobile): ☰ | Logo (center) */}
-        {/* Header row (mobile): ☰ | Logo (center) | spacer */}
-        <div className="md:hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        {/* Header row mobile */}
+        <div className="lg:hidden">
           <div className="flex items-center justify-between h-14 px-4">
             {/* Left: Hamburger */}
             <button
@@ -119,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ☰
             </button>
 
-            {/* Center: Brand (truncate để không bị xuống dòng trên máy thật) */}
+            {/* Center: Brand */}
             <button
               type="button"
               onClick={() => goPage("home")}
@@ -144,14 +145,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                     Vườn Mai Gò Cát
                   </span>
                 </div>
-                {/* <div className="text-[10px] text-slate-500 uppercase tracking-wide whitespace-nowrap truncate">
-                  Tinh hoa Mai Tết Miền Nam
-                </div> */}
               </div>
             </button>
 
             {/* Right: Cart + User */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 aria-label="Giỏ hàng"
@@ -190,8 +188,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Header row desktop: Logo - Menu - Gọi ngay (1 hàng) */}
-        <div className="hidden md:flex items-center justify-between gap-6">
+        {/* Header row desktop */}
+        <div className="hidden lg:flex items-center justify-between gap-6">
           {/* Brand (left) */}
           <button
             type="button"
@@ -212,9 +210,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <h1 className="text-lg font-bold font-serif text-amber-900">
                 Vườn Mai Gò Cát
               </h1>
-              {/* <p className="text-[10px] text-slate-500 uppercase tracking-wide">
-                Tinh hoa Mai Tết Miền Nam
-              </p> */}
             </div>
           </button>
 
@@ -328,28 +323,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
         </div>
-
-        {/* Menu desktop giữ nguyên kiểu cũ */}
-        {/* <div className="hidden md:flex items-center justify-center gap-2 mt-3">
-          {navItems.map((item) => {
-            const isActive = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setCurrentPage(item.id)}
-                className={`${navBtnBase} ${isActive ? navBtnActive : navBtnInactive}`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div> */}
       </div>
 
       {/* Overlay */}
       <div
-        className={`fixed inset-0 transition-opacity duration-200 ${
+        className={`fixed inset-0 lg:hidden transition-opacity duration-200 ${
           drawerOpen || userMenuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -361,9 +339,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         aria-hidden="true"
       />
 
-      {/* Drawer */}
+      {/* Drawer - Mobile Menu */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[290px] bg-white shadow-2xl z-[60] transform transition-transform duration-200 ${
+        className={`fixed top-0 left-0 h-full w-[85%] max-w-xs bg-white shadow-2xl z-[60] transform transition-transform duration-200 ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -418,27 +396,43 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
 
           <div className="mt-4 pt-4 border-t">
+            {/* 👤 Hồ sơ */}
             <button
-              type="button"
+              onClick={() => {
+                setShowProfileModal(true);
+                setDrawerOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
+            >
+              👤 Hồ sơ cá nhân
+            </button>
+
+            {/* 🔒 Đổi mật khẩu */}
+            <button
+              onClick={() => {
+                setShowChangePasswordModal(true);
+                setDrawerOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
+            >
+              🔒 Đổi mật khẩu
+            </button>
+
+            {/* 🚪 Đăng xuất */}
+            <button
               onClick={() => {
                 setDrawerOpen(false);
-                if (authUser) {
-                  onLogout();
-                } else {
-                  onOpenLogin();
-                }
+                onLogout();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
             >
-              <span className="text-lg">{authUser ? "👋" : "👤"}</span>
-              <span className="font-semibold">
-                {authUser ? "Đăng xuất" : "Tài khoản"}
-              </span>
+              🚪 Đăng xuất
             </button>
           </div>
         </div>
       </aside>
 
+      {/* Modals cũ (giữ lại) */}
       {authUser && profileOpen && (
         <ProfileModal
           user={authUser}
@@ -453,27 +447,52 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClose={() => setChangePasswordOpen(false)}
         />
       )}
+
+      {/* 🔥 Modals mới theo yêu cầu */}
+      {showProfileModal && (
+        <ProfileModal
+          user={authUser!}
+          onClose={() => setShowProfileModal(false)}
+          onUpdateUser={onUpdateUser}
+        />
+      )}
+
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          user={authUser!}
+          onClose={() => setShowChangePasswordModal(false)}
+        />
+      )}
     </nav>
   );
 };
 
-
-export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({ setCurrentPage }) => {
+export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({
+  setCurrentPage,
+}) => {
   return (
     <footer className="bg-slate-800 text-white pt-16 pb-8">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="col-span-1 md:col-span-1">
           <div className="flex items-center gap-3 mb-6 select-none">
-            <img src="/logo.jpg" alt="logo" className="rounded-full w-10 h-10 object-cover" draggable={false} />
+            <img
+              src="/logo.jpg"
+              alt="logo"
+              className="rounded-full w-10 h-10 object-cover"
+              draggable={false}
+            />
             <h2 className="text-xl font-bold font-serif">Vườn Mai Gò Cát</h2>
           </div>
           <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            Hơn 30 năm kinh nghiệm trồng và chăm sóc Mai Tết cao cấp tại miền Nam Việt Nam. Cam kết chất lượng và sự hài lòng tuyệt đối.
+            Hơn 30 năm kinh nghiệm trồng và chăm sóc Mai Tết cao cấp tại miền
+            Nam Việt Nam. Cam kết chất lượng và sự hài lòng tuyệt đối.
           </p>
         </div>
 
         <div>
-          <h3 className="text-lg font-bold mb-6 text-amber-400">Liên Kết Nhanh</h3>
+          <h3 className="text-lg font-bold mb-6 text-amber-400">
+            Liên Kết Nhanh
+          </h3>
           <ul className="space-y-3 text-sm text-slate-400">
             <li>
               <button
@@ -509,23 +528,64 @@ export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({ set
           <h3 className="text-lg font-bold mb-6 text-amber-400">Liên Hệ</h3>
           <ul className="space-y-4 text-sm text-slate-400">
             <li className="flex gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-amber-400 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               56 Đường 882, P. Long Trường, Thành phố Hồ Chí Minh
             </li>
 
             <li className="flex gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-amber-400 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                />
               </svg>
               0922 727 277
             </li>
 
             <li className="flex gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-amber-400 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
               vuonmaigocat@gmail.com
             </li>
@@ -533,7 +593,9 @@ export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({ set
         </div>
 
         <div>
-          <h3 className="text-lg font-bold mb-6 text-amber-400">Kết Nối Với Chúng Tôi</h3>
+          <h3 className="text-lg font-bold mb-6 text-amber-400">
+            Kết Nối Với Chúng Tôi
+          </h3>
           <div className="flex gap-4 mb-6">
             <a
               href="https://www.facebook.com/vuonmaigocatquan9"
@@ -555,11 +617,13 @@ export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({ set
               💬
             </a>
           </div>
-          <p className="text-xs text-slate-500">Giờ làm việc: 7:00 - 18:00 (Hàng ngày)</p>
+          <p className="text-xs text-slate-500">
+            Giờ làm việc: 7:00 - 18:00 (Hàng ngày)
+          </p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 mt-16 pt-8 border-t border-slate-700 text-center text-slate-500 text-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-slate-700 text-center text-slate-500 text-sm">
         <p>© 2024 Vườn Mai Gò Cát. Bảo lưu mọi quyền.</p>
       </div>
     </footer>

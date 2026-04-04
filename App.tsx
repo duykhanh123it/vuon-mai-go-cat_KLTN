@@ -52,7 +52,7 @@ const FloatingCTAStyle = () => (
 const pageToHash = (
   page: Page,
   productId?: string | null,
-  productsPage: number = 1
+  productsPage: number = 1,
 ) => {
   const p = Math.max(1, Math.trunc(productsPage || 1));
 
@@ -84,7 +84,7 @@ function normPid(v: any) {
 }
 
 const hashToState = (
-  hash: string
+  hash: string,
 ): { page: Page; productId?: string; productsPage: number } => {
   const raw = (hash || "#/").trim();
   const h = raw.startsWith("#") ? raw.slice(1) : raw; // "/san-pham/BS02?p=20"
@@ -116,7 +116,8 @@ const hashToState = (
 // ===== Products cache reader (để App restore detail khi F5) =====
 // ===== Products cache reader (đồng bộ với ProductList.tsx: cache theo type) =====
 type ProductsType = "All" | "BS" | "T";
-const PRODUCTS_CACHE_KEY = (type: ProductsType) => `vmgc_products_cache_v1_${type}`;
+const PRODUCTS_CACHE_KEY = (type: ProductsType) =>
+  `vmgc_products_cache_v1_${type}`;
 
 type CacheShape = {
   items: any[];
@@ -176,7 +177,6 @@ const safeReadProductsCacheAllMerged = (): CacheShape | null => {
 
   return { items: uniq, savedAt: Date.now() };
 };
-
 
 const App: React.FC = () => {
   // ✅ products dùng chung cho App (phục vụ restore khi F5)
@@ -251,7 +251,11 @@ const App: React.FC = () => {
           const specs = parts.length ? parts.join(" · ") : "";
           const note = String(sp?.note || "").trim();
           const description =
-            specs && note ? `${specs}. ${note}` : specs ? `${specs}.` : note || "";
+            specs && note
+              ? `${specs}. ${note}`
+              : specs
+                ? `${specs}.`
+                : note || "";
 
           const norm = id.replace(/\s+/g, "").toUpperCase();
           const category = norm.startsWith("BS")
@@ -262,8 +266,8 @@ const App: React.FC = () => {
 
           const image = sp?.imageUrl
             ? `${sp.imageUrl}${sp.imageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(
-              imgVersion
-            )}`
+                imgVersion,
+              )}`
             : "";
 
           return {
@@ -364,7 +368,11 @@ const App: React.FC = () => {
         return;
       }
 
-      const { page, productId, productsPage: p } = hashToState(window.location.hash);
+      const {
+        page,
+        productId,
+        productsPage: p,
+      } = hashToState(window.location.hash);
       setProductsPage(p);
 
       setCurrentPage(page);
@@ -442,7 +450,11 @@ const App: React.FC = () => {
     // ✅ đang resolve detail thì giữ nguyên hash hiện tại, đừng tự rewrite
     if (currentPage === "product-detail" && !selectedProduct) return;
 
-    const desired = pageToHash(currentPage, selectedProduct?.id ?? null, productsPage);
+    const desired = pageToHash(
+      currentPage,
+      selectedProduct?.id ?? null,
+      productsPage,
+    );
     if (window.location.hash !== desired) {
       syncingRef.current = true;
       window.location.hash = desired;
@@ -470,7 +482,7 @@ const App: React.FC = () => {
           return (
             <ProductDetail
               product={selectedProduct}
-              products={appProducts}   // ✅ QUAN TRỌNG
+              products={appProducts} // ✅ QUAN TRỌNG
               setCurrentPage={navigate}
               setSelectedProduct={setSelectedProduct}
             />
@@ -484,7 +496,9 @@ const App: React.FC = () => {
                 <div className="text-slate-900 font-bold text-lg mb-2">
                   Đang tải sản phẩm…
                 </div>
-                <div className="text-slate-500 text-sm">Vui lòng đợi trong giây lát.</div>
+                <div className="text-slate-500 text-sm">
+                  Vui lòng đợi trong giây lát.
+                </div>
 
                 <button
                   type="button"
@@ -512,12 +526,7 @@ const App: React.FC = () => {
         return <Contact setCurrentPage={navigate} />;
 
       case "booking":
-        return (
-          <Booking
-            setCurrentPage={navigate}
-            authUser={authUser}
-          />
-        );
+        return <Booking setCurrentPage={navigate} authUser={authUser} />;
 
       default:
         return <Home setCurrentPage={navigate} />;

@@ -71,8 +71,6 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
 
       // 🔥 show toast trước
       setLoading(false);
-
-      // 🔥 show toast trước
       showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
 
       // logout đúng key đang dùng trong App.tsx
@@ -81,10 +79,10 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
       // đóng modal
       onClose();
 
-      // ⏳ delay để toast chạy đủ 3s rồi về trang chính
+      // ⏳ delay để toast chạy đủ rồi về trang chính
       setTimeout(() => {
         window.location.href = "/";
-      }, 3200);
+      }, 3500);
     } catch {
       showToast("Không thể kết nối server", "error");
       setLoading(false);
@@ -95,16 +93,16 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-md max-h-[90vh] rounded-3xl bg-white px-6 py-5 shadow-2xl flex flex-col">
+      <div className="relative z-10 w-full max-w-md max-h-[90vh] rounded-3xl bg-white px-5 py-4 shadow-2xl flex flex-col">
         <h2 className="text-xl font-bold mb-4 text-amber-900">Đổi mật khẩu</h2>
 
-        <div className="space-y-4 overflow-y-auto pr-2">
+        <div className="space-y-4 overflow-y-auto pr-1 flex-1">
           <input
             type="password"
             placeholder="Mật khẩu hiện tại"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full h-12 rounded-xl bg-slate-100 px-4"
+            className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
 
           <input
@@ -112,7 +110,7 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
             placeholder="Mật khẩu mới"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full h-12 rounded-xl bg-slate-100 px-4"
+            className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
 
           <input
@@ -120,17 +118,19 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
             placeholder="Xác nhận mật khẩu mới"
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
-            className="w-full h-12 rounded-xl bg-slate-100 px-4"
+            className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
         </div>
 
-        <button
-          onClick={handleChangePassword}
-          disabled={loading}
-          className="mt-6 w-full h-12 rounded-xl bg-amber-400 font-bold"
-        >
-          {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
-        </button>
+        <div className="mt-6 shrink-0">
+          <button
+            onClick={handleChangePassword}
+            disabled={loading}
+            className="w-full h-12 rounded-xl bg-amber-400 font-bold"
+          >
+            {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
+          </button>
+        </div>
       </div>
     </div>
   );

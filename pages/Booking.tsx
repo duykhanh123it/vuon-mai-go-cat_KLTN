@@ -13,7 +13,8 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
  * - Nếu bạn muốn nhận lại "mã đặt lịch" từ server, mình sẽ đưa phương án iframe+postMessage.
  */
 
-const APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
+const APPS_SCRIPT_WEBAPP_URL =
+  "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
 
 type BookingForm = {
   name: string;
@@ -62,13 +63,12 @@ function saveBookingHistory(item: BookingHistoryItem) {
   try {
     const prev = loadBookingHistory();
 
-    // dedupe theo phone + email + name (đủ “đúng logic” cho gợi ý)
     const keyOf = (x: BookingHistoryItem) =>
       `${x.phone.trim()}|${x.email.trim().toLowerCase()}|${x.name.trim().toLowerCase()}`;
 
     const next = [item, ...prev.filter((x) => keyOf(x) !== keyOf(item))].slice(
       0,
-      BOOKING_HISTORY_MAX
+      BOOKING_HISTORY_MAX,
     );
 
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(next));
@@ -97,7 +97,6 @@ const isFutureOrNowDateTime = (dateISO: string, timeHHmm: string) => {
   const hh = Number(hhStr);
   const mm = Number(mmStr);
 
-  // ghép datetime theo local time của máy khách
   const selected = new Date(dateISO + "T00:00:00");
   selected.setHours(hh, mm, 0, 0);
 
@@ -118,10 +117,8 @@ const Booking: React.FC<{
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Ref để scroll tới khối bên phải (form / success)
   const successRef = useRef<HTMLDivElement | null>(null);
 
-  // Khi submit thành công → tự scroll tới thông báo
   useEffect(() => {
     if (!isSubmitted) return;
 
@@ -129,14 +126,13 @@ const Booking: React.FC<{
       const el = successRef.current;
       if (!el) return;
 
-      const headerOffset = 96; // chỉnh số này nếu header cao hơn/thấp hơn
+      const headerOffset = 96;
       const rect = el.getBoundingClientRect();
 
       const elementTop = rect.top + window.scrollY;
       const elementHeight = rect.height;
       const viewportHeight = window.innerHeight;
 
-      // target: tâm element trùng tâm viewport (trừ đi header)
       const targetY =
         elementTop - headerOffset - (viewportHeight / 2 - elementHeight / 2);
 
@@ -146,7 +142,6 @@ const Booking: React.FC<{
       });
     });
   }, [isSubmitted]);
-
 
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string>("");
@@ -164,9 +159,10 @@ const Booking: React.FC<{
   });
 
   const [history, setHistory] = useState<BookingHistoryItem[]>([]);
-  useEffect(() => { setHistory(loadBookingHistory()); }, []);
+  useEffect(() => {
+    setHistory(loadBookingHistory());
+  }, []);
 
-  // Autofill khi đã login
   useEffect(() => {
     if (!authUser) return;
 
@@ -180,9 +176,18 @@ const Booking: React.FC<{
   const unique = (arr: string[]) =>
     Array.from(new Set(arr.map((s) => s.trim()).filter(Boolean)));
 
-  const nameSuggestions = useMemo(() => unique(history.map((h) => h.name)), [history]);
-  const phoneSuggestions = useMemo(() => unique(history.map((h) => h.phone)), [history]);
-  const emailSuggestions = useMemo(() => unique(history.map((h) => h.email)), [history]);
+  const nameSuggestions = useMemo(
+    () => unique(history.map((h) => h.name)),
+    [history],
+  );
+  const phoneSuggestions = useMemo(
+    () => unique(history.map((h) => h.phone)),
+    [history],
+  );
+  const emailSuggestions = useMemo(
+    () => unique(history.map((h) => h.email)),
+    [history],
+  );
 
   const canSubmit = useMemo(() => {
     return (
@@ -196,9 +201,9 @@ const Booking: React.FC<{
 
   const setField =
     <K extends keyof BookingForm>(key: K) =>
-      (value: BookingForm[K]) => {
-        setFormData((prev) => ({ ...prev, [key]: value }));
-      };
+    (value: BookingForm[K]) => {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    };
 
   const resetForm = () => {
     setFormData({
@@ -218,13 +223,16 @@ const Booking: React.FC<{
     setSuccessCode("");
     setTimeError("");
 
-    // Honeypot: bot hay điền field ẩn
     if (formData.website.trim()) return;
 
     if (!formData.name.trim()) return setError("Vui lòng nhập họ và tên.");
-    if (!phoneVN(formData.phone)) return setError("Số điện thoại không hợp lệ (0xxxxxxxxx hoặc +84xxxxxxxxx).");
+    if (!phoneVN(formData.phone))
+      return setError(
+        "Số điện thoại không hợp lệ (0xxxxxxxxx hoặc +84xxxxxxxxx).",
+      );
     if (!formData.date) return setError("Vui lòng chọn ngày tham quan.");
-    if (!isFutureOrToday(formData.date)) return setError("Ngày tham quan phải từ hôm nay trở đi.");
+    if (!isFutureOrToday(formData.date))
+      return setError("Ngày tham quan phải từ hôm nay trở đi.");
     if (!formData.time) return setError("Vui lòng chọn giờ hẹn.");
 
     if (!isFutureOrNowDateTime(formData.date, formData.time)) {
@@ -232,9 +240,10 @@ const Booking: React.FC<{
       return;
     }
 
-
     if (!APPS_SCRIPT_WEBAPP_URL) {
-      return setError("Chưa cấu hình APPS_SCRIPT_WEBAPP_URL. Bạn hãy dán URL Web App (Apps Script) vào Booking.tsx.");
+      return setError(
+        "Chưa cấu hình APPS_SCRIPT_WEBAPP_URL. Bạn hãy dán URL Web App (Apps Script) vào Booking.tsx.",
+      );
     }
 
     const payload = {
@@ -244,15 +253,11 @@ const Booking: React.FC<{
       source: "vuonmaigocat_web",
     };
 
-    // Code hiển thị cho người dùng (tạm thời) – vì no-cors không đọc được response
     const localCode = ("DL" + Date.now().toString().slice(-8)).toUpperCase();
 
     setLoading(true);
-
-    // 1) Optimistic UI: cho “thành công” ngay (hoặc đợi 900ms cho tự nhiên)
     setSuccessCode(localCode);
 
-    // Nếu bạn muốn có cảm giác chờ nhẹ 0.8–1.2s thì bật delay này:
     const MIN_SUCCESS_DELAY_MS = 900;
 
     setTimeout(() => {
@@ -261,7 +266,6 @@ const Booking: React.FC<{
       setLoading(false);
     }, MIN_SUCCESS_DELAY_MS);
 
-    // 2) Gửi request NGẦM, không await
     void fetch(APPS_SCRIPT_WEBAPP_URL, {
       method: "POST",
       mode: "no-cors",
@@ -269,12 +273,8 @@ const Booking: React.FC<{
         "Content-Type": "text/plain;charset=utf-8",
       },
       body: JSON.stringify(payload),
-    }).catch(() => {
-      // no-cors: không đọc được response; lỗi network thật sự rất hiếm
-      // Bạn có thể log để debug, hoặc bỏ qua hoàn toàn để giữ UX
-    });
+    }).catch(() => {});
 
-    // 3) Lưu lịch sử gợi ý ngay lập tức (vì UX ưu tiên khách)
     const saved: BookingHistoryItem = {
       name: payload.name,
       phone: payload.phone,
@@ -291,8 +291,12 @@ const Booking: React.FC<{
       {/* Hero */}
       <section className="py-16 bg-gradient-to-r from-[#2F5D3A] to-[#D4A017] text-white">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4">Đặt Lịch Tham Quan</h1>
-          <p className="text-white/90 text-lg">Hãy đến trực tiếp vườn để trải nghiệm và chọn lựa cây mai ưng ý</p>
+          <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4">
+            Đặt Lịch Tham Quan
+          </h1>
+          <p className="text-white/90 text-lg">
+            Hãy đến trực tiếp vườn để trải nghiệm và chọn lựa cây mai ưng ý
+          </p>
         </div>
       </section>
 
@@ -330,17 +334,27 @@ const Booking: React.FC<{
                   <div className="text-amber-500 font-bold">⏰</div>
                   <div>
                     <p className="font-bold">Giờ Làm Việc</p>
-                    <p className="text-slate-500 text-sm">Hàng ngày: 7:00 - 18:00</p>
+                    <p className="text-slate-500 text-sm">
+                      Hàng ngày: 7:00 - 18:00
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-amber-50 border border-amber-100 p-8 rounded-3xl">
-              <p className="font-bold text-amber-800 flex items-center gap-2 mb-4">💡 Gợi Ý Cho Bạn</p>
+              <p className="font-bold text-amber-800 flex items-center gap-2 mb-4">
+                💡 Gợi Ý Cho Bạn
+              </p>
               <ul className="text-amber-900/80 text-sm space-y-3 leading-relaxed">
-                <li>• Nên đến vườn vào buổi sáng để chọn mai trong điều kiện ánh sáng tốt nhất.</li>
-                <li>• Mang theo ảnh không gian đặt mai để được tư vấn kích thước phù hợp.</li>
+                <li>
+                  • Nên đến vườn vào buổi sáng để chọn mai trong điều kiện ánh
+                  sáng tốt nhất.
+                </li>
+                <li>
+                  • Mang theo ảnh không gian đặt mai để được tư vấn kích thước
+                  phù hợp.
+                </li>
                 <li>• Đội ngũ chuyên gia luôn sẵn sàng hỗ trợ bạn tại vườn.</li>
               </ul>
             </div>
@@ -349,11 +363,13 @@ const Booking: React.FC<{
           {/* Right column - Form */}
           <div
             ref={successRef}
-            className="bg-white p-10 rounded-3xl shadow-xl lg:self-center"
+            className="bg-white p-10 rounded-3xl shadow-xl lg:self-center max-h-[90vh] overflow-y-auto"
           >
             {!isSubmitted ? (
               <>
-                <h3 className="text-2xl font-bold text-slate-900 mb-8">Thông Tin Đặt Lịch</h3>
+                <h3 className="text-2xl font-bold text-slate-900 mb-8">
+                  Thông Tin Đặt Lịch
+                </h3>
 
                 <form
                   ref={formRef}
@@ -371,8 +387,8 @@ const Booking: React.FC<{
 
                     const focusables = Array.from(
                       form.querySelectorAll<HTMLElement>(
-                        'input:not([type="hidden"]), textarea, button, select'
-                      )
+                        'input:not([type="hidden"]), textarea, button, select',
+                      ),
                     ).filter((el) => el.offsetParent !== null);
 
                     const index = focusables.indexOf(target);
@@ -391,7 +407,7 @@ const Booking: React.FC<{
                     aria-hidden="true"
                   />
 
-                  <div>
+                  <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Họ và Tên <span className="text-red-500">*</span>
                     </label>
@@ -399,7 +415,7 @@ const Booking: React.FC<{
                       type="text"
                       placeholder="Nguyễn Văn A"
                       list="vmgc-name-suggestions"
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={formData.name}
                       onChange={(e) => setField("name")(e.target.value)}
                       required
@@ -411,7 +427,7 @@ const Booking: React.FC<{
                     </datalist>
                   </div>
 
-                  <div>
+                  <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Số Điện Thoại <span className="text-red-500">*</span>
                     </label>
@@ -419,7 +435,7 @@ const Booking: React.FC<{
                       type="tel"
                       placeholder="090 123 4567"
                       list="vmgc-phone-suggestions"
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={formData.phone}
                       onChange={(e) => setField("phone")(e.target.value)}
                       required
@@ -430,17 +446,21 @@ const Booking: React.FC<{
                       ))}
                     </datalist>
                     {formData.phone && !phoneVN(formData.phone) && (
-                      <p className="text-xs text-red-600 mt-2">SĐT phải có 10 số (0xxxxxxxxx) hoặc +84xxxxxxxxx.</p>
+                      <p className="text-xs text-red-600 mt-2">
+                        SĐT phải có 10 số (0xxxxxxxxx) hoặc +84xxxxxxxxx.
+                      </p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="text-sm font-bold text-slate-700">Email</label>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <label className="text-sm font-bold text-slate-700">
+                      Email
+                    </label>
                     <input
                       type="email"
                       placeholder="email@example.com"
                       list="vmgc-email-suggestions"
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={formData.email}
                       onChange={(e) => setField("email")(e.target.value)}
                     />
@@ -451,50 +471,46 @@ const Booking: React.FC<{
                     </datalist>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-1.5 sm:space-y-2">
                       <label className="text-sm font-bold text-slate-700">
                         Ngày Tham Quan <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="date"
-                        className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                         value={formData.date}
                         onChange={(e) => {
                           setField("date")(e.target.value);
-                          setTimeError(""); // đổi ngày thì xóa lỗi giờ (nếu có)
+                          setTimeError("");
                         }}
                         required
                       />
                       {formData.date && !isFutureOrToday(formData.date) && (
-                        <p className="text-xs text-red-600 mt-2">Ngày tham quan phải từ hôm nay trở đi.</p>
+                        <p className="text-xs text-red-600 mt-2">
+                          Ngày tham quan phải từ hôm nay trở đi.
+                        </p>
                       )}
                     </div>
 
-                    <div>
-                      {/* Giờ hẹn (24h + OK) */}
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <label className="text-sm font-bold text-slate-700">
+                        Giờ Hẹn <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
-                        <label className="text-sm font-bold text-slate-700">
-                          Giờ Hẹn <span className="text-red-500">*</span>
-                        </label>
-
-                        {/* Nút mở chọn giờ */}
                         <button
                           type="button"
                           onClick={() => setTimeOpen((v) => !v)}
-                          className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-left
-               focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-amber-400"
                         >
                           {formData.time ? formData.time : "Chọn giờ (HH:mm)"}
                         </button>
 
-                        {/* Popup chọn giờ */}
                         {timeOpen && (
                           <div className="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-xl p-4">
                             <div className="flex gap-3">
-                              {/* Giờ */}
                               <select
-                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200"
+                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
                                 value={timeDraft.split(":")[0]}
                                 onChange={(e) => {
                                   const hh = e.target.value.padStart(2, "0");
@@ -503,15 +519,16 @@ const Booking: React.FC<{
                                 }}
                               >
                                 {Array.from({ length: 24 }, (_, i) =>
-                                  String(i).padStart(2, "0")
+                                  String(i).padStart(2, "0"),
                                 ).map((h) => (
-                                  <option key={h} value={h}>{h}</option>
+                                  <option key={h} value={h}>
+                                    {h}
+                                  </option>
                                 ))}
                               </select>
 
-                              {/* Phút */}
                               <select
-                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200"
+                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
                                 value={timeDraft.split(":")[1]}
                                 onChange={(e) => {
                                   const hh = timeDraft.split(":")[0] || "07";
@@ -519,18 +536,21 @@ const Booking: React.FC<{
                                   setTimeDraft(`${hh}:${mm}`);
                                 }}
                               >
-                                {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
-                                  <option key={m} value={m}>{m}</option>
+                                {Array.from({ length: 60 }, (_, i) =>
+                                  String(i).padStart(2, "0"),
+                                ).map((m) => (
+                                  <option key={m} value={m}>
+                                    {m}
+                                  </option>
                                 ))}
                               </select>
                             </div>
 
-                            {/* Nút OK / Hủy */}
                             <div className="mt-4 flex justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => setTimeOpen(false)}
-                                className="px-4 py-2 rounded-xl border"
+                                className="px-4 py-2 rounded-xl border text-sm sm:text-base"
                               >
                                 Hủy
                               </button>
@@ -541,14 +561,21 @@ const Booking: React.FC<{
                                   setField("time")(timeDraft);
                                   setTimeOpen(false);
 
-                                  // validate giờ so với hiện tại (nếu có ngày)
-                                  if (formData.date && !isFutureOrNowDateTime(formData.date, timeDraft)) {
-                                    setTimeError("Giờ hẹn phải từ thời điểm hiện tại trở đi.");
+                                  if (
+                                    formData.date &&
+                                    !isFutureOrNowDateTime(
+                                      formData.date,
+                                      timeDraft,
+                                    )
+                                  ) {
+                                    setTimeError(
+                                      "Giờ hẹn phải từ thời điểm hiện tại trở đi.",
+                                    );
                                   } else {
                                     setTimeError("");
                                   }
                                 }}
-                                className="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold"
+                                className="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm sm:text-base"
                               >
                                 OK
                               </button>
@@ -556,20 +583,23 @@ const Booking: React.FC<{
                           </div>
                         )}
 
-                        {/* input ẩn để required vẫn hoạt động */}
                         <input type="hidden" value={formData.time} required />
                         {formData.time && timeError && (
-                          <p className="text-xs text-red-600 mt-2">{timeError}</p>
+                          <p className="text-xs text-red-600 mt-2">
+                            {timeError}
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-bold text-slate-700">Ghi Chú</label>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <label className="text-sm font-bold text-slate-700">
+                      Ghi Chú
+                    </label>
                     <textarea
                       placeholder="Nhu cầu cụ thể của bạn..."
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[120px]"
+                      className="mt-2 w-full px-4 h-28 sm:h-36 lg:h-40 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={formData.note}
                       onChange={(e) => setField("note")(e.target.value)}
                     />
@@ -577,20 +607,24 @@ const Booking: React.FC<{
 
                   {error && <p className="text-sm text-red-600">{error}</p>}
 
-                  <button
-                    type="submit"
-                    disabled={loading || !canSubmit}
-                    className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all
-                      ${loading || !canSubmit
-                        ? "bg-red-300 cursor-not-allowed"
-                        : "bg-red-700 hover:bg-red-800 active:scale-[0.99]"
-                      }`}
-                  >
-                    {loading ? "Đang gửi..." : "Xác Nhận Đặt Lịch Hẹn"}
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
+                    <button
+                      type="submit"
+                      disabled={loading || !canSubmit}
+                      className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all
+                        ${
+                          loading || !canSubmit
+                            ? "bg-red-300 cursor-not-allowed"
+                            : "bg-red-700 hover:bg-red-800 active:scale-[0.99]"
+                        }`}
+                    >
+                      {loading ? "Đang gửi..." : "Xác Nhận Đặt Lịch Hẹn"}
+                    </button>
+                  </div>
 
                   <p className="text-xs text-slate-400 text-center mt-4">
-                    Bằng việc đặt lịch, bạn đồng ý với các điều khoản dịch vụ của chúng tôi.
+                    Bằng việc đặt lịch, bạn đồng ý với các điều khoản dịch vụ
+                    của chúng tôi.
                   </p>
                 </form>
               </>
@@ -600,14 +634,16 @@ const Booking: React.FC<{
                   ✓
                 </div>
 
-                <h4 className="text-2xl font-bold text-slate-900">Đặt Lịch Thành Công!</h4>
+                <h4 className="text-2xl font-bold text-slate-900">
+                  Đặt Lịch Thành Công!
+                </h4>
 
                 <p className="text-slate-500 leading-relaxed max-w-sm mx-auto">
-                  Chúng tôi đã nhận được yêu cầu của bạn. Đội ngũ sẽ liên hệ xác nhận trong thời gian sớm nhất.
+                  Chúng tôi đã nhận được yêu cầu của bạn. Đội ngũ sẽ liên hệ xác
+                  nhận trong thời gian sớm nhất.
                 </p>
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
-                  {/* CTA sang trang Sản Phẩm */}
                   <a
                     href="#/san-pham"
                     className="
@@ -623,7 +659,6 @@ const Booking: React.FC<{
                     👉 Tiếp Tục Xem Mai Tết
                   </a>
 
-                  {/* Đặt lại lịch */}
                   <button
                     type="button"
                     onClick={() => {

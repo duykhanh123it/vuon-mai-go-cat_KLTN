@@ -132,10 +132,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-xl max-h-[90vh] rounded-3xl bg-white px-8 py-6 shadow-2xl flex flex-col">
+      <div className="relative bg-white rounded-3xl px-5 py-4 w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="sticky top-0 bg-white z-10 pb-4 flex items-center gap-3 mb-6">
           <button
             type="button"
@@ -157,7 +157,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
         </div>
 
-        <div className="space-y-5 overflow-y-auto pr-2">
+        <div className="space-y-5 overflow-y-auto pr-1 flex-1">
           <div>
             {profileLoading && (
               <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
@@ -203,7 +203,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
                 Ngày sinh
@@ -234,7 +234,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
           {/* Đã tách đổi mật khẩu sang modal riêng */}
 
-          <div className="sticky bottom-0 bg-white pt-4">
+          <div className="mt-6 shrink-0">
             <button
               type="button"
               onClick={handleUpdate}

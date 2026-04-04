@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AuthUser } from "../types";
+import { useToast } from "./Toast";
 
 const API_URL =
   "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
+  const { showToast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -17,29 +19,29 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmNewPassword) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      showToast("Vui lòng nhập đầy đủ thông tin", "error");
       return;
     }
 
     // ✅ validate password mạnh hơn
     if (newPassword.length < 6) {
-      alert("Mật khẩu mới phải ít nhất 6 ký tự");
+      showToast("Mật khẩu mới phải ít nhất 6 ký tự", "error");
       return;
     }
 
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      alert("Mật khẩu phải có ít nhất 1 chữ hoa và 1 số");
+      showToast("Mật khẩu phải có ít nhất 1 chữ hoa và 1 số", "error");
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      alert("Xác nhận mật khẩu không khớp");
+      showToast("Xác nhận mật khẩu không khớp", "error");
       return;
     }
 
     // ✅ chặn trùng mật khẩu cũ
     if (newPassword === currentPassword) {
-      alert("Mật khẩu mới không được trùng mật khẩu cũ");
+      showToast("Mật khẩu mới không được trùng mật khẩu cũ", "error");
       return;
     }
 
@@ -62,21 +64,29 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
       const data = await res.json();
 
       if (!data.ok) {
-        alert(data.error || "Đổi mật khẩu thất bại");
+        showToast(data.error || "Đổi mật khẩu thất bại", "error");
         setLoading(false);
         return;
       }
 
-      alert("Đổi mật khẩu thành công, vui lòng đăng nhập lại");
+      // 🔥 show toast trước
       setLoading(false);
 
-      // ✅ xoá user local
-      localStorage.removeItem("authUser");
+      // 🔥 show toast trước
+      showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
 
-      // reload để reset toàn bộ state
-      window.location.reload();
+      // logout đúng key đang dùng trong App.tsx
+      localStorage.removeItem("vmgc_user");
+
+      // đóng modal
+      onClose();
+
+      // ⏳ delay để toast chạy đủ 3s rồi về trang chính
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3200);
     } catch {
-      alert("Không thể kết nối server");
+      showToast("Không thể kết nối server", "error");
       setLoading(false);
     }
   };
@@ -85,10 +95,10 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
+      <div className="relative z-10 w-full max-w-md max-h-[90vh] rounded-3xl bg-white px-6 py-5 shadow-2xl flex flex-col">
         <h2 className="text-xl font-bold mb-4 text-amber-900">Đổi mật khẩu</h2>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto pr-2">
           <input
             type="password"
             placeholder="Mật khẩu hiện tại"

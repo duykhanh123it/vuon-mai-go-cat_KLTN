@@ -206,7 +206,11 @@ const App: React.FC = () => {
     try {
       const raw = localStorage.getItem("vmgc_user");
       if (raw) {
-        setAuthUser(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        setAuthUser({
+          ...parsed,
+          avatarUrl: parsed?.avatarUrl || "",
+        });
       }
     } catch {
       // ignore
@@ -313,8 +317,13 @@ const App: React.FC = () => {
    */
 
   const handleLogin = (user: AuthUser) => {
-    setAuthUser(user);
-    localStorage.setItem("vmgc_user", JSON.stringify(user));
+    const normalizedUser = {
+      ...user,
+      avatarUrl: user?.avatarUrl || "",
+    };
+
+    setAuthUser(normalizedUser);
+    localStorage.setItem("vmgc_user", JSON.stringify(normalizedUser));
     setShowLogin(false);
   };
 
@@ -324,8 +333,14 @@ const App: React.FC = () => {
   };
 
   const handleUpdateUser = (user: AuthUser) => {
-    setAuthUser(user);
-    localStorage.setItem("vmgc_user", JSON.stringify(user));
+    const mergedUser = {
+      ...authUser,
+      ...user,
+      avatarUrl: user?.avatarUrl || authUser?.avatarUrl || "",
+    };
+
+    setAuthUser(mergedUser);
+    localStorage.setItem("vmgc_user", JSON.stringify(mergedUser));
   };
 
   const navigate = useCallback((page: Page) => {

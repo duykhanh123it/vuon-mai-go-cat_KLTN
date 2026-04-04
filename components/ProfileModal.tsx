@@ -25,6 +25,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+
+  const currentAvatar =
+    previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
+  const isUsingDefaultAvatar = !previewAvatar && !user.avatarUrl;
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -94,6 +99,53 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     };
   }, [user.email]);
 
+  const handleSelectAvatar = async (file: File) => {
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+
+      // preview ngay
+      setPreviewAvatar(base64);
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            api: "uploadAvatar",
+            email: user.email,
+            fileName: file.name,
+            fileData: base64,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          showToast("Upload avatar thất bại", "error");
+          setPreviewAvatar(null);
+          return;
+        }
+
+        // update UI + local
+        onUpdateUser({
+          ...user,
+          avatarUrl: data.avatarUrl,
+        });
+
+        setPreviewAvatar(null);
+      } catch {
+        showToast("Lỗi upload avatar", "error");
+        setPreviewAvatar(null);
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   const handleUpdate = async () => {
     try {
       setSaving(true);
@@ -152,10 +204,72 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         <div className="flex justify-center mb-6">
-          <div className="w-28 h-28 rounded-full bg-slate-100 flex items-center justify-center text-5xl text-slate-400">
-            🖼️
+          <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+            {/* Avatar */}
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-md bg-slate-200 border-[3px] border-slate-300">
+              <img
+                src={currentAvatar}
+                alt="avatar"
+                className={`w-full h-full object-cover ${
+                  isUsingDefaultAvatar ? "opacity-70" : ""
+                }`}
+              />
+            </div>
+
+            {/* Overlay giữa chỉ hiện khi đang dùng avatar mặc định */}
+            {isUsingDefaultAvatar && (
+              <label
+                htmlFor="avatarInput"
+                className="absolute inset-0 rounded-full bg-black/35 flex flex-col items-center justify-center text-white cursor-pointer transition"
+              >
+                <div className="w-9 h-9 rounded-full bg-white text-slate-800 flex items-center justify-center text-base shadow">
+                  📷
+                </div>
+                <span className="mt-1 text-xs font-medium">Thêm</span>
+              </label>
+            )}
+
+            {/* Nút camera góc phải dưới: luôn là nơi bấm đổi ảnh */}
+            <label
+              htmlFor="avatarInput"
+              className="
+    absolute 
+    bottom-1 right-1
+    w-8 h-8 sm:w-9 sm:h-9
+    rounded-full
+    bg-slate-700 text-white
+    border-2 border-white
+    shadow-md
+    flex items-center justify-center
+    cursor-pointer
+    hover:scale-105 active:scale-95
+    transition
+  "
+              style={{
+                transform: "translate(12%, 5%)",
+              }}
+            >
+              <span className="text-[13px] sm:text-[14px] leading-none">
+                📷
+              </span>
+            </label>
           </div>
         </div>
+
+        {/* Input file ẩn */}
+        <input
+          type="file"
+          accept="image/*"
+          id="avatarInput"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleSelectAvatar(file);
+              e.target.value = ""; // 🔥 reset để chọn lại cùng ảnh vẫn chạy
+            }
+          }}
+        />
 
         <div className="space-y-5 overflow-y-auto pr-1 flex-1">
           <div>

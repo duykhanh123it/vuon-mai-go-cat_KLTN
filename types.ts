@@ -57,6 +57,7 @@ export interface AuthUser {
   name: string;
   email: string;
   phone?: string;
+  avatarUrl?: string;
 }
 
 export interface LoginFormData {

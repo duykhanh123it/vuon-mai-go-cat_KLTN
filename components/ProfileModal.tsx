@@ -9,12 +9,14 @@ interface ProfileModalProps {
   user: AuthUser;
   onClose: () => void;
   onUpdateUser: (user: AuthUser) => void;
+  showPasswordSection?: boolean; // 👈 THÊM
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({
   user,
   onClose,
   onUpdateUser,
+  showPasswordSection = true,
 }) => {
   const { showToast } = useToast();
   const [fullName, setFullName] = useState(user.name || "");
@@ -26,6 +28,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const currentAvatar =
     previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
@@ -150,6 +156,50 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     try {
       setSaving(true);
 
+      // ✅ VALIDATE PASSWORD
+      if (newPassword || confirmPassword || currentPassword) {
+        if (!currentPassword) {
+          showToast("Vui lòng nhập mật khẩu hiện tại", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          showToast("Mật khẩu mới tối thiểu 6 ký tự", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          showToast("Xác nhận mật khẩu không khớp", "error");
+          setSaving(false);
+          return;
+        }
+
+        // 🔐 CALL API đổi mật khẩu
+        const resPass = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            api: "changePassword",
+            email: user.email,
+            oldPassword: currentPassword,
+            newPassword: newPassword,
+          }),
+        });
+
+        const dataPass = await resPass.json();
+
+        if (!dataPass.ok) {
+          showToast(dataPass.error || "Đổi mật khẩu thất bại", "error");
+          setSaving(false);
+          return;
+        }
+      }
+
+      // 📌 UPDATE PROFILE
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -174,6 +224,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       }
 
       onUpdateUser(data.user);
+
+      // reset password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
       showToast("Cập nhật thành công", "success");
       setSaving(false);
       onClose();
@@ -216,26 +272,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               />
             </div>
 
-            {/* Overlay giữa chỉ hiện khi đang dùng avatar mặc định */}
-            {isUsingDefaultAvatar && (
-              <label
-                htmlFor="avatarInput"
-                className="absolute inset-0 rounded-full bg-black/35 flex flex-col items-center justify-center text-white cursor-pointer transition"
-              >
-                <div className="w-9 h-9 rounded-full bg-white text-slate-800 flex items-center justify-center text-base shadow">
-                  📷
-                </div>
-                <span className="mt-1 text-xs font-medium">Thêm</span>
-              </label>
-            )}
-
             {/* Nút camera góc phải dưới: luôn là nơi bấm đổi ảnh */}
             <label
               htmlFor="avatarInput"
               className="
     absolute 
-    bottom-1 right-1
-    w-8 h-8 sm:w-9 sm:h-9
+    bottom-2 right-1.5
+    w-9 h-9
     rounded-full
     bg-slate-700 text-white
     border-2 border-white
@@ -249,9 +292,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                 transform: "translate(12%, 5%)",
               }}
             >
-              <span className="text-[13px] sm:text-[14px] leading-none">
-                📷
-              </span>
+              <span className="text-[14px] leading-none">📷</span>
             </label>
           </div>
         </div>
@@ -346,7 +387,40 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Đã tách đổi mật khẩu sang modal riêng */}
+          {/* SECTION ĐỔI MẬT KHẨU */}
+          {showPasswordSection && (
+            <div className="mt-6 pt-5 border-t border-slate-200">
+              <h3 className="text-base font-semibold text-slate-800 mb-4">
+                Đổi mật khẩu
+              </h3>
+
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Mật khẩu hiện tại"
+                  className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                />
+
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mật khẩu mới"
+                  className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                />
+
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Xác nhận mật khẩu"
+                  className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 shrink-0">
             <button

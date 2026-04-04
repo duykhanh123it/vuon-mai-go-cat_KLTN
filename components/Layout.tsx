@@ -32,13 +32,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const ZALO_LINK = `https://zalo.me/${PHONE_NUMBER}`;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-
-  // 🔥 thêm 2 state này
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -66,7 +62,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const goPage = (page: Page) => {
     setCurrentPage(page);
     setDrawerOpen(false);
-    setUserMenuOpen(false);
   };
 
   // ESC để đóng + khóa scroll nền khi drawer mở
@@ -75,7 +70,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       if (e.key === "Escape") {
         setDrawerOpen(false);
         setUserMenuOpen(false);
-        setProfileOpen(false);
       }
     };
 
@@ -85,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       document.body.style.overflow = "";
     }
 
-    if (userMenuOpen || drawerOpen || profileOpen) {
+    if (drawerOpen) {
       document.addEventListener("keydown", onKeyDown);
     }
 
@@ -93,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
     };
-  }, [drawerOpen, userMenuOpen, profileOpen]);
+  }, [drawerOpen]);
 
   const navBtnBase =
     "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 " +
@@ -164,25 +158,34 @@ export const Navbar: React.FC<NavbarProps> = ({
                 🛒
               </button>
 
+              {/* Mobile User Button - Avatar */}
               <button
                 type="button"
                 onClick={() => {
                   if (authUser) {
-                    onLogout();
+                    setShowProfileModal(true);
                   } else {
                     onOpenLogin();
                   }
                 }}
                 aria-label="Tài khoản người dùng"
                 className="
-      w-9 h-9 rounded-full
-      bg-slate-100 hover:bg-slate-200
-      flex items-center justify-center
-      text-base
-      active:scale-95
-    "
+                  w-9 h-9 rounded-full
+                  overflow-hidden
+                  bg-slate-100 hover:bg-slate-200
+                  flex items-center justify-center
+                  active:scale-95
+                "
               >
-                {authUser ? "👋" : "👤"}
+                {authUser ? (
+                  <img
+                    src={authUser.avatarUrl || "/no_avatar_fallback.png"}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  "👤"
+                )}
               </button>
             </div>
           </div>
@@ -251,7 +254,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               🛒
             </button>
 
-            {/* User */}
+            {/* Desktop User Button - Avatar + Name */}
             <button
               type="button"
               onClick={() => {
@@ -261,30 +264,36 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onOpenLogin();
                 }
               }}
-              aria-label="Tài khoản người dùng"
               className={`
-    flex items-center gap-2
-    px-4 py-2
-    rounded-full
-    font-semibold
-    transition-all duration-200
-    active:scale-95
-    ${
-      authUser
-        ? "bg-emerald-500 text-white hover:bg-emerald-600"
-        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-    }
-  `}
+                flex items-center gap-2
+                px-2 py-1
+                rounded-full
+                transition-all duration-200
+                active:scale-95
+                ${
+                  authUser
+                    ? "bg-emerald-500 hover:bg-emerald-600"
+                    : "bg-slate-100 hover:bg-slate-200"
+                }
+              `}
             >
-              <span className="text-base">👤</span>
-
-              {authUser && (
-                <span className="text-sm whitespace-nowrap">
-                  {authUser.name.split(" ").slice(-1)[0]}
-                </span>
+              {authUser ? (
+                <>
+                  <img
+                    src={authUser.avatarUrl || "/no_avatar_fallback.png"}
+                    alt="avatar"
+                    className="w-8 h-8 rounded-full object-cover border border-white"
+                  />
+                  <span className="text-sm text-white font-medium">
+                    {authUser.name.split(" ").slice(-1)[0]}
+                  </span>
+                </>
+              ) : (
+                <span className="text-base">👤</span>
               )}
             </button>
 
+            {/* Desktop User Dropdown */}
             {authUser && userMenuOpen && (
               <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
                 <button
@@ -292,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    setProfileOpen(true);
+                    setShowProfileModal(true);
                   }}
                 >
                   Hồ sơ của tôi
@@ -303,7 +312,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition border-t border-slate-100"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    setChangePasswordOpen(true);
+                    setShowChangePasswordModal(true);
                   }}
                 >
                   Đổi mật khẩu
@@ -328,10 +337,10 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Overlay */}
       <div
         className={`fixed inset-0 lg:hidden transition-opacity duration-200 ${
-          drawerOpen || userMenuOpen
-            ? "opacity-100 pointer-events-auto"
+          drawerOpen
+            ? "opacity-100 pointer-events-auto bg-black/40"
             : "opacity-0 pointer-events-none"
-        } ${drawerOpen ? "bg-black/40" : "bg-transparent"}`}
+        }`}
         onClick={() => {
           setDrawerOpen(false);
           setUserMenuOpen(false);
@@ -396,28 +405,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
 
           <div className="mt-4 pt-4 border-t">
-            {/* 👤 Hồ sơ */}
-            <button
-              onClick={() => {
-                setShowProfileModal(true);
-                setDrawerOpen(false);
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
-            >
-              👤 Hồ sơ cá nhân
-            </button>
-
-            {/* 🔒 Đổi mật khẩu */}
-            <button
-              onClick={() => {
-                setShowChangePasswordModal(true);
-                setDrawerOpen(false);
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
-            >
-              🔒 Đổi mật khẩu
-            </button>
-
             {/* 🚪 Đăng xuất */}
             <button
               onClick={() => {
@@ -432,34 +419,20 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </aside>
 
-      {/* Modals cũ (giữ lại) */}
-      {authUser && profileOpen && (
+      {/* ProfileModal */}
+      {showProfileModal && authUser && (
         <ProfileModal
           user={authUser}
-          onClose={() => setProfileOpen(false)}
-          onUpdateUser={onUpdateUser}
-        />
-      )}
-
-      {authUser && changePasswordOpen && (
-        <ChangePasswordModal
-          user={authUser}
-          onClose={() => setChangePasswordOpen(false)}
-        />
-      )}
-
-      {/* 🔥 Modals mới theo yêu cầu */}
-      {showProfileModal && (
-        <ProfileModal
-          user={authUser!}
           onClose={() => setShowProfileModal(false)}
           onUpdateUser={onUpdateUser}
+          showPasswordSection={window.innerWidth >= 768 ? false : true}
         />
       )}
 
-      {showChangePasswordModal && (
+      {/* ChangePasswordModal */}
+      {showChangePasswordModal && authUser && (
         <ChangePasswordModal
-          user={authUser!}
+          user={authUser}
           onClose={() => setShowChangePasswordModal(false)}
         />
       )}

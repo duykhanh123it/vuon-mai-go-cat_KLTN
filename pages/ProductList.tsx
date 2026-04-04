@@ -245,7 +245,7 @@ const ZALO_LINK = `https://zalo.me/${PHONE}`;
 const isTouchDevice = () =>
   typeof window !== "undefined" &&
   window.matchMedia &&
-  window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+  window.matchMedia("(hover: none) && (pointer: coarse)").matches;
 
 type ProductCardProps = {
   p: any;
@@ -963,6 +963,7 @@ const ProductList: React.FC<ProductListProps> = ({
     setSearchTerm("");
     setPage(1);
     setProductsPage(1);
+    setIsFilterOpen(false);
   };
 
   // mẫu số hiển thị: ưu tiên tổng BS+T
@@ -1014,145 +1015,172 @@ const ProductList: React.FC<ProductListProps> = ({
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
-          {/* Sidebar filters - SỬA 3 */}
-          <aside className="hidden lg:block bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-80">
-            <h3 className="font-bold items-center gap-2 mb-5 flex">
+          {/* Sidebar filters - ĐÃ SỬA THÀNH TOGGLE */}
+          <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full lg:w-80">
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen((v) => !v)}
+              className="w-full lg:hidden flex items-center justify-between gap-3 font-bold py-2"
+            >
+              <span className="flex items-center gap-2">
+                <FilterIcon className="text-amber-500" />
+                Bộ Lọc
+              </span>
+
+              <svg
+                className={`h-5 w-5 text-slate-600 transition-transform duration-200 ${
+                  isFilterOpen ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            <h3 className="hidden lg:flex font-bold items-center gap-2 mb-5">
               <FilterIcon className="text-amber-500" />
               Bộ Lọc
             </h3>
 
-            <div className="space-y-6">
-              {/* Sản phẩm */}
-              <div>
-                <label className="text-sm text-slate-500 block mb-3">
-                  Sản Phẩm
-                </label>
-                <div className="flex flex-col gap-2">
-                  {categoryOptions.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => {
-                        setFilterType(type);
-                        setPriceMode("rent");
-                        setFilterPrice("All");
-                        setFilterHeight("All");
-                        setSearchTerm("");
-                        setIsFilterOpen(false);
-                      }}
-                      className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        filterType === type
-                          ? "bg-amber-400 text-amber-950"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                      }`}
-                      type="button"
-                    >
-                      {type === "All" ? "Tất cả" : type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Khung Giá */}
-              <div>
-                <label className="text-sm text-slate-500 block mb-3">
-                  Khung giá
-                </label>
-
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setPriceMode("rent")}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                      priceMode === "rent"
-                        ? "bg-amber-400 text-amber-950"
-                        : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    Thuê
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPriceMode("sell")}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                      priceMode === "sell"
-                        ? "bg-amber-400 text-amber-950"
-                        : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    Bán
-                  </button>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  {PRICE_OPTIONS.map((item) => (
-                    <button
-                      key={item.key}
-                      onClick={() => {
-                        setFilterPrice(item.key);
-                        setIsFilterOpen(false);
-                      }}
-                      className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        filterPrice === item.key
-                          ? "bg-amber-400 text-amber-950"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                      }`}
-                      type="button"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Chiều cao */}
-              <div>
-                <label className="text-sm text-slate-500 block mb-3">
-                  Chiều cao
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(
-                    [
-                      ["All", "Tất cả"],
-                      ["under1_5", "Dưới 1.5m"],
-                      ["1_5to2", "1.5m - 2m"],
-                      ["2to2_5", "2m - 2.5m"],
-                      ["over2_5", "Trên 2.5m"],
-                    ] as Array<[HeightKey, string]>
-                  ).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setFilterHeight(key)}
-                      className={`
-                        px-4 py-2 rounded-xl text-sm font-bold transition-all
-                        ${key === "over2_5" ? "col-span-2" : ""}
-                        ${
-                          filterHeight === key
+            <div className={`${isFilterOpen ? "block" : "hidden"} lg:block`}>
+              <div className="space-y-6">
+                {/* Sản phẩm */}
+                <div>
+                  <label className="text-sm text-slate-500 block mb-3">
+                    Sản Phẩm
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    {categoryOptions.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          setFilterType(type);
+                          setPriceMode("rent");
+                          setFilterPrice("All");
+                          setFilterHeight("All");
+                          setSearchTerm("");
+                          setIsFilterOpen(false);
+                        }}
+                        className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                          filterType === type
                             ? "bg-amber-400 text-amber-950"
                             : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                        }
-                      `}
-                      type="button"
-                    >
-                      {label}
-                    </button>
-                  ))}
+                        }`}
+                        type="button"
+                      >
+                        {type === "All" ? "Tất cả" : type}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all select-none"
-                >
-                  Reset bộ lọc
-                </button>
+                {/* Khung Giá */}
+                <div>
+                  <label className="text-sm text-slate-500 block mb-3">
+                    Khung giá
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setPriceMode("rent")}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                        priceMode === "rent"
+                          ? "bg-amber-400 text-amber-950"
+                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      Thuê
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPriceMode("sell")}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                        priceMode === "sell"
+                          ? "bg-amber-400 text-amber-950"
+                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      Bán
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {PRICE_OPTIONS.map((item) => (
+                      <button
+                        key={item.key}
+                        onClick={() => {
+                          setFilterPrice(item.key);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                          filterPrice === item.key
+                            ? "bg-amber-400 text-amber-950"
+                            : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                        }`}
+                        type="button"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Chiều cao */}
+                <div>
+                  <label className="text-sm text-slate-500 block mb-3">
+                    Chiều cao
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        ["All", "Tất cả"],
+                        ["under1_5", "Dưới 1.5m"],
+                        ["1_5to2", "1.5m - 2m"],
+                        ["2to2_5", "2m - 2.5m"],
+                        ["over2_5", "Trên 2.5m"],
+                      ] as Array<[HeightKey, string]>
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => setFilterHeight(key)}
+                        className={`
+                          px-4 py-2 rounded-xl text-sm font-bold transition-all
+                          ${key === "over2_5" ? "col-span-2" : ""}
+                          ${
+                            filterHeight === key
+                              ? "bg-amber-400 text-amber-950"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                          }
+                        `}
+                        type="button"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all select-none"
+                  >
+                    Reset bộ lọc
+                  </button>
+                </div>
               </div>
             </div>
           </aside>
 
           {/* Main content */}
           <div>
-            {/* Search + count + Filter Mobile Button - SỬA 4 */}
+            {/* Search + count */}
             <div className="flex items-center justify-between gap-4 mb-6">
               <div className="relative flex-1">
                 <input
@@ -1182,16 +1210,7 @@ const ProductList: React.FC<ProductListProps> = ({
               </p>
             </div>
 
-            {/* Nút Bộ lọc cho Mobile - SỬA 4 */}
-            <button
-              onClick={() => setIsFilterOpen(true)}
-              className="lg:hidden mb-4 w-full h-11 rounded-xl bg-slate-100 font-semibold flex items-center justify-center gap-2"
-            >
-              <FilterIcon className="text-amber-500" />
-              Bộ lọc
-            </button>
-
-            {/* Grid Sản Phẩm - SỬA 1 + SỬA 2 */}
+            {/* Grid Sản Phẩm */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {pagedProducts.map((p: any) => (
                 <ProductCard
@@ -1248,7 +1267,7 @@ const ProductList: React.FC<ProductListProps> = ({
               </a>
             </div>
 
-            {/* Pagination - SỬA 7 */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-8 sm:mt-9 mb-6 flex items-center justify-center">
                 <div className="flex flex-wrap justify-center gap-2 sm:gap-3 bg-white text-slate-800 rounded-full shadow-md px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200">

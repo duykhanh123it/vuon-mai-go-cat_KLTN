@@ -9,7 +9,7 @@ interface ProfileModalProps {
   user: AuthUser;
   onClose: () => void;
   onUpdateUser: (user: AuthUser) => void;
-  showPasswordSection?: boolean; // 👈 THÊM
+  showPasswordSection?: boolean;
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -19,6 +19,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   showPasswordSection = true,
 }) => {
   const { showToast } = useToast();
+
+  // BƯỚC 1: LẤY USER từ localStorage
+  const localUser = JSON.parse(localStorage.getItem("user") || "null");
+
   const [fullName, setFullName] = useState(user.name || "");
   const [phone, setPhone] = useState(user.phone || "");
   const [email, setEmail] = useState(user.email || "");
@@ -32,10 +36,16 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
 
   const currentAvatar =
     previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
   const isUsingDefaultAvatar = !previewAvatar && !user.avatarUrl;
+
+  // BƯỚC 4: Hàm đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+  };
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -111,7 +121,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     reader.onloadend = async () => {
       const base64 = reader.result as string;
 
-      // preview ngay
       setPreviewAvatar(base64);
 
       try {
@@ -136,7 +145,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           return;
         }
 
-        // update UI + local
         onUpdateUser({
           ...user,
           avatarUrl: data.avatarUrl,
@@ -156,7 +164,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     try {
       setSaving(true);
 
-      // ✅ VALIDATE PASSWORD
       if (newPassword || confirmPassword || currentPassword) {
         if (!currentPassword) {
           showToast("Vui lòng nhập mật khẩu hiện tại", "error");
@@ -176,7 +183,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           return;
         }
 
-        // 🔐 CALL API đổi mật khẩu
         const resPass = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -199,7 +205,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         }
       }
 
-      // 📌 UPDATE PROFILE
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -225,7 +230,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
       onUpdateUser(data.user);
 
-      // reset password fields
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -261,8 +265,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
         <div className="flex justify-center mb-6">
           <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-            {/* Avatar */}
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-md bg-slate-200 border-[3px] border-slate-300">
+            {/* Avatar - BƯỚC 3 */}
+            <button
+              type="button"
+              onClick={() => setIsAvatarViewerOpen(true)}
+              aria-label="Xem ảnh đại diện"
+              className="block w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-md bg-slate-200 border-[3px] border-slate-300 cursor-zoom-in"
+            >
               <img
                 src={currentAvatar}
                 alt="avatar"
@@ -270,11 +279,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                   isUsingDefaultAvatar ? "opacity-70" : ""
                 }`}
               />
-            </div>
+            </button>
 
-            {/* Nút camera góc phải dưới: luôn là nơi bấm đổi ảnh */}
             <label
               htmlFor="avatarInput"
+              onClick={(e) => e.stopPropagation()}
               className="
     absolute 
     bottom-2 right-1.5
@@ -297,7 +306,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
         </div>
 
-        {/* Input file ẩn */}
         <input
           type="file"
           accept="image/*"
@@ -307,7 +315,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             const file = e.target.files?.[0];
             if (file) {
               handleSelectAvatar(file);
-              e.target.value = ""; // 🔥 reset để chọn lại cùng ảnh vẫn chạy
+              e.target.value = "";
             }
           }}
         />
@@ -319,9 +327,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                 Đang tải thông tin tài khoản...
               </div>
             )}
+
             <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
               Người đăng ký/Người đại diện (*)
             </label>
+            {/* BƯỚC 2: Input name */}
             <input
               type="text"
               value={fullName}
@@ -348,11 +358,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
               Email (*)
             </label>
+            {/* BƯỚC 2: Input email */}
             <input
               type="email"
               value={email}
               disabled
-              onChange={(e) => setEmail(e.target.value)}
+              readOnly
               placeholder="Điền email"
               className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
             />
@@ -387,7 +398,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           </div>
 
-          {/* SECTION ĐỔI MẬT KHẨU */}
           {showPasswordSection && (
             <div className="mt-6 pt-5 border-t border-slate-200">
               <h3 className="text-base font-semibold text-slate-800 mb-4">
@@ -422,7 +432,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           )}
 
-          <div className="mt-6 shrink-0">
+          <div className="mt-6 shrink-0 flex flex-col gap-3">
             <button
               type="button"
               onClick={handleUpdate}
@@ -435,9 +445,44 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                   ? "Đang cập nhật..."
                   : "Cập nhật"}
             </button>
+
+            {/* Nút Đăng xuất */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full h-12 rounded-xl border border-red-400 text-red-600 hover:bg-red-50 font-medium transition-all"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
       </div>
+
+      {isAvatarViewerOpen && (
+        <div
+          className="fixed inset-0 z-[130] bg-black/80 flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setIsAvatarViewerOpen(false)}
+        >
+          <button
+            type="button"
+            aria-label="Đóng xem ảnh"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl leading-none flex items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAvatarViewerOpen(false);
+            }}
+          >
+            ✕
+          </button>
+
+          <img
+            src={currentAvatar}
+            alt="avatar full"
+            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

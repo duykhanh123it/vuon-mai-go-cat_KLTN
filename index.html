@@ -2,6 +2,7 @@
 <html lang="vi">
 
 <head>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- ================= Basic ================= -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -56,13 +57,22 @@
 
     /* ====== Floating buttons: zoom nhẹ nhàng ====== */
     @keyframes zoomSoft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.08); }
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.08);
+      }
     }
 
     /* Tôn trọng người dùng bật giảm chuyển động */
     @media (prefers-reduced-motion: reduce) {
-      .animate-zoom-soft { animation: none !important; }
+      .animate-zoom-soft {
+        animation: none !important;
+      }
     }
   </style>
 
@@ -80,7 +90,7 @@
   </script>
 
   <link rel="stylesheet" href="/index.css" />
-<script src="https://www.google.com/recaptcha/api.js?render=6LdaA5OsAAAAACaW-hYmQDCquxIs57g8myrA-Csz"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=6LdaA5OsAAAAACaW-hYmQDCquxIs57g8myrA-Csz"></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900">

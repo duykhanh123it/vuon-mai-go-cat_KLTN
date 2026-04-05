@@ -36,6 +36,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // === THÊM THEO YÊU CẦU ===
+  const [user, setUser] = useState<any>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+  // ========================
+
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
     { id: "products", label: "Sản Phẩm", icon: "🌼" },
@@ -159,34 +172,29 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {/* Mobile User Button - Avatar */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (authUser) {
-                    setShowProfileModal(true);
-                  } else {
-                    onOpenLogin();
-                  }
-                }}
-                aria-label="Tài khoản người dùng"
-                className="
-                  w-9 h-9 rounded-full
-                  overflow-hidden
-                  bg-slate-100 hover:bg-slate-200
-                  flex items-center justify-center
-                  active:scale-95
-                "
-              >
-                {authUser ? (
-                  <img
-                    src={authUser.avatarUrl || "/no_avatar_fallback.png"}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  "👤"
-                )}
-              </button>
+              {user ? (
+                <img
+                  src={user.avatar}
+                  alt="avatar"
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                  onClick={() => setShowProfile(true)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLogin(true)}
+                  aria-label="Tài khoản người dùng"
+                  className="
+                    w-9 h-9 rounded-full
+                    overflow-hidden
+                    bg-slate-100 hover:bg-slate-200
+                    flex items-center justify-center
+                    active:scale-95
+                  "
+                >
+                  👤
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -255,45 +263,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Desktop User Button - Avatar + Name */}
-            <button
-              type="button"
-              onClick={() => {
-                if (authUser) {
-                  setUserMenuOpen((v) => !v);
-                } else {
-                  onOpenLogin();
-                }
-              }}
-              className={`
-                flex items-center gap-2
-                px-2 py-1
-                rounded-full
-                transition-all duration-200
-                active:scale-95
-                ${
-                  authUser
-                    ? "bg-emerald-500 hover:bg-emerald-600"
-                    : "bg-slate-100 hover:bg-slate-200"
-                }
-              `}
-            >
-              {authUser ? (
-                <>
-                  <img
-                    src={authUser.avatarUrl || "/no_avatar_fallback.png"}
-                    alt="avatar"
-                    className="w-8 h-8 rounded-full object-cover border border-white"
-                  />
-                  <span className="text-sm text-white font-medium">
-                    {authUser.name.split(" ").slice(-1)[0]}
-                  </span>
-                </>
-              ) : (
+            {user ? (
+              <img
+                src={user.avatar}
+                alt="avatar"
+                className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
+                onClick={() => setShowProfile(true)}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowLogin(true)}
+                className={`
+                  flex items-center gap-2
+                  px-2 py-1
+                  rounded-full
+                  transition-all duration-200
+                  active:scale-95
+                  bg-slate-100 hover:bg-slate-200
+                `}
+              >
                 <span className="text-base">👤</span>
-              )}
-            </button>
+              </button>
+            )}
 
-            {/* Desktop User Dropdown */}
+            {/* Desktop User Dropdown (giữ nguyên logic cũ khi có authUser) */}
             {authUser && userMenuOpen && (
               <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
                 <button
@@ -434,6 +428,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <ChangePasswordModal
           user={authUser}
           onClose={() => setShowChangePasswordModal(false)}
+        />
+      )}
+
+      {/* === MODAL MỚI THEO YÊU CẦU === */}
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showProfile && user && (
+        <ProfileModal
+          user={user}
+          onClose={() => setShowProfile(false)}
+          onUpdateUser={onUpdateUser}
+          showPasswordSection={window.innerWidth >= 768 ? false : true}
         />
       )}
     </nav>

@@ -57,6 +57,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     return () => window.clearTimeout(timer);
   }, [otpSent, otpCountdown]);
 
+  // ✅ Function decode JWT
+  function parseJwt(token: string) {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
+    );
+    return JSON.parse(jsonPayload);
+  }
+
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
@@ -355,12 +368,75 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </div>
 
           <button
-            type="button"
-            className="w-full py-3 rounded-full border border-slate-300 flex items-center justify-center gap-2 text-sm font-medium hover:bg-slate-100 transition"
+            onClick={() => {
+              const client = (window as any).google?.accounts?.oauth2;
+
+              if (!client) {
+                alert("Google SDK chưa load");
+                return;
+              }
+
+              const tokenClient = client.initTokenClient({
+                client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+                scope: "profile email",
+                callback: async (response: any) => {
+                  try {
+                    if (!response.credential) {
+                      throw new Error("No credential");
+                    }
+
+                    // ✅ decode token
+                    const user = parseJwt(response.credential);
+
+                    console.log("Google user:", user);
+
+                    const apiRes = await fetch(API_URL, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        api: "googleLogin",
+                        email: user.email,
+                        name: user.name,
+                        avatarUrl: user.picture,
+                      }),
+                    });
+
+                    const text = await apiRes.text();
+                    console.log("RAW RESPONSE:", text);
+
+                    let data;
+                    try {
+                      data = JSON.parse(text);
+                    } catch (e) {
+                      console.error("JSON parse error:", e);
+                      throw new Error("API trả về không phải JSON");
+                    }
+
+                    console.log("PARSED DATA:", data);
+
+                    if (!data.ok) {
+                      throw new Error(data.error);
+                    }
+
+                    localStorage.setItem("user", JSON.stringify(data.user));
+
+                    onLogin(data.user);
+                    onClose();
+                  } catch (err) {
+                    console.error(err);
+                    alert("Google login lỗi");
+                  }
+                },
+              });
+
+              tokenClient.requestAccessToken();
+            }}
+            className="w-full border rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-gray-50"
           >
             <img
               src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="google"
               className="w-5 h-5"
             />
             Tiếp tục với Google

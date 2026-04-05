@@ -75,7 +75,6 @@ const pageToHash = (
 };
 
 // ✅ Normalize ID dùng cho routing/resolve (tránh lệch "BS 505" vs "BS505", ký tự lạ, hoa/thường)
-// ✅ Normalize ID dùng cho routing/resolve (tránh lệch "BS 505" vs "BS505", ký tự lạ, hoa/thường)
 function normPid(v: any) {
   return String(v ?? "")
     .toUpperCase()
@@ -87,7 +86,7 @@ const hashToState = (
   hash: string,
 ): { page: Page; productId?: string; productsPage: number } => {
   const raw = (hash || "#/").trim();
-  const h = raw.startsWith("#") ? raw.slice(1) : raw; // "/san-pham/BS02?p=20"
+  const h = raw.startsWith("#") ? raw.slice(1) : raw;
 
   const [pathPart, queryPart] = h.split("?");
   const parts = pathPart.split("/").filter(Boolean);
@@ -114,7 +113,6 @@ const hashToState = (
 };
 
 // ===== Products cache reader (để App restore detail khi F5) =====
-// ===== Products cache reader (đồng bộ với ProductList.tsx: cache theo type) =====
 type ProductsType = "All" | "BS" | "T";
 const PRODUCTS_CACHE_KEY = (type: ProductsType) =>
   `vmgc_products_cache_v1_${type}`;
@@ -133,7 +131,6 @@ const safeReadProductsCacheByType = (type: ProductsType): CacheShape | null => {
 
     const parsed = JSON.parse(raw);
 
-    // hỗ trợ cả dạng { items: [...] } hoặc dạng [...] (legacy)
     const items = Array.isArray(parsed?.items)
       ? parsed.items
       : Array.isArray(parsed)
@@ -154,18 +151,15 @@ const safeReadProductsCacheByType = (type: ProductsType): CacheShape | null => {
 };
 
 const safeReadProductsCacheAllMerged = (): CacheShape | null => {
-  // Ưu tiên All (đã merge)
   const all = safeReadProductsCacheByType("All");
   if (all?.items?.length) return all;
 
-  // fallback merge BS + T
   const bs = safeReadProductsCacheByType("BS");
   const t = safeReadProductsCacheByType("T");
   const merged = [...(bs?.items || []), ...(t?.items || [])];
 
   if (!merged.length) return null;
 
-  // unique theo id
   const seen = new Set<string>();
   const uniq: any[] = [];
   for (const p of merged) {
@@ -179,13 +173,11 @@ const safeReadProductsCacheAllMerged = (): CacheShape | null => {
 };
 
 const App: React.FC = () => {
-  // ✅ products dùng chung cho App (phục vụ restore khi F5)
   const [appProducts, setAppProducts] = useState<Product[]>(() => {
     const c = safeReadProductsCacheAllMerged();
     return (c?.items as Product[]) ?? [];
   });
 
-  // ✅ giữ bản mới nhất của appProducts để handler hash dùng mà không cần dependency
   const appProductsRef = useRef<Product[]>([]);
   useEffect(() => {
     appProductsRef.current = appProducts;
@@ -197,6 +189,7 @@ const App: React.FC = () => {
   const [productsPage, setProductsPage] = useState<number>(1);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isResolvingDetail, setIsResolvingDetail] = useState(false);
+
   // ================= AUTH =================
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
@@ -217,7 +210,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // ✅ Load products cho App (để F5 vào detail có thể tìm product)
+  // ✅ Load products cho App
   useEffect(() => {
     let alive = true;
 
@@ -226,15 +219,12 @@ const App: React.FC = () => {
         const bundle = await fetchProductsBundle();
         if (!alive) return;
 
-        // ưu tiên cache mapped (nhanh + đủ field)
-        // ưu tiên cache mapped (nhanh + đủ field) - theo chuẩn cache mới
         const c = safeReadProductsCacheAllMerged();
         if (c?.items?.length) {
           setAppProducts(c.items as Product[]);
           return;
         }
 
-        // ✅ fallback: map gần giống ProductList để resolve detail khi F5/link trực tiếp
         const rawItems = (bundle as any)?.items ?? [];
         const imgVersion = String((bundle as any)?.imgVersion || "");
 
@@ -307,14 +297,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Tránh vòng lặp khi ta tự set hash → hashchange → setState lại
   const syncingRef = useRef(false);
-
-  /**
-   * ✅ Điều hướng chuẩn cho toàn app (giữ API cũ: setCurrentPage(page))
-   * - đổi tab (page)
-   * - tự cuộn về đầu trang (khi user bấm menu)
-   */
 
   const handleLogin = (user: AuthUser) => {
     const normalizedUser = {
@@ -371,13 +354,8 @@ const App: React.FC = () => {
     };
   }, []);
 
-  /**
-   * 1) Khi user bấm Back/Forward (hoặc swipe back) → hash đổi
-   * => đọc hash và setState tương ứng
-   */
   useEffect(() => {
     const applyFromHash = (fromHashChange: boolean) => {
-      // nếu hashchange do mình tự sync thì bỏ qua vòng này (tránh giật)
       if (syncingRef.current) {
         syncingRef.current = false;
         return;
@@ -409,13 +387,11 @@ const App: React.FC = () => {
         setIsResolvingDetail(false);
       }
 
-      // ✅ Chỉ scroll khi user Back/Forward (hashchange thật)
       if (fromHashChange) {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       }
     };
 
-    // chạy lần đầu để sync trạng thái theo URL khi load trang (KHÔNG scroll)
     applyFromHash(false);
 
     const onHashChange = () => applyFromHash(true);
@@ -424,15 +400,10 @@ const App: React.FC = () => {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  // ✅ Khi products đã có (cache update), tự resolve lại product-detail theo URL
-  // ✅ Khi products đã có (cache update), tự resolve lại product-detail theo URL
   useEffect(() => {
     const { page, productId } = hashToState(window.location.hash);
     if (page !== "product-detail" || !productId) return;
 
-    // ✅ QUAN TRỌNG:
-    // Nếu user vừa click chọn cây (selectedProduct đã có),
-    // TUYỆT ĐỐI không được resolve lại theo hash (vì hash có thể còn là cây cũ trước khi effect sync kịp chạy)
     if (selectedProduct) return;
 
     const pid = normPid(productId);
@@ -444,7 +415,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // ✅ nếu đang chờ mà vẫn chưa ra -> thoát sau 6s (tránh kẹt vô hạn)
     if (isResolvingDetail) {
       const t = window.setTimeout(() => {
         const st = hashToState(window.location.hash);
@@ -458,11 +428,7 @@ const App: React.FC = () => {
     }
   }, [appProducts, selectedProduct, isResolvingDetail, navigate]);
 
-  /**
-   * 2) Khi state đổi do điều hướng trong app → update hash để tạo history entry
-   */
   useEffect(() => {
-    // ✅ đang resolve detail thì giữ nguyên hash hiện tại, đừng tự rewrite
     if (currentPage === "product-detail" && !selectedProduct) return;
 
     const desired = pageToHash(
@@ -497,7 +463,7 @@ const App: React.FC = () => {
           return (
             <ProductDetail
               product={selectedProduct}
-              products={appProducts} // ✅ QUAN TRỌNG
+              products={appProducts}
               setCurrentPage={navigate}
               setSelectedProduct={setSelectedProduct}
             />
@@ -568,7 +534,6 @@ const App: React.FC = () => {
         <LoginModal onClose={() => setShowLogin(false)} onLogin={handleLogin} />
       )}
 
-      {/* Overlay đóng menu khi click ra ngoài */}
       {chatOpen && (
         <div
           className="fixed inset-0 z-40 md:hidden"
@@ -576,7 +541,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Floating actions (mobile) */}
       <div
         className={`fixed bottom-6 right-6 z-50 md:hidden transition-all duration-300 ${
           isScrolling
@@ -585,7 +549,6 @@ const App: React.FC = () => {
         }`}
       >
         <div className="relative flex flex-col items-end gap-3">
-          {/* Popover menu: Messenger / Zalo */}
           {chatOpen && (
             <div className="mb-2 flex flex-col gap-2 rounded-2xl bg-white/95 backdrop-blur px-3 py-3 shadow-2xl border border-slate-200">
               <a
@@ -610,7 +573,6 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {/* Chat button */}
           <button
             type="button"
             onClick={() => setChatOpen((v) => !v)}
@@ -620,7 +582,6 @@ const App: React.FC = () => {
             💬
           </button>
 
-          {/* Call button */}
           <a
             href="tel:0922727277"
             aria-label="Gọi điện 0922727277"

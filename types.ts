@@ -71,3 +71,11 @@ export interface RegisterFormData {
   password: string;
   confirmPassword: string;
 }
+
+// ================= GOOGLE AUTH =================
+
+export interface GoogleUser {
+  email: string;
+  name: string;
+  picture: string;
+}

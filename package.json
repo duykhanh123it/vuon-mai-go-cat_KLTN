@@ -7,10 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-
     "sort:products": "node scripts/sort-products-by-image.mjs"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "yet-another-react-lightbox": "^3.28.0"

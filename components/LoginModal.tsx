@@ -57,17 +57,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     return () => window.clearTimeout(timer);
   }, [otpSent, otpCountdown]);
 
-  // ✅ Function decode JWT
-  function parseJwt(token: string) {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(""),
-    );
-    return JSON.parse(jsonPayload);
+  // ✅ Function lấy thông tin user từ Google qua access token
+  async function fetchGoogleUserInfo(accessToken: string) {
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!res.ok) {
+      throw new Error("Không lấy được thông tin người dùng từ Google");
+    }
+    return await res.json();
   }
 
   const handleSubmit = async () => {
@@ -99,13 +99,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
 
+        const params = new URLSearchParams();
+        params.append("api", "login");
+        params.append("email", email);
+        params.append("password", password);
+
         const res = await fetch(API_URL, {
           method: "POST",
-          body: JSON.stringify({
-            api: "login",
-            email,
-            password,
-          }),
+          body: params,
           signal: controller.signal,
         });
 
@@ -124,19 +125,24 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           return;
         }
 
-        onLogin(data.user);
+        if (typeof onLogin === "function") {
+          onLogin(data.user);
+        } else {
+          console.error("onLogin bị undefined:", onLogin);
+        }
         setLoading(false);
         return;
       }
 
       // register - bước 1: gửi OTP
       if (!otpSent) {
+        const params = new URLSearchParams();
+        params.append("api", "sendOtp");
+        params.append("email", email);
+
         const res = await fetch(API_URL, {
           method: "POST",
-          body: JSON.stringify({
-            api: "sendOtp",
-            email,
-          }),
+          body: params,
         });
 
         let data;
@@ -166,15 +172,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       }
 
       // ✅ CALL 1 API DUY NHẤT
+      const params = new URLSearchParams();
+      params.append("api", "registerWithOtp");
+      params.append("email", email);
+      params.append("password", password);
+      params.append("name", name);
+      params.append("otp", otp);
+
       const res = await fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({
-          api: "registerWithOtp",
-          email,
-          password,
-          name,
-          otp,
-        }),
+        body: params,
       });
 
       let data;
@@ -195,10 +202,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       setLoading(false);
     } catch (err: any) {
       console.error("ERROR:", err);
-      if (err.name === "AbortError") {
+      if (err?.name === "AbortError") {
         setError("Server phản hồi quá lâu, vui lòng thử lại");
       } else {
-        setError("Không thể kết nối server hoặc bị chặn CORS");
+        setError(err?.message || "Có lỗi xảy ra khi đăng nhập");
       }
       setLoading(false);
     }
@@ -313,12 +320,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                       setLoading(true);
 
                       try {
+                        const params = new URLSearchParams();
+                        params.append("api", "sendOtp");
+                        params.append("email", email);
+
                         const res = await fetch(API_URL, {
                           method: "POST",
-                          body: JSON.stringify({
-                            api: "sendOtp",
-                            email,
-                          }),
+                          body: params,
                         });
 
                         let data;
@@ -369,68 +377,53 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
           <button
             onClick={() => {
-              const client = (window as any).google?.accounts?.oauth2;
-
-              if (!client) {
-                alert("Google SDK chưa load");
+              setError("");
+              const oauth2 = (window as any).google?.accounts?.oauth2;
+              if (!oauth2) {
+                setError("Google SDK chưa load");
                 return;
               }
-
-              const tokenClient = client.initTokenClient({
+              const tokenClient = oauth2.initTokenClient({
                 client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                scope: "profile email",
+                scope: "openid email profile",
                 callback: async (response: any) => {
                   try {
-                    if (!response.credential) {
-                      throw new Error("No credential");
+                    if (!response?.access_token) {
+                      throw new Error("Không nhận được access token từ Google");
                     }
-
-                    // ✅ decode token
-                    const user = parseJwt(response.credential);
-
-                    console.log("Google user:", user);
+                    const googleUser = await fetchGoogleUserInfo(
+                      response.access_token,
+                    );
+                    const params = new URLSearchParams();
+                    params.append("api", "googleLogin");
+                    params.append("email", googleUser.email);
+                    params.append("name", googleUser.name);
+                    params.append("avatarUrl", googleUser.picture);
 
                     const apiRes = await fetch(API_URL, {
                       method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        api: "googleLogin",
-                        email: user.email,
-                        name: user.name,
-                        avatarUrl: user.picture,
-                      }),
+                      body: params,
                     });
-
                     const text = await apiRes.text();
-                    console.log("RAW RESPONSE:", text);
 
                     let data;
                     try {
                       data = JSON.parse(text);
                     } catch (e) {
-                      console.error("JSON parse error:", e);
+                      console.error("RAW RESPONSE:", text);
                       throw new Error("API trả về không phải JSON");
                     }
-
-                    console.log("PARSED DATA:", data);
-
                     if (!data.ok) {
-                      throw new Error(data.error);
+                      throw new Error(data.error || "Google login thất bại");
                     }
-
-                    localStorage.setItem("user", JSON.stringify(data.user));
-
                     onLogin(data.user);
                     onClose();
-                  } catch (err) {
-                    console.error(err);
-                    alert("Google login lỗi");
+                  } catch (err: any) {
+                    console.error("Google login error:", err);
+                    setError(err?.message || "Google login lỗi");
                   }
                 },
               });
-
               tokenClient.requestAccessToken();
             }}
             className="w-full border rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-gray-50"

@@ -36,19 +36,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // === THÊM THEO YÊU CẦU ===
-  const [user, setUser] = useState<any>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-  // ========================
-
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
     { id: "products", label: "Sản Phẩm", icon: "🌼" },
@@ -172,17 +159,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {/* Mobile User Button - Avatar */}
-              {user ? (
+              {authUser ? (
                 <img
-                  src={user.avatar}
+                  src={authUser.avatarUrl || "/default-avatar.png"}
                   alt="avatar"
                   className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                  onClick={() => setShowProfile(true)}
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
                 />
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShowLogin(true)}
+                  onClick={onOpenLogin}
                   aria-label="Tài khoản người dùng"
                   className="
                     w-9 h-9 rounded-full
@@ -196,6 +183,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Mobile User Dropdown */}
+            {authUser && userMenuOpen && (
+              <div className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    setShowProfileModal(true);
+                  }}
+                >
+                  Thông tin tài khoản
+                </button>
+
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    onLogout();
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -263,17 +277,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Desktop User Button - Avatar + Name */}
-            {user ? (
+            {authUser ? (
               <img
-                src={user.avatar}
+                src={authUser.avatarUrl || "/default-avatar.png"}
                 alt="avatar"
                 className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
-                onClick={() => setShowProfile(true)}
+                onClick={() => setUserMenuOpen((prev) => !prev)}
               />
             ) : (
               <button
                 type="button"
-                onClick={() => setShowLogin(true)}
+                onClick={onOpenLogin}
                 className={`
                   flex items-center gap-2
                   px-2 py-1
@@ -287,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Desktop User Dropdown (giữ nguyên logic cũ khi có authUser) */}
+            {/* Desktop User Dropdown */}
             {authUser && userMenuOpen && (
               <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
                 <button
@@ -398,18 +412,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             );
           })}
 
-          <div className="mt-4 pt-4 border-t">
-            {/* 🚪 Đăng xuất */}
-            <button
-              onClick={() => {
-                setDrawerOpen(false);
-                onLogout();
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 w-full text-left"
-            >
-              🚪 Đăng xuất
-            </button>
-          </div>
+          {/* Đã chuyển đăng xuất sang avatar */}
         </div>
       </aside>
 
@@ -419,7 +422,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           user={authUser}
           onClose={() => setShowProfileModal(false)}
           onUpdateUser={onUpdateUser}
-          showPasswordSection={window.innerWidth >= 768 ? false : true}
+          showPasswordSection={window.innerWidth < 768}
         />
       )}
 
@@ -428,29 +431,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         <ChangePasswordModal
           user={authUser}
           onClose={() => setShowChangePasswordModal(false)}
-        />
-      )}
-
-      {/* === MODAL MỚI THEO YÊU CẦU === */}
-      {showLogin && (
-        <LoginModal
-          onClose={() => setShowLogin(false)}
-          onLogin={(user) => {
-            console.log("LOGIN SUCCESS:", user);
-
-            localStorage.setItem("user", JSON.stringify(user)); // ✅ thêm dòng này
-
-            setUser(user);
-            setShowLogin(false);
-          }}
-        />
-      )}
-      {showProfile && user && (
-        <ProfileModal
-          user={user}
-          onClose={() => setShowProfile(false)}
-          onUpdateUser={onUpdateUser}
-          showPasswordSection={window.innerWidth >= 768 ? false : true}
         />
       )}
     </nav>

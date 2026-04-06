@@ -1,53 +1,43 @@
 import React, { useState } from "react";
 import { AuthUser } from "../types";
 import { useToast } from "./Toast";
-
 const API_URL =
   "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec";
-
 interface Props {
   user: AuthUser;
   onClose: () => void;
 }
-
 const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
   const { showToast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       showToast("Vui lòng nhập đầy đủ thông tin", "error");
       return;
     }
-
     // ✅ validate password mạnh hơn
     if (newPassword.length < 6) {
       showToast("Mật khẩu mới phải ít nhất 6 ký tự", "error");
       return;
     }
-
     if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
       showToast("Mật khẩu phải có ít nhất 1 chữ hoa và 1 số", "error");
       return;
     }
-
     if (newPassword !== confirmNewPassword) {
       showToast("Xác nhận mật khẩu không khớp", "error");
       return;
     }
-
     // ✅ chặn trùng mật khẩu cũ
     if (newPassword === currentPassword) {
       showToast("Mật khẩu mới không được trùng mật khẩu cũ", "error");
       return;
     }
-
     try {
       setLoading(true);
-
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -60,42 +50,33 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
           newPassword,
         }),
       });
-
       const data = await res.json();
-
       if (!data.ok) {
         showToast(data.error || "Đổi mật khẩu thất bại", "error");
         setLoading(false);
         return;
       }
 
-      // 🔥 show toast trước
       setLoading(false);
       showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
 
-      // logout đúng key đang dùng trong App.tsx
+      // logout đúng key (QUAN TRỌNG: dùng 1 key duy nhất)
       localStorage.removeItem("vmgc_user");
 
-      // đóng modal
-      onClose();
-
-      // ⏳ delay để toast chạy đủ rồi về trang chính
+      // reload sau khi user thấy toast
       setTimeout(() => {
-        window.location.href = "/";
-      }, 3500);
+        window.location.reload();
+      }, 1200);
     } catch {
       showToast("Không thể kết nối server", "error");
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
       <div className="relative z-10 w-full max-w-md max-h-[90vh] rounded-3xl bg-white px-5 py-4 shadow-2xl flex flex-col">
         <h2 className="text-xl font-bold mb-4 text-amber-900">Đổi mật khẩu</h2>
-
         <div className="space-y-4 overflow-y-auto pr-1 flex-1">
           <input
             type="password"
@@ -104,7 +85,6 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
             onChange={(e) => setCurrentPassword(e.target.value)}
             className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
-
           <input
             type="password"
             placeholder="Mật khẩu mới"
@@ -112,7 +92,6 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
-
           <input
             type="password"
             placeholder="Xác nhận mật khẩu mới"
@@ -121,7 +100,6 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
             className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base"
           />
         </div>
-
         <div className="mt-6 shrink-0">
           <button
             onClick={handleChangePassword}
@@ -135,5 +113,4 @@ const ChangePasswordModal: React.FC<Props> = ({ user, onClose }) => {
     </div>
   );
 };
-
 export default ChangePasswordModal;

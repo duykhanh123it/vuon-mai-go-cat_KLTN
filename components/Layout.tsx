@@ -432,7 +432,19 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
 
       {/* === MODAL MỚI THEO YÊU CẦU === */}
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onLogin={(user) => {
+            console.log("LOGIN SUCCESS:", user);
+
+            localStorage.setItem("user", JSON.stringify(user)); // ✅ thêm dòng này
+
+            setUser(user);
+            setShowLogin(false);
+          }}
+        />
+      )}
       {showProfile && user && (
         <ProfileModal
           user={user}

@@ -218,6 +218,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
       {/* Modal */}
       <div className="relative bg-white rounded-3xl px-5 py-4 w-full max-w-md max-h-[90vh] flex flex-col">
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-3xl">
+            <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-sm font-medium text-amber-900">
+              Đang đăng nhập với Google...
+            </p>
+          </div>
+        )}
+
         {/* Title */}
         <div className="shrink-0 pb-3 mb-2 text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-amber-900">
@@ -376,11 +385,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </div>
 
           <button
+            disabled={loading}
             onClick={() => {
               setError("");
+              setLoading(true);
+
               const oauth2 = (window as any).google?.accounts?.oauth2;
               if (!oauth2) {
                 setError("Google SDK chưa load");
+                setLoading(false);
                 return;
               }
               const tokenClient = oauth2.initTokenClient({
@@ -417,10 +430,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                       throw new Error(data.error || "Google login thất bại");
                     }
                     onLogin(data.user);
-                    onClose();
+                    setLoading(false);
+                    onClose(); // ✅ đóng ở đây mới đúng timing
                   } catch (err: any) {
                     console.error("Google login error:", err);
                     setError(err?.message || "Google login lỗi");
+                    setLoading(false);
                   }
                 },
               });

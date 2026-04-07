@@ -193,6 +193,7 @@ const App: React.FC = () => {
   // ================= AUTH =================
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   // Load user từ localStorage khi app khởi động
   useEffect(() => {
@@ -311,8 +312,13 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    setAuthUser(null);
-    localStorage.removeItem("vmgc_user");
+    setLogoutLoading(true);
+
+    setTimeout(() => {
+      setAuthUser(null);
+      localStorage.removeItem("vmgc_user");
+      setLogoutLoading(false);
+    }, 600);
   };
 
   const handleUpdateUser = (user: AuthUser) => {
@@ -516,6 +522,15 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {logoutLoading && (
+        <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="text-sm font-medium text-amber-900">
+            Đang đăng xuất...
+          </p>
+        </div>
+      )}
+
       <FloatingCTAStyle />
       <Navbar
         currentPage={currentPage}

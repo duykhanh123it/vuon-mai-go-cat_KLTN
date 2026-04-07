@@ -274,7 +274,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               {images.map((img, i) => (
                 <div
                   key={`g1-${i}`}
-                  className="group w-64 h-[220px] sm:h-[300px] lg:h-[500px] flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
+                  className="group w-64 h-40 flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
                 >
                   <img
                     src={img}
@@ -290,7 +290,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
               {images.map((img, i) => (
                 <div
                   key={`g2-${i}`}
-                  className="group w-64 h-[220px] sm:h-[300px] lg:h-[500px] flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
+                  className="group w-64 h-40 flex-shrink-0 rounded-2xl overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-xl"
                 >
                   <img
                     src={img}

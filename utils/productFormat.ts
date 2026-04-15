@@ -14,7 +14,6 @@ export function formatMillionsToVND(millions: number | null | undefined): string
   return vnd.toLocaleString("vi-VN") + "đ";
 }
 
-
 export function formatSpecs(p: {
   Cao_m?: number | null;
   Ngang_m?: number | null;
@@ -33,5 +32,3 @@ function trim(n: number): string {
   // Giữ tối đa 2 chữ số thập phân, không bị tách dòng
   return Number.isInteger(n) ? n.toString() : n.toFixed(2).replace(/\.?0+$/, "");
 }
-
-

@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-
 /**
  * Booking.tsx (Option B: Google Sheet via Apps Script Web App)
  *
@@ -12,10 +11,8 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
  * - Vì vậy mình dùng fetch({ mode: "no-cors" }) để gửi dữ liệu "fire-and-forget".
  * - Nếu bạn muốn nhận lại "mã đặt lịch" từ server, mình sẽ đưa phương án iframe+postMessage.
  */
-
 const APPS_SCRIPT_WEBAPP_URL =
   "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
-
 type BookingForm = {
   name: string;
   phone: string;
@@ -26,7 +23,6 @@ type BookingForm = {
   // honeypot chống bot
   website: string;
 };
-
 type BookingHistoryItem = {
   name: string;
   phone: string;
@@ -34,10 +30,8 @@ type BookingHistoryItem = {
   note: string;
   submittedAt: string; // ISO
 };
-
 const BOOKING_HISTORY_KEY = "vmgc_booking_history_v1";
 const BOOKING_HISTORY_MAX = 20;
-
 function loadBookingHistory(): BookingHistoryItem[] {
   try {
     const raw = localStorage.getItem(BOOKING_HISTORY_KEY);
@@ -58,30 +52,24 @@ function loadBookingHistory(): BookingHistoryItem[] {
     return [];
   }
 }
-
 function saveBookingHistory(item: BookingHistoryItem) {
   try {
     const prev = loadBookingHistory();
-
     const keyOf = (x: BookingHistoryItem) =>
       `${x.phone.trim()}|${x.email.trim().toLowerCase()}|${x.name.trim().toLowerCase()}`;
-
     const next = [item, ...prev.filter((x) => keyOf(x) !== keyOf(item))].slice(
       0,
       BOOKING_HISTORY_MAX,
     );
-
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(next));
   } catch {
     // ignore
   }
 }
-
 const phoneVN = (s: string) => {
   const p = s.replace(/\s/g, "");
   return /^(0|\+84)\d{9}$/.test(p);
 };
-
 const isFutureOrToday = (dateISO: string) => {
   if (!dateISO) return false;
   const today = new Date();
@@ -89,24 +77,17 @@ const isFutureOrToday = (dateISO: string) => {
   const d = new Date(dateISO + "T00:00:00");
   return d.getTime() >= today.getTime();
 };
-
 const isFutureOrNowDateTime = (dateISO: string, timeHHmm: string) => {
   if (!dateISO || !timeHHmm) return false;
-
   const [hhStr = "00", mmStr = "00"] = timeHHmm.split(":");
   const hh = Number(hhStr);
   const mm = Number(mmStr);
-
   const selected = new Date(dateISO + "T00:00:00");
   selected.setHours(hh, mm, 0, 0);
-
   return selected.getTime() >= Date.now();
 };
-
 const toVNPhone = (s: string) => s.replace(/\s/g, "");
-
 import { AuthUser } from "../types";
-
 const Booking: React.FC<{
   authUser: AuthUser | null;
   setCurrentPage: any;
@@ -114,40 +95,30 @@ const Booking: React.FC<{
   const [timeOpen, setTimeOpen] = useState(false);
   const [timeDraft, setTimeDraft] = useState("07:00");
   const formRef = useRef<HTMLFormElement | null>(null);
-
   const [isSubmitted, setIsSubmitted] = useState(false);
-
   const successRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (!isSubmitted) return;
-
     requestAnimationFrame(() => {
       const el = successRef.current;
       if (!el) return;
-
       const headerOffset = 96;
       const rect = el.getBoundingClientRect();
-
       const elementTop = rect.top + window.scrollY;
       const elementHeight = rect.height;
       const viewportHeight = window.innerHeight;
-
       const targetY =
         elementTop - headerOffset - (viewportHeight / 2 - elementHeight / 2);
-
       window.scrollTo({
         top: Math.max(0, targetY),
         behavior: "smooth",
       });
     });
   }, [isSubmitted]);
-
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [timeError, setTimeError] = useState<string>("");
-
   const [formData, setFormData] = useState<BookingForm>({
     name: "",
     phone: "",
@@ -157,25 +128,20 @@ const Booking: React.FC<{
     note: "",
     website: "",
   });
-
   const [history, setHistory] = useState<BookingHistoryItem[]>([]);
   useEffect(() => {
     setHistory(loadBookingHistory());
   }, []);
-
   useEffect(() => {
     if (!authUser) return;
-
     setFormData((prev) => ({
       ...prev,
       name: prev.name || authUser.name || "",
       email: prev.email || authUser.email || "",
     }));
   }, [authUser]);
-
   const unique = (arr: string[]) =>
     Array.from(new Set(arr.map((s) => s.trim()).filter(Boolean)));
-
   const nameSuggestions = useMemo(
     () => unique(history.map((h) => h.name)),
     [history],
@@ -188,7 +154,6 @@ const Booking: React.FC<{
     () => unique(history.map((h) => h.email)),
     [history],
   );
-
   const canSubmit = useMemo(() => {
     return (
       formData.name.trim() &&
@@ -198,13 +163,11 @@ const Booking: React.FC<{
       isFutureOrNowDateTime(formData.date, formData.time)
     );
   }, [formData]);
-
   const setField =
     <K extends keyof BookingForm>(key: K) =>
     (value: BookingForm[K]) => {
       setFormData((prev) => ({ ...prev, [key]: value }));
     };
-
   const resetForm = () => {
     setFormData({
       name: "",
@@ -216,15 +179,12 @@ const Booking: React.FC<{
       website: "",
     });
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccessCode("");
     setTimeError("");
-
     if (formData.website.trim()) return;
-
     if (!formData.name.trim()) return setError("Vui lòng nhập họ và tên.");
     if (!phoneVN(formData.phone))
       return setError(
@@ -234,46 +194,55 @@ const Booking: React.FC<{
     if (!isFutureOrToday(formData.date))
       return setError("Ngày tham quan phải từ hôm nay trở đi.");
     if (!formData.time) return setError("Vui lòng chọn giờ hẹn.");
-
     if (!isFutureOrNowDateTime(formData.date, formData.time)) {
       setTimeError("Giờ hẹn phải từ thời điểm hiện tại trở đi.");
       return;
     }
-
     if (!APPS_SCRIPT_WEBAPP_URL) {
       return setError(
         "Chưa cấu hình APPS_SCRIPT_WEBAPP_URL. Bạn hãy dán URL Web App (Apps Script) vào Booking.tsx.",
       );
     }
-
     const payload = {
-      ...formData,
+      api: "booking", // 🔥 bắt buộc
+      name: formData.name,
       phone: toVNPhone(formData.phone),
-      createdAt: new Date().toISOString(),
+      email: formData.email,
+      date: formData.date,
+      time: formData.time,
+      note: formData.note,
+      website: "",
       source: "vuonmaigocat_web",
     };
 
-    const localCode = ("DL" + Date.now().toString().slice(-8)).toUpperCase();
-
     setLoading(true);
-    setSuccessCode(localCode);
 
-    const MIN_SUCCESS_DELAY_MS = 900;
+    try {
+      const res = await fetch(APPS_SCRIPT_WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setTimeout(() => {
       setIsSubmitted(true);
       resetForm();
       setLoading(false);
-    }, MIN_SUCCESS_DELAY_MS);
 
-    void fetch(APPS_SCRIPT_WEBAPP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
+      if (!data.ok) {
+        throw new Error(data.error || "Đặt lịch thất bại");
+      }
+
+      setSuccessCode(data.bookingCode || "");
+      setIsSubmitted(true);
+      resetForm();
+    } catch (err: any) {
+      setError(err.message || "Có lỗi xảy ra");
+    } finally {
+      setLoading(false);
+    }
 
     const saved: BookingHistoryItem = {
       name: payload.name,
@@ -285,7 +254,6 @@ const Booking: React.FC<{
     saveBookingHistory(saved);
     setHistory(loadBookingHistory());
   };
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero */}
@@ -299,7 +267,6 @@ const Booking: React.FC<{
           </p>
         </div>
       </section>
-
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* Left column */}
@@ -312,13 +279,11 @@ const Booking: React.FC<{
                 loading="lazy"
               />
             </div>
-
             <div className="bg-white p-8 rounded-3xl shadow-md">
               <h3 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <span className="w-1.5 h-7 bg-amber-500 rounded-full" />
                 Thông Tin Vườn
               </h3>
-
               <div className="space-y-6 text-slate-700">
                 <div className="flex gap-4">
                   <div className="text-amber-500 font-bold">📍</div>
@@ -329,7 +294,6 @@ const Booking: React.FC<{
                     </p>
                   </div>
                 </div>
-
                 <div className="flex gap-4">
                   <div className="text-amber-500 font-bold">⏰</div>
                   <div>
@@ -341,7 +305,6 @@ const Booking: React.FC<{
                 </div>
               </div>
             </div>
-
             <div className="bg-amber-50 border border-amber-100 p-8 rounded-3xl">
               <p className="font-bold text-amber-800 flex items-center gap-2 mb-4">
                 💡 Gợi Ý Cho Bạn
@@ -359,7 +322,6 @@ const Booking: React.FC<{
               </ul>
             </div>
           </div>
-
           {/* Right column - Form */}
           <div
             ref={successRef}
@@ -370,27 +332,21 @@ const Booking: React.FC<{
                 <h3 className="text-2xl font-bold text-slate-900 mb-8">
                   Thông Tin Đặt Lịch
                 </h3>
-
                 <form
                   ref={formRef}
                   onSubmit={handleSubmit}
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
-
                     const target = e.target as HTMLElement;
                     if (target.tagName === "TEXTAREA") return;
-
                     e.preventDefault();
-
                     const form = formRef.current;
                     if (!form) return;
-
                     const focusables = Array.from(
                       form.querySelectorAll<HTMLElement>(
                         'input:not([type="hidden"]), textarea, button, select',
                       ),
                     ).filter((el) => el.offsetParent !== null);
-
                     const index = focusables.indexOf(target);
                     focusables[index + 1]?.focus();
                   }}
@@ -406,7 +362,6 @@ const Booking: React.FC<{
                     className="hidden"
                     aria-hidden="true"
                   />
-
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Họ và Tên <span className="text-red-500">*</span>
@@ -426,7 +381,6 @@ const Booking: React.FC<{
                       ))}
                     </datalist>
                   </div>
-
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Số Điện Thoại <span className="text-red-500">*</span>
@@ -451,7 +405,6 @@ const Booking: React.FC<{
                       </p>
                     )}
                   </div>
-
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Email
@@ -470,7 +423,6 @@ const Booking: React.FC<{
                       ))}
                     </datalist>
                   </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-1.5 sm:space-y-2">
                       <label className="text-sm font-bold text-slate-700">
@@ -492,7 +444,6 @@ const Booking: React.FC<{
                         </p>
                       )}
                     </div>
-
                     <div className="space-y-1.5 sm:space-y-2">
                       <label className="text-sm font-bold text-slate-700">
                         Giờ Hẹn <span className="text-red-500">*</span>
@@ -505,7 +456,6 @@ const Booking: React.FC<{
                         >
                           {formData.time ? formData.time : "Chọn giờ (HH:mm)"}
                         </button>
-
                         {timeOpen && (
                           <div className="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-xl p-4">
                             <div className="flex gap-3">
@@ -526,7 +476,6 @@ const Booking: React.FC<{
                                   </option>
                                 ))}
                               </select>
-
                               <select
                                 className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
                                 value={timeDraft.split(":")[1]}
@@ -545,7 +494,6 @@ const Booking: React.FC<{
                                 ))}
                               </select>
                             </div>
-
                             <div className="mt-4 flex justify-end gap-2">
                               <button
                                 type="button"
@@ -554,13 +502,11 @@ const Booking: React.FC<{
                               >
                                 Hủy
                               </button>
-
                               <button
                                 type="button"
                                 onClick={() => {
                                   setField("time")(timeDraft);
                                   setTimeOpen(false);
-
                                   if (
                                     formData.date &&
                                     !isFutureOrNowDateTime(
@@ -582,7 +528,6 @@ const Booking: React.FC<{
                             </div>
                           </div>
                         )}
-
                         <input type="hidden" value={formData.time} required />
                         {formData.time && timeError && (
                           <p className="text-xs text-red-600 mt-2">
@@ -592,7 +537,6 @@ const Booking: React.FC<{
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-sm font-bold text-slate-700">
                       Ghi Chú
@@ -604,9 +548,7 @@ const Booking: React.FC<{
                       onChange={(e) => setField("note")(e.target.value)}
                     />
                   </div>
-
                   {error && <p className="text-sm text-red-600">{error}</p>}
-
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
                     <button
                       type="submit"
@@ -621,7 +563,6 @@ const Booking: React.FC<{
                       {loading ? "Đang gửi..." : "Xác Nhận Đặt Lịch Hẹn"}
                     </button>
                   </div>
-
                   <p className="text-xs text-slate-400 text-center mt-4">
                     Bằng việc đặt lịch, bạn đồng ý với các điều khoản dịch vụ
                     của chúng tôi.
@@ -633,16 +574,19 @@ const Booking: React.FC<{
                 <div className="w-24 h-24 rounded-full flex items-center justify-center text-green-600 text-5xl mx-auto mb-8 border-4 border-green-200 bg-green-100">
                   ✓
                 </div>
-
                 <h4 className="text-2xl font-bold text-slate-900">
                   Đặt Lịch Thành Công!
                 </h4>
-
                 <p className="text-slate-500 leading-relaxed max-w-sm mx-auto">
                   Chúng tôi đã nhận được yêu cầu của bạn. Đội ngũ sẽ liên hệ xác
                   nhận trong thời gian sớm nhất.
                 </p>
-
+                {successCode && (
+                  <p className="text-lg font-semibold text-amber-600">
+                    Mã đặt lịch:{" "}
+                    <span className="font-mono">{successCode}</span>
+                  </p>
+                )}
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
                   <a
                     href="#/san-pham"
@@ -658,7 +602,6 @@ const Booking: React.FC<{
                   >
                     👉 Tiếp Tục Xem Mai Tết
                   </a>
-
                   <button
                     type="button"
                     onClick={() => {
@@ -685,5 +628,4 @@ const Booking: React.FC<{
     </div>
   );
 };
-
 export default Booking;

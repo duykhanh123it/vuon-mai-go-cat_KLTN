@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 
-import { AuthUser } from "../types";
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec";
+import { AuthUser, normalizeAuthUser } from "../types";
+const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 
 interface LoginModalProps {
   onClose: () => void;
@@ -99,14 +98,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
 
-        const params = new URLSearchParams();
-        params.append("api", "login");
-        params.append("email", email);
-        params.append("password", password);
-
         const res = await fetch(API_URL, {
           method: "POST",
-          body: params,
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            api: "login",
+            email,
+            password,
+          }),
           signal: controller.signal,
         });
 
@@ -126,7 +127,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         }
 
         if (typeof onLogin === "function") {
-          onLogin(data.user);
+          onLogin(normalizeAuthUser(data.user));
         } else {
           console.error("onLogin bị undefined:", onLogin);
         }
@@ -136,13 +137,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
 
       // register - bước 1: gửi OTP
       if (!otpSent) {
-        const params = new URLSearchParams();
-        params.append("api", "sendOtp");
-        params.append("email", email);
-
         const res = await fetch(API_URL, {
           method: "POST",
-          body: params,
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            api: "sendOtp",
+            email,
+          }),
         });
 
         let data;
@@ -172,16 +175,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
       }
 
       // ✅ CALL 1 API DUY NHẤT
-      const params = new URLSearchParams();
-      params.append("api", "registerWithOtp");
-      params.append("email", email);
-      params.append("password", password);
-      params.append("name", name);
-      params.append("otp", otp);
-
       const res = await fetch(API_URL, {
         method: "POST",
-        body: params,
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          api: "registerWithOtp",
+          email,
+          password,
+          name,
+          otp,
+        }),
       });
 
       let data;
@@ -197,7 +202,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         return;
       }
 
-      onLogin(data.user);
+      onLogin(normalizeAuthUser(data.user));
 
       setLoading(false);
     } catch (err: any) {
@@ -329,13 +334,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                       setLoading(true);
 
                       try {
-                        const params = new URLSearchParams();
-                        params.append("api", "sendOtp");
-                        params.append("email", email);
-
                         const res = await fetch(API_URL, {
                           method: "POST",
-                          body: params,
+                          headers: {
+                            "Content-Type": "text/plain;charset=utf-8",
+                          },
+                          body: JSON.stringify({
+                            api: "sendOtp",
+                            email,
+                          }),
                         });
 
                         let data;
@@ -407,15 +414,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                     const googleUser = await fetchGoogleUserInfo(
                       response.access_token,
                     );
-                    const params = new URLSearchParams();
-                    params.append("api", "googleLogin");
-                    params.append("email", googleUser.email);
-                    params.append("name", googleUser.name);
-                    params.append("avatarUrl", googleUser.picture);
-
                     const apiRes = await fetch(API_URL, {
                       method: "POST",
-                      body: params,
+                      headers: {
+                        "Content-Type": "text/plain;charset=utf-8",
+                      },
+                      body: JSON.stringify({
+                        api: "googleLogin",
+                        email: googleUser.email,
+                        name: googleUser.name,
+                        avatarUrl: googleUser.picture,
+                      }),
                     });
                     const text = await apiRes.text();
 
@@ -429,7 +438,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
                     if (!data.ok) {
                       throw new Error(data.error || "Google login thất bại");
                     }
-                    onLogin(data.user);
+                    onLogin(
+                      normalizeAuthUser({
+                        ...data.user,
+                        avatarUrl:
+                          data.user?.avatarUrl || googleUser.picture || "",
+                      }),
+                    );
                     setLoading(false);
                     onClose(); // ✅ đóng ở đây mới đúng timing
                   } catch (err: any) {

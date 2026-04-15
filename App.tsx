@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Page, Product, AuthUser } from "./types";
+import { Page, Product, AuthUser, normalizeAuthUser } from "./types";
 import { fetchProductsBundle } from "./utils/productsApi";
 import { Navbar, Footer } from "./components/Layout";
 
@@ -8,6 +8,7 @@ import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import Booking from "./pages/Booking";
 import Contact from "./pages/Contact";
+import Admin from "./pages/Admin";
 import LoginModal from "./components/LoginModal";
 
 const FloatingCTAStyle = () => (
@@ -96,6 +97,10 @@ const hashToState = (
 
   if (parts.length === 0) return { page: "home", productsPage: p };
 
+  if (parts[0] === "admin") {
+    return { page: "admin", productsPage: 1 };
+  }
+
   if (parts[0] === "san-pham") {
     if (parts[1])
       return {
@@ -110,6 +115,18 @@ const hashToState = (
   if (parts[0] === "lien-he") return { page: "contact", productsPage: p };
 
   return { page: "home", productsPage: p };
+};
+
+const getRouteState = (): {
+  page: Page;
+  productId?: string;
+  productsPage: number;
+} => {
+  if (window.location.pathname === "/admin") {
+    return { page: "admin", productsPage: 1 };
+  }
+
+  return hashToState(window.location.hash);
 };
 
 // ===== Products cache reader (để App restore detail khi F5) =====
@@ -201,10 +218,7 @@ const App: React.FC = () => {
       const raw = localStorage.getItem("vmgc_user");
       if (raw) {
         const parsed = JSON.parse(raw);
-        setAuthUser({
-          ...parsed,
-          avatarUrl: parsed?.avatarUrl || "",
-        });
+        setAuthUser(normalizeAuthUser(parsed));
       }
     } catch {
       // ignore
@@ -301,10 +315,7 @@ const App: React.FC = () => {
   const syncingRef = useRef(false);
 
   const handleLogin = (user: AuthUser) => {
-    const normalizedUser = {
-      ...user,
-      avatarUrl: user?.avatarUrl || "",
-    };
+    const normalizedUser = normalizeAuthUser(user);
 
     setAuthUser(normalizedUser);
     localStorage.setItem("vmgc_user", JSON.stringify(normalizedUser));
@@ -322,11 +333,10 @@ const App: React.FC = () => {
   };
 
   const handleUpdateUser = (user: AuthUser) => {
-    const mergedUser = {
+    const mergedUser = normalizeAuthUser({
       ...authUser,
       ...user,
-      avatarUrl: user?.avatarUrl || authUser?.avatarUrl || "",
-    };
+    });
 
     setAuthUser(mergedUser);
     localStorage.setItem("vmgc_user", JSON.stringify(mergedUser));
@@ -367,11 +377,7 @@ const App: React.FC = () => {
         return;
       }
 
-      const {
-        page,
-        productId,
-        productsPage: p,
-      } = hashToState(window.location.hash);
+      const { page, productId, productsPage: p } = getRouteState();
       setProductsPage(p);
 
       setCurrentPage(page);
@@ -401,13 +407,19 @@ const App: React.FC = () => {
     applyFromHash(false);
 
     const onHashChange = () => applyFromHash(true);
-    window.addEventListener("hashchange", onHashChange);
+    const onPopState = () => applyFromHash(true);
 
-    return () => window.removeEventListener("hashchange", onHashChange);
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("popstate", onPopState);
+
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("popstate", onPopState);
+    };
   }, []);
 
   useEffect(() => {
-    const { page, productId } = hashToState(window.location.hash);
+    const { page, productId } = getRouteState();
     if (page !== "product-detail" || !productId) return;
 
     if (selectedProduct) return;
@@ -423,7 +435,7 @@ const App: React.FC = () => {
 
     if (isResolvingDetail) {
       const t = window.setTimeout(() => {
-        const st = hashToState(window.location.hash);
+        const st = getRouteState();
         if (st.page === "product-detail" && st.productId === productId) {
           setIsResolvingDetail(false);
           navigate("products");
@@ -435,6 +447,17 @@ const App: React.FC = () => {
   }, [appProducts, selectedProduct, isResolvingDetail, navigate]);
 
   useEffect(() => {
+    if (currentPage === "admin") {
+      if (window.location.pathname !== "/admin") {
+        window.history.pushState({}, "", "/admin");
+      }
+      return;
+    }
+
+    if (window.location.pathname === "/admin") {
+      window.history.pushState({}, "", "/");
+    }
+
     if (currentPage === "product-detail" && !selectedProduct) return;
 
     const desired = pageToHash(
@@ -442,6 +465,7 @@ const App: React.FC = () => {
       selectedProduct?.id ?? null,
       productsPage,
     );
+
     if (window.location.hash !== desired) {
       syncingRef.current = true;
       window.location.hash = desired;
@@ -514,6 +538,45 @@ const App: React.FC = () => {
 
       case "booking":
         return <Booking setCurrentPage={navigate} authUser={authUser} />;
+
+      case "admin":
+        // ❌ chưa login
+        if (!authUser) {
+          return (
+            <div className="container mx-auto px-4 py-20 text-center">
+              <p className="text-lg text-red-600 font-semibold">
+                Bạn cần đăng nhập để truy cập trang quản trị
+              </p>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="mt-4 px-6 py-2 bg-amber-400 rounded-lg font-bold"
+              >
+                Đăng nhập
+              </button>
+            </div>
+          );
+        }
+
+        // ❌ không có quyền admin
+        const hasPermission =
+          authUser.role === "admin" ||
+          authUser.permissions?.includes("products") ||
+          authUser.permissions?.includes("bookings");
+
+        if (!hasPermission) {
+          return (
+            <div className="container mx-auto px-4 py-20 text-center">
+              <p className="text-lg text-red-600 font-semibold">
+                Bạn không có quyền truy cập trang quản trị
+              </p>
+            </div>
+          );
+        }
+
+        // ✅ OK
+        return (
+          <Admin authUser={authUser} onBackToSite={() => navigate("home")} />
+        );
 
       default:
         return <Home setCurrentPage={navigate} />;

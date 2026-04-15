@@ -1,23 +1,8 @@
-// Gửi người anh em lập trình:
-//
-// Lúc tui viết đống code này,
-// chỉ có Chúa với tui là hiểu nó chạy kiểu gì.
-//
-// Giờ thì… xin chia buồn,
-// chỉ còn mỗi Chúa hiểu thôi.
-//
-// Nên nếu bro đang cố tối ưu
-// cái mớ này và nó toang (99% là vậy),
-// thì làm ơn tăng cái biến đếm này lên
-// để người xui xẻo tiếp theo còn biết đường chạy:
-//
-// total_hours_wasted_here = 254
-
 // src/pages/ProductList.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Product, Page } from "../types";
 import {
-  fetchProductsBundle,
+  fetchProductsBundleRevalidateMapped,
   fetchProductsMeta,
   fetchProductsBundleRevalidate,
 } from "../utils/productsApi";
@@ -37,19 +22,15 @@ const PRODUCTS_CACHE_KEY = (type: ProductsType) =>
  * Helpers
  * =========================
  */
-
 // parse tiền an toàn (đầu vào có thể là number/string/null)
 // - Hỗ trợ "32,4" "32.4" "350" "1.200.000"...
 const parseMoney = (v: any): number | null => {
   if (v == null) return null;
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
-
   const s = String(v).trim();
   if (!s) return null;
-
   // giữ số, dấu . , -
   const cleaned = s.replace(/[^\d.,-]/g, "");
-
   // case:
   // - "1.200.000" => remove dots thousand => "1200000"
   // - "32,4" => "32,4" => replace "," => "."
@@ -58,7 +39,6 @@ const parseMoney = (v: any): number | null => {
     cleaned.includes(",") && cleaned.includes(".")
       ? cleaned.replace(/\./g, "").replace(",", ".") // "1.234,5" => "1234.5"
       : cleaned.replace(/\./g, "").replace(",", "."); // "32,4" => "32.4" ; "350" => "350"
-
   const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
 };
@@ -67,28 +47,23 @@ const parseMoney = (v: any): number | null => {
 const parseHeightMeters = (v: any): number | null => {
   if (v == null) return null;
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
-
   const s = String(v).trim().toLowerCase();
   if (!s) return null;
-
   const mMatch = s.match(/^(\d+(?:[.,]\d+)?)\s*m$/i);
   if (mMatch) {
     const n = Number(mMatch[1].replace(",", "."));
     return Number.isFinite(n) ? n : null;
   }
-
   const compactMatch = s.match(/^(\d+)\s*m\s*(\d+)?$/i);
   if (compactMatch) {
     const whole = Number(compactMatch[1]);
     const tail = compactMatch[2];
     if (!Number.isFinite(whole)) return null;
     if (!tail) return whole;
-
     if (tail.length === 1) return whole + Number(tail) / 10;
     if (tail.length === 2) return whole + Number(tail) / 100;
     return whole + Number(tail) / 100;
   }
-
   const any = s.match(/(\d+(?:[.,]\d+)?)/);
   if (!any) return null;
   const n = Number(any[1].replace(",", "."));
@@ -138,9 +113,7 @@ const matchesPrice = (priceVnd: number | null, key: PriceKey) => {
   if (key === "All") return true;
   if (key === "contact") return priceVnd == null;
   if (priceVnd == null) return false;
-
   const m = priceVnd / 1_000_000;
-
   switch (key) {
     case "le20":
       return m <= 20;
@@ -164,7 +137,6 @@ const matchesPrice = (priceVnd: number | null, key: PriceKey) => {
 const matchesHeight = (heightMeters: number | null, key: HeightKey) => {
   if (key === "All") return true;
   if (heightMeters == null) return false;
-
   switch (key) {
     case "under1_5":
       return heightMeters < 1.5;
@@ -195,17 +167,13 @@ const getImageSrc = (p: any) => {
 const splitSpecsFromDescription = (desc?: string) => {
   const s = String(desc || "").trim();
   if (!s) return { specs: null as string | null, desc: null as string | null };
-
   // chỉ tách tại ". " để không cắt nhầm số thập phân
   const sep = ". ";
   const idx = s.indexOf(sep);
-
   const first = idx >= 0 ? s.slice(0, idx).trim() : s;
   const looksLikeSpecs =
     first.includes("·") || /Cao\s*~|Tán\s*~|Hoành\s*\d+/i.test(first);
-
   if (!looksLikeSpecs) return { specs: null, desc: s };
-
   const rest = idx >= 0 ? s.slice(idx + sep.length).trim() : "";
   return { specs: first || null, desc: rest || null };
 };
@@ -223,10 +191,8 @@ const hasPublicPrice = (p: any) => {
 const getInternalStatus = (p: any) => {
   const rent = parseMoney(p?.__filterRentPrice);
   const sell = parseMoney(p?.__filterSellPrice);
-
   const hasRent = rent != null && rent > 0;
   const hasSell = sell != null && sell > 0;
-
   if (hasRent && hasSell)
     return { label: "Thuê + Bán", cls: "bg-emerald-600 text-white" };
   if (hasRent) return { label: "Thuê Tết", cls: "bg-amber-400 text-amber-950" };
@@ -259,12 +225,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onContact,
 }) => {
   const { specs, desc } = splitSpecsFromDescription(p.description);
-
   const isSold = !!p?.isSold;
   const isRented = !!p?.isRented;
   const soldOrRentedLabel = isSold ? "ĐÃ BÁN" : isRented ? "ĐÃ CHO THUÊ" : "";
   const dimmed = isSold || isRented;
-
   const internalStatus = getInternalStatus(p);
 
   // ✅ Card luôn mở chi tiết (tất cả cây đều xem được chi tiết)
@@ -280,7 +244,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   // Giá hiển thị
   const publicRent = parseMoney(p?.rentPrice);
   const publicSell = parseMoney(p?.price);
-
   const hasPriceToShow =
     (publicRent != null && publicRent > 0) ||
     (publicSell != null && publicSell > 0);
@@ -301,7 +264,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   }
 
-  const showDetailButton = hasPublicPrice(p); // ✅ đúng theo yêu cầu
+  const showDetailButton = hasPublicPrice(p);
 
   return (
     <div
@@ -326,13 +289,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           draggable={false}
         />
-
         <div className="absolute top-4 right-4">
           <span className="bg-[#3B5A2A] text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wide">
             {p.category || "Khác"}
           </span>
         </div>
-
         {soldOrRentedLabel && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-black/10" />
@@ -344,13 +305,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
       </div>
-
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h3 className="font-bold text-sm sm:text-base lg:text-lg text-slate-800 line-clamp-1">
             {p.name}
           </h3>
-
           {/* Tag status dựa theo giá nội bộ */}
           {internalStatus.label !== "Liên hệ" && (
             <span
@@ -360,17 +319,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </span>
           )}
         </div>
-
         {specs && (
           <p className="text-xs text-slate-500 mb-2 whitespace-normal break-words leading-5">
             {specs}
           </p>
         )}
-
         <p className="text-slate-500 text-sm mb-4 line-clamp-2">
           {desc || `Mã cây: ${p.id}. Vui lòng liên hệ để xem cây thực tế.`}
         </p>
-
         <div className="mt-auto flex items-end justify-between gap-4">
           {/* ✅ HIỂN THỊ GIÁ THEO 2 CỘT GiaThue / GiaBan */}
           <div className="min-w-0">
@@ -381,7 +337,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {priceLine}
             </p>
           </div>
-
           {/* ✅ Nút theo giá HIỂN THỊ: không có giá => Liên hệ; có giá => Chi tiết */}
           {showDetailButton ? (
             <button
@@ -444,13 +399,11 @@ const safeReadCache = (type: ProductsType): CacheShape | null => {
   try {
     const raw = localStorage.getItem(PRODUCTS_CACHE_KEY(type));
     if (!raw) return null;
-
     const parsed = JSON.parse(raw);
     const items = Array.isArray(parsed?.items)
       ? (parsed.items as Product[])
       : null;
     if (!items) return null;
-
     return {
       items,
       savedAt: Number(parsed?.savedAt || Date.now()),
@@ -488,7 +441,6 @@ interface ProductListProps {
   setSelectedProduct: (p: Product) => void;
   productsPage: number;
   setProductsPage: (n: number) => void;
-
   // báo danh sách Product[] (đã map) lên App để App resolve detail khi F5/link trực tiếp
   onProductsUpdated?: (items: Product[]) => void;
 }
@@ -501,7 +453,6 @@ const ProductList: React.FC<ProductListProps> = ({
   onProductsUpdated,
 }) => {
   const [contactOpen, setContactOpen] = useState(false);
-
   const openContact = () => {
     if (isTouchDevice()) {
       setContactOpen(true);
@@ -557,11 +508,11 @@ const ProductList: React.FC<ProductListProps> = ({
   const [products, setProducts] = useState<Product[]>(
     () => safeReadCache("All")?.items ?? [],
   );
+
   const [loadingProducts, setLoadingProducts] = useState<boolean>(
     () => !(safeReadCache("All")?.items?.length > 0),
   );
   const [productsError, setProductsError] = useState("");
-
   const productsRef = useRef<Product[]>(products);
   useEffect(() => {
     productsRef.current = products;
@@ -581,89 +532,6 @@ const ProductList: React.FC<ProductListProps> = ({
   useEffect(() => {
     cacheVersionsRef.current = cacheVersions;
   }, [cacheVersions]);
-
-  /**
-   * mapToProduct:
-   * - HIỂN THỊ GIÁ: lấy từ GiaThue/GiaBan (sheet) => vnd
-   * - GIÁ LỌC: lấy từ giaThueFilter/giaBanFilter (xem nội bộ) => vnd (gắn __filter*)
-   * - category phụ thuộc sheet/type (BS/T)
-   */
-  const mapToProduct = (
-    sp: any,
-    imgVersion: string,
-    forcedType: ProductsType,
-  ): Product => {
-    const id = String(sp?.maCay || sp?.id || "").trim();
-    const name = id;
-
-    const category =
-      forcedType === "BS"
-        ? "Mai Bonsai"
-        : forcedType === "T"
-          ? "Mai Tàng"
-          : "Khác";
-
-    // specs (để hiển thị dòng thông số trên card)
-    const parts: string[] = [];
-    if (sp?.cao_m != null && sp?.cao_m !== "") parts.push(`Cao ~ ${sp.cao_m}m`);
-    if (sp?.ngang_m != null && sp?.ngang_m !== "")
-      parts.push(`Tán ~ ${sp.ngang_m}m`);
-    if (sp?.hoanh_cm != null && sp?.hoanh_cm !== "")
-      parts.push(`Hoành ${sp.hoanh_cm}cm`);
-    if (sp?.chau_m != null && sp?.chau_m !== "")
-      parts.push(`Chậu ~ ${sp.chau_m}m`);
-    const specs = parts.length ? parts.join(" · ") : "";
-
-    const note = String(sp?.note || "").trim();
-
-    // ✅ Dùng ". " để splitSpecsFromDescription hoạt động ổn
-    const description =
-      specs && note ? `${specs}. ${note}` : specs ? `${specs}.` : note || "";
-
-    const isRented = !!sp?.daThue;
-    const isSold = !!sp?.daBan;
-
-    const image = sp?.imageUrl
-      ? `${sp.imageUrl}${sp.imageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(imgVersion)}`
-      : "";
-
-    // ✅ GIÁ HIỂN THỊ: GiaThue / GiaBan
-    const rentPrice = millionToVnd(
-      sp?.giaThue ?? sp?.GiaThue ?? sp?.GiaThuê ?? sp?.GiaMua ?? null,
-    );
-    const sellPrice = millionToVnd(sp?.giaBan ?? sp?.GiaBan ?? null);
-
-    const p: Product = {
-      id,
-      name,
-      category,
-
-      // ✅ HIỂN THỊ GIÁ TRÊN WEB (đúng yêu cầu mới)
-      rentPrice,
-      price: sellPrice,
-
-      height: sp?.cao_m != null ? `${sp.cao_m}m` : null,
-      width: sp?.ngang_m != null ? `${sp.ngang_m}m` : null,
-      age: null,
-
-      image,
-      thumbnails: image ? [image] : [],
-
-      description,
-      isRented,
-      isSold,
-    };
-
-    // ✅ giá nội bộ để filter (đơn vị TRIỆU => VND)
-    (p as any).__filterRentPrice = millionToVnd(
-      sp?.giaThueFilter ?? sp?.__giaThueNoiBo ?? null,
-    );
-    (p as any).__filterSellPrice = millionToVnd(
-      sp?.giaBanFilter ?? sp?.__giaBanNoiBo ?? null,
-    );
-
-    return p;
-  };
 
   /**
    * Reload từ server theo type (tận dụng 2 sheet)
@@ -691,19 +559,16 @@ const ProductList: React.FC<ProductListProps> = ({
       const imgVersion = String(bs.imgVersion || t.imgVersion || "");
       const dataVersion = String(bs.dataVersion || t.dataVersion || "");
 
-      const mappedBS = bs.items.map((sp: any) =>
-        mapToProduct(sp, imgVersion, "BS"),
-      );
-      const mappedT = t.items.map((sp: any) =>
-        mapToProduct(sp, imgVersion, "T"),
-      );
-      const mapped = [...mappedBS, ...mappedT];
+      // === THAY ĐỔI THEO YÊU CẦU ===
+      const resBS = await fetchProductsBundleRevalidateMapped({ type: "BS" });
+      const resT = await fetchProductsBundleRevalidateMapped({ type: "T" });
+
+      const mapped = [...(resBS.products || []), ...(resT.products || [])];
 
       setProducts(mapped);
       setCacheVersions({ imgVersion, dataVersion });
       onProductsUpdated?.(mapped);
       setProductsError("");
-
       saveCache("All", mapped, imgVersion, dataVersion);
       return;
     }
@@ -713,27 +578,25 @@ const ProductList: React.FC<ProductListProps> = ({
     if (!aliveRef()) return;
 
     const otherType: ProductsType = type === "BS" ? "T" : "BS";
-    const other = await fetchProductsBundle({ type: otherType });
+    const other = await fetchProductsBundle({ type: otherType }); // giữ để lấy total
     if (!aliveRef()) return;
 
     const mainTotal = (main as any).total ?? main.items.length;
     const otherTotal = (other as any).total ?? other.items.length;
-
     if (type === "BS") setTotals(mainTotal, otherTotal);
     else setTotals(otherTotal, mainTotal);
 
     const imgVersion = String(main.imgVersion || "");
     const dataVersion = String(main.dataVersion || "");
 
-    const mapped = main.items.map((sp: any) =>
-      mapToProduct(sp, imgVersion, type),
-    );
+    // === THAY ĐỔI THEO YÊU CẦU ===
+    const res = await fetchProductsBundleRevalidateMapped({ type });
+    const mapped = res.products || [];
 
     setProducts(mapped);
     setCacheVersions({ imgVersion, dataVersion });
     onProductsUpdated?.(mapped);
     setProductsError("");
-
     saveCache(type, mapped, imgVersion, dataVersion);
   };
 
@@ -756,7 +619,6 @@ const ProductList: React.FC<ProductListProps> = ({
           });
           onProductsUpdated?.(c.items);
         }
-
         await reloadFromServer(aliveRef, apiType);
       } catch (err: any) {
         if (!alive) return;
@@ -781,7 +643,6 @@ const ProductList: React.FC<ProductListProps> = ({
     let alive = true;
     let timer: number | null = null;
     let busy = false;
-
     const getInterval = () =>
       document.visibilityState === "visible" ? 2000 : 20000;
 
@@ -795,7 +656,6 @@ const ProductList: React.FC<ProductListProps> = ({
       if (!alive) return;
       if (busy) return scheduleNext();
       busy = true;
-
       try {
         const meta = await fetchProductsMeta();
         if (!alive) return;
@@ -804,7 +664,6 @@ const ProductList: React.FC<ProductListProps> = ({
           imgVersion: String(meta.imgVersion || ""),
           dataVersion: String(meta.dataVersion || ""),
         };
-
         const cur = cacheVersionsRef.current;
         const changed =
           next.imgVersion !== cur.imgVersion ||
@@ -817,7 +676,6 @@ const ProductList: React.FC<ProductListProps> = ({
             import("../utils/productsApi").then(({ clearProductsCache }) => {
               clearProductsCache(apiType);
             });
-
             await reloadFromServer(() => alive, apiType);
           } finally {
             if (!alive) return;
@@ -835,7 +693,6 @@ const ProductList: React.FC<ProductListProps> = ({
     };
 
     scheduleNext(500);
-
     const onVis = () => scheduleNext(200);
     document.addEventListener("visibilitychange", onVis);
 
@@ -858,10 +715,8 @@ const ProductList: React.FC<ProductListProps> = ({
    */
   const filteredProducts = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-
     return (products as Product[]).filter((p) => {
       const typeOk = filterType === "All" || String(p.category) === filterType;
-
       const searchOk =
         q === "" ||
         String(p.name ?? "")
@@ -873,7 +728,6 @@ const ProductList: React.FC<ProductListProps> = ({
 
       const rentInternal = parseMoney((p as any).__filterRentPrice);
       const sellInternal = parseMoney((p as any).__filterSellPrice);
-
       const selected = priceMode === "rent" ? rentInternal : sellInternal;
       const priceOk = matchesPrice(selected, filterPrice);
 
@@ -932,7 +786,6 @@ const ProductList: React.FC<ProductListProps> = ({
       )
         return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-
       if (e.key === "ArrowLeft" || e.key === "PageUp") {
         if (safePage > 1) {
           setPage(safePage - 1);
@@ -946,7 +799,6 @@ const ProductList: React.FC<ProductListProps> = ({
         }
       }
     };
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [safePage, totalPages, setProductsPage]);
@@ -984,7 +836,6 @@ const ProductList: React.FC<ProductListProps> = ({
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/10" />
-
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4">
             Sản Phẩm Mai Tết
@@ -1007,7 +858,6 @@ const ProductList: React.FC<ProductListProps> = ({
             ))}
           </div>
         )}
-
         {productsError && (
           <div className="mb-6 text-center text-red-600 text-sm">
             Lỗi tải sản phẩm: {productsError}
@@ -1015,7 +865,7 @@ const ProductList: React.FC<ProductListProps> = ({
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
-          {/* Sidebar filters - ĐÃ SỬA THÀNH TOGGLE */}
+          {/* Sidebar filters */}
           <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full lg:w-80">
             <button
               type="button"
@@ -1026,7 +876,6 @@ const ProductList: React.FC<ProductListProps> = ({
                 <FilterIcon className="text-amber-500" />
                 Bộ Lọc
               </span>
-
               <svg
                 className={`h-5 w-5 text-slate-600 transition-transform duration-200 ${
                   isFilterOpen ? "rotate-180" : ""
@@ -1041,12 +890,10 @@ const ProductList: React.FC<ProductListProps> = ({
                 />
               </svg>
             </button>
-
             <h3 className="hidden lg:flex font-bold items-center gap-2 mb-5">
               <FilterIcon className="text-amber-500" />
               Bộ Lọc
             </h3>
-
             <div className={`${isFilterOpen ? "block" : "hidden"} lg:block`}>
               <div className="space-y-6">
                 {/* Sản phẩm */}
@@ -1084,7 +931,6 @@ const ProductList: React.FC<ProductListProps> = ({
                   <label className="text-sm text-slate-500 block mb-3">
                     Khung giá
                   </label>
-
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
                       type="button"
@@ -1097,7 +943,6 @@ const ProductList: React.FC<ProductListProps> = ({
                     >
                       Thuê
                     </button>
-
                     <button
                       type="button"
                       onClick={() => setPriceMode("sell")}
@@ -1110,7 +955,6 @@ const ProductList: React.FC<ProductListProps> = ({
                       Bán
                     </button>
                   </div>
-
                   <div className="flex flex-col gap-2">
                     {PRICE_OPTIONS.map((item) => (
                       <button
@@ -1165,7 +1009,6 @@ const ProductList: React.FC<ProductListProps> = ({
                       </button>
                     ))}
                   </div>
-
                   <button
                     type="button"
                     onClick={resetFilters}
@@ -1204,7 +1047,6 @@ const ProductList: React.FC<ProductListProps> = ({
                   </svg>
                 </div>
               </div>
-
               <p className="text-slate-500 text-sm whitespace-nowrap">
                 {filteredProducts.length}/{denominator} sản phẩm
               </p>
@@ -1240,7 +1082,6 @@ const ProductList: React.FC<ProductListProps> = ({
                   của bạn.
                 </p>
               </div>
-
               <a
                 href={`tel:${PHONE}`}
                 className="
@@ -1284,12 +1125,10 @@ const ProductList: React.FC<ProductListProps> = ({
                   >
                     ←
                   </button>
-
                   <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 whitespace-nowrap">
                     <span className="text-xs text-slate-600 hidden sm:inline">
                       Trang
                     </span>
-
                     <input
                       value={pageDraft}
                       onChange={(e) => {
@@ -1325,12 +1164,10 @@ const ProductList: React.FC<ProductListProps> = ({
                       pattern="[0-9]*"
                       type="text"
                     />
-
                     <span className="text-xs text-slate-600">
                       / {totalPages}
                     </span>
                   </div>
-
                   <button
                     type="button"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -1362,11 +1199,9 @@ const ProductList: React.FC<ProductListProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
-
             <div className="text-center font-bold text-slate-800 mb-3">
               Liên hệ ngay
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <a
                 href={`tel:${PHONE}`}
@@ -1375,7 +1210,6 @@ const ProductList: React.FC<ProductListProps> = ({
               >
                 📞 Gọi
               </a>
-
               <a
                 href={ZALO_LINK}
                 target="_blank"
@@ -1386,7 +1220,6 @@ const ProductList: React.FC<ProductListProps> = ({
                 💬 Zalo
               </a>
             </div>
-
             <button
               type="button"
               className="mt-3 w-full py-3 rounded-2xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-700"

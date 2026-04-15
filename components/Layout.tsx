@@ -161,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Mobile User Button - Avatar */}
               {authUser ? (
                 <img
-                  src={authUser.avatarUrl || "/default-avatar.png"}
+                  src={authUser.avatarUrl || "/no-avatar.png"}
                   alt="avatar"
                   className="w-8 h-8 rounded-full object-cover cursor-pointer"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
@@ -185,8 +185,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Mobile User Dropdown */}
-            {authUser && userMenuOpen && (
+            {authUser !== null && userMenuOpen && (
               <div className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
+                {authUser.role === "admin" && (
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setCurrentPage("admin");
+                    }}
+                  >
+                    ⚙️ Quản trị hệ thống
+                  </button>
+                )}
+
                 <button
                   type="button"
                   className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
@@ -279,7 +292,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop User Button - Avatar + Name */}
             {authUser ? (
               <img
-                src={authUser.avatarUrl || "/default-avatar.png"}
+                src={authUser.avatarUrl || "/no-avatar.png"}
                 alt="avatar"
                 className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
@@ -302,8 +315,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
 
             {/* Desktop User Dropdown */}
-            {authUser && userMenuOpen && (
+            {authUser !== null && userMenuOpen && (
               <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
+                {authUser.role === "admin" && (
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setCurrentPage("admin");
+                    }}
+                  >
+                    ⚙️ Quản trị hệ thống
+                  </button>
+                )}
+
                 <button
                   type="button"
                   className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"

@@ -43,7 +43,37 @@ export type ProductsMeta = {
   dataVersion: string;
 };
 
+export type AdminMeta = {
+  products: ProductsMeta;
+  bookings: {
+    dataVersion: string;
+  };
+  users: {
+    dataVersion: string;
+  };
+  now: number;
+};
+
+export type AdminProductsCache = {
+  products: Product[];
+  meta: ProductsMeta;
+  total?: number;
+  fetchedAt: number;
+};
+
+export type AdminListCache<T> = {
+  data: T[];
+  version: string;
+  fetchedAt: number;
+};
+
 type FetchBundleArg = ProductsType | { type?: ProductsType };
+
+const ADMIN_CACHE_PREFIX = "vmgc_admin_cache_v2";
+
+const _adminProductsCacheByType: Partial<Record<ProductsType, AdminProductsCache>> = {};
+let _adminBookingsCache: AdminListCache<Booking> | null = null;
+let _adminUsersCache: AdminListCache<AuthUser> | null = null;
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_PRODUCTS_API_BASE;
@@ -69,6 +99,66 @@ function buildProductsUrl(type?: ProductsType): string {
 
 function buildMetaUrl(): string {
   return `${getApiBase()}?api=meta`;
+}
+
+function buildAdminMetaUrl(): string {
+  return `${getApiBase()}?api=adminMeta`;
+}
+
+function getStorage(): Storage | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function safeReadJson<T>(key: string): T | null {
+  const storage = getStorage();
+  if (!storage) return null;
+
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function safeWriteJson(key: string, value: unknown): void {
+  const storage = getStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore quota / privacy mode errors
+  }
+}
+
+function safeRemove(key: string): void {
+  const storage = getStorage();
+  if (!storage) return;
+
+  try {
+    storage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+function productsCacheKey(type: ProductsType): string {
+  return `${ADMIN_CACHE_PREFIX}:products:${type}`;
+}
+
+function bookingsCacheKey(): string {
+  return `${ADMIN_CACHE_PREFIX}:bookings`;
+}
+
+function usersCacheKey(): string {
+  return `${ADMIN_CACHE_PREFIX}:users`;
 }
 
 const parseNum = (v: any): number | null => {
@@ -170,9 +260,7 @@ export function mapBundleItemsToProducts(bundle: ProductsBundle): Product[] {
 }
 
 const _bundleCacheByType: Partial<Record<ProductsType, ProductsBundle>> = {};
-const _inflightByType: Partial<
-  Record<ProductsType, Promise<ProductsBundle>>
-> = {};
+const _inflightByType: Partial<Record<ProductsType, Promise<ProductsBundle>>> = {};
 
 async function fetchProductsBundleRaw(type?: ProductsType): Promise<ProductsBundle> {
   const t = normalizeType(type);
@@ -234,11 +322,70 @@ export function prefetchProductsFromSheet(type?: ProductsType): void {
   void fetchProductsBundle(t);
 }
 
+function readAdminProductsCache(type: ProductsType): AdminProductsCache | null {
+  const inMemory = _adminProductsCacheByType[type];
+  if (inMemory) return inMemory;
+
+  const fromStorage = safeReadJson<AdminProductsCache>(productsCacheKey(type));
+  if (!fromStorage) return null;
+
+  _adminProductsCacheByType[type] = fromStorage;
+  return fromStorage;
+}
+
+function writeAdminProductsCache(type: ProductsType, value: AdminProductsCache): void {
+  _adminProductsCacheByType[type] = value;
+  safeWriteJson(productsCacheKey(type), value);
+}
+
+export function getCachedAdminProducts(arg?: FetchBundleArg): AdminProductsCache | null {
+  const t = normalizeArg(arg);
+  return readAdminProductsCache(t);
+}
+
+export function setCachedAdminProducts(
+  arg: FetchBundleArg | undefined,
+  value: {
+    products: Product[];
+    meta: ProductsMeta;
+    total?: number;
+    fetchedAt?: number;
+  },
+): AdminProductsCache {
+  const t = normalizeArg(arg);
+  const payload: AdminProductsCache = {
+    products: Array.isArray(value.products) ? value.products : [],
+    meta: {
+      imgVersion: String(value.meta?.imgVersion || "0"),
+      dataVersion: String(value.meta?.dataVersion || "0"),
+    },
+    total: value.total,
+    fetchedAt: typeof value.fetchedAt === "number" ? value.fetchedAt : Date.now(),
+  };
+
+  writeAdminProductsCache(t, payload);
+  return payload;
+}
+
+function clearAdminProductsPersisted(type?: ProductsType): void {
+  if (type) {
+    delete _adminProductsCacheByType[type];
+    safeRemove(productsCacheKey(type));
+    return;
+  }
+
+  (["All", "BS", "T"] as ProductsType[]).forEach((key) => {
+    delete _adminProductsCacheByType[key];
+    safeRemove(productsCacheKey(key));
+  });
+}
+
 export function clearProductsCache(type?: ProductsType): void {
   if (type) {
     const t = normalizeType(type);
     delete _bundleCacheByType[t];
     delete _inflightByType[t];
+    clearAdminProductsPersisted(t);
     return;
   }
 
@@ -248,6 +395,90 @@ export function clearProductsCache(type?: ProductsType): void {
   (Object.keys(_inflightByType) as ProductsType[]).forEach(
     (k) => delete _inflightByType[k],
   );
+  clearAdminProductsPersisted();
+}
+
+function readAdminBookingsCache(): AdminListCache<Booking> | null {
+  if (_adminBookingsCache) return _adminBookingsCache;
+
+  const fromStorage = safeReadJson<AdminListCache<Booking>>(bookingsCacheKey());
+  if (!fromStorage) return null;
+
+  _adminBookingsCache = fromStorage;
+  return fromStorage;
+}
+
+function writeAdminBookingsCache(value: AdminListCache<Booking>): void {
+  _adminBookingsCache = value;
+  safeWriteJson(bookingsCacheKey(), value);
+}
+
+export function getCachedAdminBookings(): AdminListCache<Booking> | null {
+  return readAdminBookingsCache();
+}
+
+export function setCachedAdminBookings(
+  data: Booking[],
+  version?: string,
+  fetchedAt?: number,
+): AdminListCache<Booking> {
+  const payload: AdminListCache<Booking> = {
+    data: Array.isArray(data) ? data : [],
+    version: String(version || Date.now()),
+    fetchedAt: typeof fetchedAt === "number" ? fetchedAt : Date.now(),
+  };
+
+  writeAdminBookingsCache(payload);
+  return payload;
+}
+
+export function clearAdminBookingsCache(): void {
+  _adminBookingsCache = null;
+  safeRemove(bookingsCacheKey());
+}
+
+function readAdminUsersCache(): AdminListCache<AuthUser> | null {
+  if (_adminUsersCache) return _adminUsersCache;
+
+  const fromStorage = safeReadJson<AdminListCache<AuthUser>>(usersCacheKey());
+  if (!fromStorage) return null;
+
+  _adminUsersCache = {
+    ...fromStorage,
+    data: Array.isArray(fromStorage.data)
+      ? fromStorage.data.map((user) => normalizeAuthUser(user))
+      : [],
+  };
+  return _adminUsersCache;
+}
+
+function writeAdminUsersCache(value: AdminListCache<AuthUser>): void {
+  _adminUsersCache = value;
+  safeWriteJson(usersCacheKey(), value);
+}
+
+export function getCachedAdminUsers(): AdminListCache<AuthUser> | null {
+  return readAdminUsersCache();
+}
+
+export function setCachedAdminUsers(
+  data: AuthUser[],
+  version?: string,
+  fetchedAt?: number,
+): AdminListCache<AuthUser> {
+  const payload: AdminListCache<AuthUser> = {
+    data: Array.isArray(data) ? data.map((user) => normalizeAuthUser(user)) : [],
+    version: String(version || Date.now()),
+    fetchedAt: typeof fetchedAt === "number" ? fetchedAt : Date.now(),
+  };
+
+  writeAdminUsersCache(payload);
+  return payload;
+}
+
+export function clearAdminUsersCache(): void {
+  _adminUsersCache = null;
+  safeRemove(usersCacheKey());
 }
 
 export async function fetchProductsMeta(): Promise<ProductsMeta> {
@@ -266,6 +497,38 @@ export async function fetchProductsMeta(): Promise<ProductsMeta> {
   return {
     imgVersion: String(data.imgVersion || "0"),
     dataVersion: String(data.dataVersion || "0"),
+  };
+}
+
+export async function fetchAdminMeta(): Promise<AdminMeta> {
+  const res = await fetch(buildAdminMetaUrl(), { cache: "no-store" });
+  if (!res.ok) throw new Error(`Admin META HTTP ${res.status}`);
+
+  const data = (await res.json()) as {
+    ok: boolean;
+    versions?: {
+      products?: { imgVersion?: string; dataVersion?: string };
+      bookings?: { dataVersion?: string };
+      users?: { dataVersion?: string };
+    };
+    now?: number;
+    error?: string;
+  };
+
+  if (!data.ok) throw new Error(data.error || "Admin meta ok=false");
+
+  return {
+    products: {
+      imgVersion: String(data.versions?.products?.imgVersion || "0"),
+      dataVersion: String(data.versions?.products?.dataVersion || "0"),
+    },
+    bookings: {
+      dataVersion: String(data.versions?.bookings?.dataVersion || "0"),
+    },
+    users: {
+      dataVersion: String(data.versions?.users?.dataVersion || "0"),
+    },
+    now: typeof data.now === "number" ? data.now : Date.now(),
   };
 }
 
@@ -295,6 +558,50 @@ export async function fetchProductsBundleRevalidateMapped(
     meta: { imgVersion: bundle.imgVersion, dataVersion: bundle.dataVersion },
     total: bundle.total,
   };
+}
+
+export async function syncAdminProducts(
+  arg?: FetchBundleArg,
+  options?: {
+    force?: boolean;
+    knownMeta?: ProductsMeta;
+  },
+): Promise<AdminProductsCache> {
+  const t = normalizeArg(arg);
+  const cached = readAdminProductsCache(t);
+  const knownMeta = options?.knownMeta;
+
+  if (
+    !options?.force &&
+    cached &&
+    knownMeta &&
+    cached.meta.dataVersion === String(knownMeta.dataVersion || "0") &&
+    cached.meta.imgVersion === String(knownMeta.imgVersion || "0")
+  ) {
+    return cached;
+  }
+
+  if (!options?.force && cached && !knownMeta) {
+    return cached;
+  }
+
+  delete _bundleCacheByType[t];
+  delete _inflightByType[t];
+
+  const bundle = await fetchProductsBundleRaw(t);
+  const payload: AdminProductsCache = {
+    products: mapBundleItemsToProducts(bundle),
+    meta: {
+      imgVersion: bundle.imgVersion,
+      dataVersion: bundle.dataVersion,
+    },
+    total: bundle.total,
+    fetchedAt: Date.now(),
+  };
+
+  _bundleCacheByType[t] = bundle;
+  writeAdminProductsCache(t, payload);
+  return payload;
 }
 
 async function postAPI<T = any>(body: any): Promise<T> {
@@ -355,6 +662,30 @@ export async function fetchBookings(): Promise<Booking[]> {
     console.error("fetchBookings error:", err);
     return [];
   }
+}
+
+export async function syncAdminBookings(options?: {
+  force?: boolean;
+  knownVersion?: string;
+}): Promise<AdminListCache<Booking>> {
+  const cached = readAdminBookingsCache();
+  const knownVersion = String(options?.knownVersion || "").trim();
+
+  if (
+    !options?.force &&
+    cached &&
+    knownVersion &&
+    cached.version === knownVersion
+  ) {
+    return cached;
+  }
+
+  if (!options?.force && cached && !knownVersion) {
+    return cached;
+  }
+
+  const data = await fetchBookings();
+  return setCachedAdminBookings(data, knownVersion || String(Date.now()));
 }
 
 export async function updateBookingStatus(
@@ -431,6 +762,30 @@ export async function fetchUsers(): Promise<AuthUser[]> {
     console.error("fetchUsers error:", err);
     return [];
   }
+}
+
+export async function syncAdminUsers(options?: {
+  force?: boolean;
+  knownVersion?: string;
+}): Promise<AdminListCache<AuthUser>> {
+  const cached = readAdminUsersCache();
+  const knownVersion = String(options?.knownVersion || "").trim();
+
+  if (
+    !options?.force &&
+    cached &&
+    knownVersion &&
+    cached.version === knownVersion
+  ) {
+    return cached;
+  }
+
+  if (!options?.force && cached && !knownVersion) {
+    return cached;
+  }
+
+  const data = await fetchUsers();
+  return setCachedAdminUsers(data, knownVersion || String(Date.now()));
 }
 
 export async function verifyAdminPassword(

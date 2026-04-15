@@ -1,13 +1,27 @@
 import React from "react";
 import { AuthUser, Booking } from "../types";
 import {
-  fetchProductsBundleRevalidateMapped,
-  fetchBookings,
-  updateBookingStatus,
+  clearProductsCache,
+  createProduct,
+  deleteProduct,
+  fetchAdminMeta,
+  getCachedAdminBookings,
+  getCachedAdminProducts,
+  getCachedAdminUsers,
+  setCachedAdminBookings,
+  setCachedAdminProducts,
+  setCachedAdminUsers,
+  syncAdminBookings,
+  syncAdminProducts,
+  syncAdminUsers,
   updateBookingNote,
-  fetchUsers,
-  verifyAdminPassword,
+  updateBookingStatus,
+  updateProduct as updateProductApi,
   updateUserPermissions,
+  verifyAdminPassword,
+  type AdminMeta,
+  type ProductsMeta,
+  type ProductsType,
 } from "../utils/productsApi";
 import type { Product } from "../types";
 import { useToast } from "../components/Toast";
@@ -46,7 +60,6 @@ const toMillionInput = (value: number | string | null | undefined) => {
 };
 
 const RECENT_USER_DAYS = 7;
-
 const DEFAULT_AVATAR_URLS = [
   "/no-avatar.png",
   "/no_avatar_fallback.png",
@@ -89,18 +102,135 @@ interface AdminProps {
   onBackToSite?: () => void;
 }
 
+type ProductFormState = {
+  id: string;
+  category: string;
+  rentPrice: string;
+  price: string;
+  height: string;
+  width: string;
+  hoanh: string;
+  chau: string;
+  note: string;
+  daThue: boolean;
+  daBan: boolean;
+};
+
+const ADMIN_META_POLL_MS = 20_000;
+
+const sortProductsForAdmin = (items: Product[]) => {
+  return [...items].sort((a, b) => {
+    const getNum = (id: string) =>
+      parseInt(String(id || "").replace(/[^\d]/g, "")) || 0;
+    return getNum(b.id) - getNum(a.id);
+  });
+};
+
+const buildProductStats = (items: Product[]) => {
+  const bonsai = items.filter((p) => p.category === "Mai Bonsai").length;
+  const tang = items.filter((p) => p.category === "Mai Tàng").length;
+  return {
+    total: items.length,
+    bonsai,
+    tang,
+  };
+};
+
+const matchesProductsType = (category: string, type: ProductsType) => {
+  if (type === "All") return true;
+  if (type === "BS") return category === "Mai Bonsai";
+  if (type === "T") return category === "Mai Tàng";
+  return true;
+};
+
+const parseCommaNumber = (value: string) => {
+  const raw = String(value || "")
+    .trim()
+    .replace(/\s+/g, "");
+  if (!raw) return null;
+  const normalized = raw.replace(",", ".");
+  const num = Number(normalized);
+  return Number.isFinite(num) ? num : null;
+};
+
+const parseMillionInputToVnd = (value: string) => {
+  const num = parseCommaNumber(value);
+  if (num == null || num <= 0) return null;
+  return Math.round(num * 1_000_000);
+};
+
+const buildProductDescriptionFromForm = (formData: ProductFormState) => {
+  const parts: string[] = [];
+  const height = parseCommaNumber(formData.height);
+  const width = parseCommaNumber(formData.width);
+  const chau = parseCommaNumber(formData.chau);
+  const hoanh = formData.hoanh ? Number(formData.hoanh) : null;
+  if (height != null) parts.push(`Cao ~ ${height}m`);
+  if (width != null) parts.push(`Tán ~ ${width}m`);
+  if (hoanh != null && Number.isFinite(hoanh)) parts.push(`Hoành ${hoanh}cm`);
+  if (chau != null) parts.push(`Chậu ~ ${chau}m`);
+  const specs = parts.join(" · ");
+  const note = String(formData.note || "").trim();
+  if (specs && note) return `${specs}. ${note}`;
+  if (specs) return `${specs}.`;
+  return note;
+};
+
+const buildOptimisticProduct = (
+  formData: ProductFormState,
+  fallbackImage?: string | null,
+): Product => {
+  const normalizedId = String(formData.id || "")
+    .trim()
+    .toUpperCase();
+  const image = String(fallbackImage || "").trim() || "/notimg.jpg";
+  return {
+    id: normalizedId,
+    name: normalizedId || "Sản phẩm",
+    category:
+      formData.category === "Mai Tàng"
+        ? "Mai Tàng"
+        : formData.category === "Mai Bonsai"
+          ? "Mai Bonsai"
+          : "Khác",
+    description: buildProductDescriptionFromForm(formData),
+    image,
+    thumbnails: image ? [image] : [],
+    rentPrice: parseMillionInputToVnd(formData.rentPrice),
+    price: parseMillionInputToVnd(formData.price),
+    height: parseCommaNumber(formData.height),
+    width: parseCommaNumber(formData.width),
+    age: null,
+    hoanh_cm: formData.hoanh ? Number(formData.hoanh) : null,
+    chau_m: parseCommaNumber(formData.chau),
+    isSold: formData.daBan === true,
+    isRented: formData.daThue === true,
+  };
+};
+
 const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
-  const { showToast, showConfirm, showPromise } = useToast();
+  const { showToast, showConfirm } = useToast();
+
+  // ==================== SCROLL MANAGEMENT ====================
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+  const scrollPositionsRef = React.useRef<Record<string, number>>({
+    products: 0,
+    bookings: 0,
+    users: 0,
+  });
+  // ===========================================================
+
   const [activeTab, setActiveTab] = React.useState<AdminTab>(() => {
     if (authUser?.role === "admin") return "products";
     if (authUser?.permissions?.includes("products")) return "products";
     if (authUser?.permissions?.includes("bookings")) return "bookings";
     return "products";
   });
-  const [products, setProducts] = React.useState<Product[]>([]);
-  const [bookings, setBookings] = React.useState<any[]>([]);
-  const [users, setUsers] = React.useState<AuthUser[]>([]);
 
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [users, setUsers] = React.useState<AuthUser[]>([]);
   const [showPermissionModal, setShowPermissionModal] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<AuthUser | null>(null);
   const [selectedPermissions, setSelectedPermissions] = React.useState<
@@ -111,14 +241,16 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   );
   const [adminPassword, setAdminPassword] = React.useState("");
   const [showCancelModal, setShowCancelModal] = React.useState(false);
-  const [selectedBooking, setSelectedBooking] = React.useState<any | null>(
+  const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(
     null,
   );
   const [cancelReason, setCancelReason] = React.useState("");
   const [otherReason, setOtherReason] = React.useState("");
   const [showBookingNoteModal, setShowBookingNoteModal] = React.useState(false);
   const [selectedBookingNote, setSelectedBookingNote] = React.useState("");
-  const [editingBooking, setEditingBooking] = React.useState<any | null>(null);
+  const [editingBooking, setEditingBooking] = React.useState<Booking | null>(
+    null,
+  );
   const [editingBookingNote, setEditingBookingNote] = React.useState("");
   const [bookingFilter, setBookingFilter] = React.useState("Tất cả");
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -130,8 +262,17 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   );
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageInput, setPageInput] = React.useState("1");
+  const [bookingPage, setBookingPage] = React.useState(1);
+  const [bookingPageInput, setBookingPageInput] = React.useState("1");
+  const [userPage, setUserPage] = React.useState(1);
+  const [userPageInput, setUserPageInput] = React.useState("1");
   const itemsPerPage = 10;
-
+  const latestAdminMetaRef = React.useRef<AdminMeta | null>(null);
+  const dirtyResourcesRef = React.useRef({
+    products: false,
+    bookings: false,
+    users: false,
+  });
   const [stats, setStats] = React.useState({
     total: 0,
     bonsai: 0,
@@ -175,13 +316,106 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Restore scroll position khi chuyển tab
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const saved = scrollPositionsRef.current[activeTab] || 0;
+
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: saved,
+        behavior: "smooth", // Bonus: scroll mượt hơn
+      });
+    });
+  }, [activeTab]);
+
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowModal(false);
+      if (e.key === "Escape") {
+        if (showPermissionModal) {
+          setShowPermissionModal(false);
+          setSelectedUser(null);
+          return;
+        }
+        if (showCancelModal) {
+          setShowCancelModal(false);
+          setSelectedBooking(null);
+          setCancelReason("");
+          setOtherReason("");
+          return;
+        }
+        if (showBookingNoteModal) {
+          setShowBookingNoteModal(false);
+          return;
+        }
+        if (editingBooking) {
+          setEditingBooking(null);
+          setEditingBookingNote("");
+          return;
+        }
+        if (fullImage) {
+          setFullImage(null);
+          return;
+        }
+        if (showModal) {
+          setShowModal(false);
+          setProductImageFile(null);
+          setPreviewImage(null);
+          setSelectedProduct(null);
+          setIdError("");
+          setIsIdTouched(false);
+          setErrors({
+            rentPrice: "",
+            price: "",
+            height: "",
+            width: "",
+            hoanh: "",
+            chau: "",
+          });
+        }
+      }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
+  }, [
+    showModal,
+    showPermissionModal,
+    showCancelModal,
+    showBookingNoteModal,
+    editingBooking,
+    fullImage,
+  ]);
+
+  React.useEffect(() => {
+    const hasAnyModalOpen =
+      showModal ||
+      showPermissionModal ||
+      showCancelModal ||
+      showBookingNoteModal ||
+      !!editingBooking ||
+      !!fullImage;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    if (hasAnyModalOpen) {
+      html.style.overflow = "hidden";
+      body.style.overflow = "hidden";
+    }
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, [
+    showModal,
+    showPermissionModal,
+    showCancelModal,
+    showBookingNoteModal,
+    editingBooking,
+    fullImage,
+  ]);
 
   React.useEffect(() => {
     if (!selectedProduct) return;
@@ -219,74 +453,373 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   }, [currentPage]);
 
   React.useEffect(() => {
-    if (activeTab !== "products" || products.length > 0) return;
-    const fetchData = async () => {
-      try {
-        setLoadingProducts(true);
-        setLoadingAdminTab(true);
-        const res = await fetchProductsBundleRevalidateMapped({
-          type: productsType,
-        });
-        const data = res.products || [];
-        const sortedData = [...data].sort((a, b) => {
-          const getNum = (id: string) =>
-            parseInt(id.replace(/[^\d]/g, "")) || 0;
-          return getNum(b.id) - getNum(a.id);
-        });
-        setProducts(sortedData);
+    setBookingPageInput(String(bookingPage));
+  }, [bookingPage]);
+
+  React.useEffect(() => {
+    setUserPageInput(String(userPage));
+  }, [userPage]);
+
+  React.useEffect(() => {
+    if (activeTab === "products") {
+      setCurrentPage(1);
+    }
+    if (activeTab === "bookings") {
+      setBookingPage(1);
+    }
+    if (activeTab === "users") {
+      setUserPage(1);
+    }
+  }, [activeTab]);
+
+  const applyProductsSnapshot = React.useCallback(
+    (items: Product[], options?: { resetPage?: boolean }) => {
+      const sorted = sortProductsForAdmin(Array.isArray(items) ? items : []);
+      setProducts(sorted);
+      if (options?.resetPage !== false) {
         setCurrentPage(1);
-        const bonsaiCount = data.filter(
-          (p: any) => p.category === "Mai Bonsai",
-        ).length;
-        const tangCount = data.filter(
-          (p: any) => p.category === "Mai Tàng",
-        ).length;
-        setStats({
-          total: data.length,
-          bonsai: bonsaiCount,
-          tang: tangCount,
+      }
+      setStats(buildProductStats(sorted));
+    },
+    [],
+  );
+
+  const applyBookingsSnapshot = React.useCallback((items: Booking[]) => {
+    setBookings(Array.isArray(items) ? items : []);
+  }, []);
+
+  const applyUsersSnapshot = React.useCallback((items: AuthUser[]) => {
+    setUsers(Array.isArray(items) ? items : []);
+  }, []);
+
+  const commitOptimisticProducts = React.useCallback(
+    (items: Product[], options?: { resetPage?: boolean }) => {
+      const sorted = sortProductsForAdmin(Array.isArray(items) ? items : []);
+      setProducts(sorted);
+      if (options?.resetPage !== false) {
+        setCurrentPage(1);
+      }
+      setStats(buildProductStats(sorted));
+      clearProductsCache();
+      setCachedAdminProducts(
+        { type: productsType },
+        {
+          products: sorted,
+          meta: {
+            imgVersion: String(Date.now()),
+            dataVersion: String(Date.now()),
+          },
+          total: sorted.length,
+        },
+      );
+      dirtyResourcesRef.current.products = true;
+      return sorted;
+    },
+    [productsType],
+  );
+
+  const commitOptimisticBookings = React.useCallback((items: Booking[]) => {
+    const nextItems = Array.isArray(items) ? items : [];
+    setBookings(nextItems);
+    setCachedAdminBookings(nextItems, String(Date.now()));
+    dirtyResourcesRef.current.bookings = true;
+    return nextItems;
+  }, []);
+
+  const commitOptimisticUsers = React.useCallback((items: AuthUser[]) => {
+    const nextItems = Array.isArray(items) ? items : [];
+    setUsers(nextItems);
+    setCachedAdminUsers(nextItems, String(Date.now()));
+    dirtyResourcesRef.current.users = true;
+    return nextItems;
+  }, []);
+
+  const refreshProducts = React.useCallback(
+    async (options?: {
+      force?: boolean;
+      silent?: boolean;
+      knownMeta?: ProductsMeta;
+      resetPage?: boolean;
+    }) => {
+      try {
+        if (!options?.silent) {
+          setLoadingProducts(true);
+          setLoadingAdminTab(true);
+        }
+        const payload = await syncAdminProducts(
+          { type: productsType },
+          {
+            force: options?.force,
+            knownMeta: options?.knownMeta,
+          },
+        );
+        applyProductsSnapshot(payload.products, {
+          resetPage: options?.resetPage,
         });
+        dirtyResourcesRef.current.products = false;
+        if (latestAdminMetaRef.current) {
+          latestAdminMetaRef.current = {
+            ...latestAdminMetaRef.current,
+            products: payload.meta,
+            now: Date.now(),
+          };
+        }
+        return payload;
       } catch (err) {
         console.error("Load products error:", err);
+        if (!options?.silent) {
+          showToast("Không tải được dữ liệu sản phẩm", "error");
+        }
+        return null;
       } finally {
-        setLoadingProducts(false);
-        setLoadingAdminTab(false);
+        if (!options?.silent) {
+          setLoadingProducts(false);
+          setLoadingAdminTab(false);
+        }
       }
-    };
-    fetchData();
-  }, [activeTab, productsType]);
+    },
+    [applyProductsSnapshot, productsType, showToast],
+  );
 
-  React.useEffect(() => {
-    if (activeTab !== "bookings" || bookings.length > 0) return;
-    (async () => {
+  const refreshBookings = React.useCallback(
+    async (options?: {
+      force?: boolean;
+      silent?: boolean;
+      knownVersion?: string;
+    }) => {
       try {
-        setLoadingAdminTab(true);
-        const data = await fetchBookings();
-        setBookings(data);
+        if (!options?.silent) {
+          setLoadingAdminTab(true);
+        }
+        const payload = await syncAdminBookings({
+          force: options?.force,
+          knownVersion: options?.knownVersion,
+        });
+        applyBookingsSnapshot(payload.data);
+        dirtyResourcesRef.current.bookings = false;
+        if (latestAdminMetaRef.current && options?.knownVersion) {
+          latestAdminMetaRef.current = {
+            ...latestAdminMetaRef.current,
+            bookings: { dataVersion: options.knownVersion },
+            now: Date.now(),
+          };
+        }
+        return payload;
       } catch (err) {
         console.error("Load bookings error:", err);
-        showToast("Không tải được dữ liệu đặt lịch", "error");
+        if (!options?.silent) {
+          showToast("Không tải được dữ liệu đặt lịch", "error");
+        }
+        return null;
       } finally {
-        setLoadingAdminTab(false);
+        if (!options?.silent) {
+          setLoadingAdminTab(false);
+        }
       }
-    })();
-  }, [activeTab]);
+    },
+    [applyBookingsSnapshot, showToast],
+  );
 
-  React.useEffect(() => {
-    if (activeTab !== "users" || users.length > 0) return;
-    (async () => {
+  const refreshUsers = React.useCallback(
+    async (options?: {
+      force?: boolean;
+      silent?: boolean;
+      knownVersion?: string;
+    }) => {
       try {
-        setLoadingAdminTab(true);
-        const data = await fetchUsers();
-        setUsers(data);
+        if (!options?.silent) {
+          setLoadingAdminTab(true);
+        }
+        const payload = await syncAdminUsers({
+          force: options?.force,
+          knownVersion: options?.knownVersion,
+        });
+        applyUsersSnapshot(payload.data);
+        dirtyResourcesRef.current.users = false;
+        if (latestAdminMetaRef.current && options?.knownVersion) {
+          latestAdminMetaRef.current = {
+            ...latestAdminMetaRef.current,
+            users: { dataVersion: options.knownVersion },
+            now: Date.now(),
+          };
+        }
+        return payload;
       } catch (err) {
         console.error("Load users error:", err);
-        showToast("Không tải được user", "error");
+        if (!options?.silent) {
+          showToast("Không tải được user", "error");
+        }
+        return null;
       } finally {
-        setLoadingAdminTab(false);
+        if (!options?.silent) {
+          setLoadingAdminTab(false);
+        }
       }
-    })();
-  }, [activeTab]);
+    },
+    [applyUsersSnapshot, showToast],
+  );
+
+  React.useEffect(() => {
+    if (activeTab !== "products") return;
+    const cached = getCachedAdminProducts({ type: productsType });
+    if (cached) {
+      applyProductsSnapshot(cached.products, { resetPage: false });
+      setLoadingProducts(false);
+      setLoadingAdminTab(false);
+      if (dirtyResourcesRef.current.products) {
+        void refreshProducts({
+          force: true,
+          silent: true,
+          knownMeta: latestAdminMetaRef.current?.products,
+          resetPage: false,
+        });
+      }
+      return;
+    }
+    setProducts([]);
+    setStats({ total: 0, bonsai: 0, tang: 0 });
+    setLoadingProducts(true);
+    setLoadingAdminTab(true);
+    if (latestAdminMetaRef.current?.products) {
+      void refreshProducts({
+        force: true,
+        knownMeta: latestAdminMetaRef.current.products,
+      });
+    }
+  }, [activeTab, productsType, applyProductsSnapshot, refreshProducts]);
+
+  React.useEffect(() => {
+    if (activeTab !== "bookings") return;
+    const cached = getCachedAdminBookings();
+    if (cached) {
+      applyBookingsSnapshot(cached.data);
+      setLoadingAdminTab(false);
+      if (dirtyResourcesRef.current.bookings) {
+        void refreshBookings({
+          force: true,
+          silent: true,
+          knownVersion: latestAdminMetaRef.current?.bookings.dataVersion,
+        });
+      }
+      return;
+    }
+    setBookings([]);
+    setLoadingAdminTab(true);
+    if (latestAdminMetaRef.current?.bookings.dataVersion) {
+      void refreshBookings({
+        force: true,
+        knownVersion: latestAdminMetaRef.current.bookings.dataVersion,
+      });
+    }
+  }, [activeTab, applyBookingsSnapshot, refreshBookings]);
+
+  React.useEffect(() => {
+    if (activeTab !== "users") return;
+    const cached = getCachedAdminUsers();
+    if (cached) {
+      applyUsersSnapshot(cached.data);
+      setLoadingAdminTab(false);
+      if (dirtyResourcesRef.current.users) {
+        void refreshUsers({
+          force: true,
+          silent: true,
+          knownVersion: latestAdminMetaRef.current?.users.dataVersion,
+        });
+      }
+      return;
+    }
+    setUsers([]);
+    setLoadingAdminTab(true);
+    if (latestAdminMetaRef.current?.users.dataVersion) {
+      void refreshUsers({
+        force: true,
+        knownVersion: latestAdminMetaRef.current.users.dataVersion,
+      });
+    }
+  }, [activeTab, applyUsersSnapshot, refreshUsers]);
+
+  React.useEffect(() => {
+    let disposed = false;
+    let timer: number | null = null;
+    const runMetaSync = async () => {
+      if (disposed) return;
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        return;
+      }
+      try {
+        const meta = await fetchAdminMeta();
+        if (disposed) return;
+        latestAdminMetaRef.current = meta;
+        const productsCache = getCachedAdminProducts({ type: productsType });
+        const bookingsCache = getCachedAdminBookings();
+        const usersCache = getCachedAdminUsers();
+        dirtyResourcesRef.current.products =
+          !productsCache ||
+          productsCache.meta.dataVersion !== meta.products.dataVersion ||
+          productsCache.meta.imgVersion !== meta.products.imgVersion;
+        dirtyResourcesRef.current.bookings =
+          !bookingsCache || bookingsCache.version !== meta.bookings.dataVersion;
+        dirtyResourcesRef.current.users =
+          !usersCache || usersCache.version !== meta.users.dataVersion;
+        const hasProductsCache = !!productsCache;
+        const hasBookingsCache = !!bookingsCache;
+        const hasUsersCache = !!usersCache;
+        if (activeTab === "products" && dirtyResourcesRef.current.products) {
+          await refreshProducts({
+            force: true,
+            silent: hasProductsCache,
+            knownMeta: meta.products,
+            resetPage: false,
+          });
+        }
+        if (activeTab === "bookings" && dirtyResourcesRef.current.bookings) {
+          await refreshBookings({
+            force: true,
+            silent: hasBookingsCache,
+            knownVersion: meta.bookings.dataVersion,
+          });
+        }
+        if (activeTab === "users" && dirtyResourcesRef.current.users) {
+          await refreshUsers({
+            force: true,
+            silent: hasUsersCache,
+            knownVersion: meta.users.dataVersion,
+          });
+        }
+      } catch (err) {
+        console.error("Admin meta sync error:", err);
+      }
+    };
+    const handleVisibility = () => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+      ) {
+        void runMetaSync();
+      }
+    };
+    void runMetaSync();
+    if (typeof window !== "undefined") {
+      timer = window.setInterval(() => {
+        void runMetaSync();
+      }, ADMIN_META_POLL_MS);
+    }
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+    return () => {
+      disposed = true;
+      if (timer != null && typeof window !== "undefined") {
+        window.clearInterval(timer);
+      }
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
+  }, [activeTab, productsType, refreshBookings, refreshProducts, refreshUsers]);
 
   const filteredProducts = products.filter((p) =>
     p.id.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -297,30 +830,27 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     currentPage * itemsPerPage,
   );
 
-  const bookingStats = React.useMemo(() => {
-    const total = bookings.length;
-    const pending = bookings.filter((b) => b.trangThai === "Mới").length;
-    const confirmed = bookings.filter(
-      (b) => b.trangThai === "Đã xác nhận",
-    ).length;
-    return { total, pending, confirmed };
-  }, [bookings]);
-
   const filteredBookings = bookings.filter((b) => {
     if (bookingFilter === "Tất cả") return true;
     return b.trangThai === bookingFilter;
   });
+  const totalBookingPages = Math.max(
+    1,
+    Math.ceil(filteredBookings.length / itemsPerPage),
+  );
+  const paginatedBookings = filteredBookings.slice(
+    (bookingPage - 1) * itemsPerPage,
+    bookingPage * itemsPerPage,
+  );
 
   const filteredUsers = React.useMemo(() => {
     const keyword = userSearch.trim().toLowerCase();
     if (!keyword) return users;
-
     return users.filter((u) => {
       const email = String(u.email || "").toLowerCase();
       const name = String(u.name || "").toLowerCase();
       const phone = String(u.phone || "").toLowerCase();
       const gender = String(u.gender || "").toLowerCase();
-
       return (
         email.includes(keyword) ||
         name.includes(keyword) ||
@@ -330,23 +860,45 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     });
   }, [users, userSearch]);
 
+  const totalUserPages = Math.max(
+    1,
+    Math.ceil(filteredUsers.length / itemsPerPage),
+  );
+  const paginatedUsers = filteredUsers.slice(
+    (userPage - 1) * itemsPerPage,
+    userPage * itemsPerPage,
+  );
+
+  React.useEffect(() => {
+    setBookingPage(1);
+  }, [bookingFilter]);
+
+  React.useEffect(() => {
+    setUserPage(1);
+  }, [userSearch]);
+
+  const bookingStats = React.useMemo(() => {
+    const total = bookings.length;
+    const pending = bookings.filter((b) => b.trangThai === "Mới").length;
+    const confirmed = bookings.filter(
+      (b) => b.trangThai === "Đã xác nhận",
+    ).length;
+    return { total, pending, confirmed };
+  }, [bookings]);
+
   const userStats = React.useMemo(() => {
     const now = new Date();
     const recentThreshold = new Date(now);
     recentThreshold.setDate(recentThreshold.getDate() - RECENT_USER_DAYS);
-
     const parseCreatedAt = (value: string) => {
       const raw = String(value || "").trim();
       if (!raw) return null;
-
       const parsed = new Date(raw);
       if (!Number.isNaN(parsed.getTime())) return parsed;
-
       const match = raw.match(
         /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
       );
       if (!match) return null;
-
       const [, dd, mm, yyyy, hh = "0", min = "0", ss = "0"] = match;
       const normalized = new Date(
         Number(yyyy),
@@ -356,17 +908,14 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         Number(min),
         Number(ss),
       );
-
       return Number.isNaN(normalized.getTime()) ? null : normalized;
     };
-
     const totalUsers = users.length;
     const avatarCount = users.filter((u) => hasRealAvatar(u.avatarUrl)).length;
     const recentUsers = users.filter((u) => {
       const createdAt = parseCreatedAt(u.createdAt || "");
       return createdAt ? createdAt >= recentThreshold : false;
     }).length;
-
     return {
       totalUsers,
       avatarCount,
@@ -417,6 +966,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   };
 
   const normalizeId = (val: string) => val.replace(/\s+/g, "").toUpperCase();
+
   const isDuplicateId = (id: string) => {
     const normalizedInput = normalizeId(id);
     return products.some((p) => {
@@ -478,18 +1028,15 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         showToast("Vui lòng nhập mã cây", "error");
         return;
       }
-
       const idErrorCheck = validateTreeId(id, formData.category);
       if (idErrorCheck) {
         showToast(idErrorCheck, "error");
         return;
       }
-
       if (isDuplicateId(id)) {
         showToast("Mã cây đã tồn tại", "error");
         return;
       }
-
       let fileData = "";
       if (productImageFile) {
         fileData = await new Promise<string>((resolve, reject) => {
@@ -499,62 +1046,45 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
           reader.onerror = reject;
         });
       }
-
-      const res = await fetch(import.meta.env.VITE_PRODUCTS_API_BASE, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify({
-          api: "updateProduct",
-          originalId: selectedProduct?.id || id,
-          id,
-          category: formData.category,
-          rentPrice: formData.rentPrice,
-          price: formData.price,
-          height: formData.height,
-          width: formData.width,
-          hoanh: formData.hoanh,
-          chau: formData.chau,
-          note: formData.note,
-          daThue: formData.daThue,
-          daBan: formData.daBan,
-          fileData,
-        }),
+      await updateProductApi({
+        originalId: selectedProduct?.id || id,
+        id,
+        category: formData.category,
+        rentPrice: formData.rentPrice,
+        price: formData.price,
+        height: formData.height,
+        width: formData.width,
+        hoanh: formData.hoanh,
+        chau: formData.chau,
+        note: formData.note,
+        daThue: formData.daThue,
+        daBan: formData.daBan,
+        fileData,
       });
-
-      const data = await res.json();
-      if (!data.ok) {
-        showToast(
-          "Lỗi: " + (data.error || data.message || "Không cập nhật được"),
-          "error",
-        );
-        return;
-      }
+      const optimisticProduct = buildOptimisticProduct(
+        { ...formData, id },
+        previewImage || selectedProduct?.image || null,
+      );
+      const nextBase = products.filter(
+        (item) =>
+          normalizeId(item.id || "") !== normalizeId(selectedProduct?.id || id),
+      );
+      const nextProducts = matchesProductsType(
+        optimisticProduct.category,
+        productsType,
+      )
+        ? [optimisticProduct, ...nextBase]
+        : nextBase;
+      commitOptimisticProducts(nextProducts, { resetPage: false });
       showToast("Cập nhật thành công", "success");
       setShowModal(false);
       setSelectedProduct(null);
       setProductImageFile(null);
       setPreviewImage(null);
-      const resReload = await fetchProductsBundleRevalidateMapped({
-        type: productsType,
-      });
-      const productsReloaded = resReload.products || [];
-      const sortedData = [...productsReloaded].sort((a, b) => {
-        const getNum = (id: string) => parseInt(id.replace(/[^\d]/g, "")) || 0;
-        return getNum(b.id) - getNum(a.id);
-      });
-      setProducts(sortedData);
-      const bonsaiCount = productsReloaded.filter(
-        (p: any) => p.category === "Mai Bonsai",
-      ).length;
-      const tangCount = productsReloaded.filter(
-        (p: any) => p.category === "Mai Tàng",
-      ).length;
-      setStats({
-        total: productsReloaded.length,
-        bonsai: bonsaiCount,
-        tang: tangCount,
+      void refreshProducts({
+        force: true,
+        silent: true,
+        resetPage: false,
       });
     } catch (err) {
       console.error(err);
@@ -734,66 +1264,31 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                                       `Xóa cây ${p.id}?`,
                                       async () => {
                                         try {
-                                          const res = await fetch(
-                                            `${import.meta.env.VITE_PRODUCTS_API_BASE}?api=deleteProduct`,
+                                          await deleteProduct(
+                                            p.id,
+                                            p.category === "Mai Bonsai"
+                                              ? "BS"
+                                              : "T",
+                                          );
+                                          const nextProducts = products.filter(
+                                            (item) =>
+                                              normalizeId(item.id || "") !==
+                                              normalizeId(p.id || ""),
+                                          );
+                                          commitOptimisticProducts(
+                                            nextProducts,
                                             {
-                                              method: "POST",
-                                              body: JSON.stringify({
-                                                api: "deleteProduct",
-                                                id: p.id,
-                                                category:
-                                                  p.category === "Mai Bonsai"
-                                                    ? "BS"
-                                                    : "T",
-                                              }),
+                                              resetPage: false,
                                             },
                                           );
-                                          const data = await res.json();
-                                          if (!data.ok) {
-                                            showToast(
-                                              "Lỗi: " +
-                                                (data.error ||
-                                                  "Không xóa được sản phẩm"),
-                                              "error",
-                                            );
-                                            return;
-                                          }
                                           showToast(
                                             "Đã xóa sản phẩm thành công",
                                             "success",
                                           );
-                                          const resReload =
-                                            await fetchProductsBundleRevalidateMapped(
-                                              {
-                                                type: productsType,
-                                              },
-                                            );
-                                          const productsReloaded =
-                                            resReload.products || [];
-                                          const sortedData = [
-                                            ...productsReloaded,
-                                          ].sort((a, b) => {
-                                            const getNum = (id: string) =>
-                                              parseInt(
-                                                id.replace(/[^\d]/g, ""),
-                                              ) || 0;
-                                            return getNum(b.id) - getNum(a.id);
-                                          });
-                                          setProducts(sortedData);
-                                          const bonsaiCount =
-                                            productsReloaded.filter(
-                                              (x: any) =>
-                                                x.category === "Mai Bonsai",
-                                            ).length;
-                                          const tangCount =
-                                            productsReloaded.filter(
-                                              (x: any) =>
-                                                x.category === "Mai Tàng",
-                                            ).length;
-                                          setStats({
-                                            total: productsReloaded.length,
-                                            bonsai: bonsaiCount,
-                                            tang: tangCount,
+                                          void refreshProducts({
+                                            force: true,
+                                            silent: true,
+                                            resetPage: false,
                                           });
                                         } catch (err) {
                                           console.error(err);
@@ -874,7 +1369,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               <StatCard
                 title="Đã xác nhận"
                 value={String(bookingStats.confirmed)}
-                note="Sẽ nối API sau"
+                note="Đã xác nhận lịch hẹn"
               />
             </div>
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
@@ -902,6 +1397,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead>
                     <tr className="text-left">
+                      <Th>STT</Th>
                       <Th>Mã lịch</Th>
                       <Th>Khách hàng</Th>
                       <Th>Ngày tham quan</Th>
@@ -912,8 +1408,9 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredBookings.map((b) => (
+                    {paginatedBookings.map((b, index) => (
                       <tr key={b.maDatLich}>
+                        <Td>{(bookingPage - 1) * itemsPerPage + index + 1}</Td>
                         <Td>{b.maDatLich}</Td>
                         <Td>{b.hoTen}</Td>
                         <Td>{b.ngayThamQuan}</Td>
@@ -967,19 +1464,27 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                             <div className="flex gap-2 justify-end">
                               <button
                                 onClick={async () => {
-                                  await showPromise(
-                                    updateBookingStatus(
-                                      b.maDatLich,
-                                      "Đã xác nhận",
-                                    ),
-                                    {
-                                      loading: "Đang xác nhận...",
-                                      success: "Đã xác nhận lịch",
-                                      error: "Thất bại",
-                                    },
+                                  const previousBookings = [...bookings];
+                                  const nextBookings = previousBookings.map(
+                                    (item) =>
+                                      item.maDatLich === b.maDatLich
+                                        ? {
+                                            ...item,
+                                            trangThai: "Đã xác nhận" as const,
+                                          }
+                                        : item,
                                   );
-                                  const data = await fetchBookings();
-                                  setBookings(data);
+                                  commitOptimisticBookings(nextBookings);
+                                  const ok = await updateBookingStatus(
+                                    b.maDatLich,
+                                    "Đã xác nhận",
+                                  );
+                                  if (!ok) {
+                                    commitOptimisticBookings(previousBookings);
+                                    showToast("Xác nhận thất bại", "error");
+                                    return;
+                                  }
+                                  showToast("Đã xác nhận lịch", "success");
                                 }}
                                 className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded"
                               >
@@ -1004,7 +1509,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     {filteredBookings.length === 0 && (
                       <tr>
                         <Td
-                          colSpan={7}
+                          colSpan={8}
                           className="text-center py-8 text-slate-500"
                         >
                           Không có lịch hẹn nào
@@ -1013,6 +1518,42 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={() => setBookingPage((p) => Math.max(1, p - 1))}
+                  disabled={bookingPage === 1}
+                  className="px-4 py-2 rounded-lg border border-slate-300 disabled:opacity-50"
+                >
+                  ←
+                </button>
+                <div className="px-4 py-2 rounded-xl bg-slate-100 flex items-center gap-2">
+                  Trang
+                  <input
+                    type="number"
+                    value={bookingPageInput}
+                    onChange={(e) => setBookingPageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        let page = Number(bookingPageInput);
+                        if (!page || page < 1) page = 1;
+                        if (page > totalBookingPages) page = totalBookingPages;
+                        setBookingPage(page);
+                      }
+                    }}
+                    className="w-16 px-2 py-1 border rounded text-center outline-none"
+                  />
+                  / {totalBookingPages}
+                </div>
+                <button
+                  onClick={() =>
+                    setBookingPage((p) => Math.min(totalBookingPages, p + 1))
+                  }
+                  disabled={bookingPage === totalBookingPages}
+                  className="px-4 py-2 rounded-lg border border-slate-300 disabled:opacity-50"
+                >
+                  →
+                </button>
               </div>
             </section>
           </div>
@@ -1037,7 +1578,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                 note={`${userStats.recentDays} ngày gần nhất theo createdAt`}
               />
             </div>
-
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
                 <div>
@@ -1049,20 +1589,24 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     sheet Users.
                   </p>
                 </div>
-
                 <input
-                  type="text"
+                  type="search"
+                  name="admin-user-search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="Tìm theo email, tên, số điện thoại hoặc giới tính..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   className="h-11 rounded-xl border border-slate-300 px-4 bg-white text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead>
                     <tr className="text-left">
+                      <Th>STT</Th>
                       <Th>Email</Th>
                       <Th>Họ tên</Th>
                       <Th>Số điện thoại</Th>
@@ -1070,20 +1614,20 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       <Th className="text-right">Thao tác</Th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <Td
-                          colSpan={5}
+                          colSpan={6}
                           className="text-center text-slate-500 py-8"
                         >
                           Không có người dùng phù hợp.
                         </Td>
                       </tr>
                     ) : (
-                      filteredUsers.map((u) => (
+                      paginatedUsers.map((u, index) => (
                         <tr key={u.email}>
+                          <Td>{(userPage - 1) * itemsPerPage + index + 1}</Td>
                           <Td>{u.email}</Td>
                           <Td>{u.name || "--"}</Td>
                           <Td>{u.phone || "--"}</Td>
@@ -1092,6 +1636,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                             <button
                               type="button"
                               onClick={() => {
+                                setUserSearch("");
                                 setSelectedUser(u);
                                 setSelectedPermissions(u.permissions || []);
                                 setSelectedRole(
@@ -1110,6 +1655,42 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                  disabled={userPage === 1}
+                  className="px-4 py-2 rounded-lg border border-slate-300 disabled:opacity-50"
+                >
+                  ←
+                </button>
+                <div className="px-4 py-2 rounded-xl bg-slate-100 flex items-center gap-2">
+                  Trang
+                  <input
+                    type="number"
+                    value={userPageInput}
+                    onChange={(e) => setUserPageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        let page = Number(userPageInput);
+                        if (!page || page < 1) page = 1;
+                        if (page > totalUserPages) page = totalUserPages;
+                        setUserPage(page);
+                      }
+                    }}
+                    className="w-16 px-2 py-1 border rounded text-center outline-none"
+                  />
+                  / {totalUserPages}
+                </div>
+                <button
+                  onClick={() =>
+                    setUserPage((p) => Math.min(totalUserPages, p + 1))
+                  }
+                  disabled={userPage === totalUserPages}
+                  className="px-4 py-2 rounded-lg border border-slate-300 disabled:opacity-50"
+                >
+                  →
+                </button>
               </div>
             </section>
           </div>
@@ -1154,7 +1735,13 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => setActiveTab(item.key)}
+                    onClick={() => {
+                      if (containerRef.current) {
+                        scrollPositionsRef.current[activeTab] =
+                          containerRef.current.scrollTop;
+                      }
+                      setActiveTab(item.key);
+                    }}
                     className={`w-full text-left rounded-2xl px-4 py-4 transition ${
                       isActive
                         ? "bg-amber-400 text-amber-950"
@@ -1188,7 +1775,12 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
             </button>
           </div>
         </aside>
-        <main className="px-4 sm:px-6 lg:px-8 py-6">
+
+        {/* Main content với ref và scroll */}
+        <main
+          ref={containerRef}
+          className="px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto h-screen"
+        >
           {loadingAdminTab && (
             <div className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
               <div className="bg-white rounded-2xl shadow-xl border border-slate-200 px-5 py-4 flex items-center gap-3">
@@ -1199,6 +1791,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           )}
+
           <header className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
@@ -1217,6 +1810,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           </header>
+
           {renderTabContent()}
 
           {/* Modal tạo/sửa/xem sản phẩm */}
@@ -1289,7 +1883,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       <option>Mai Bonsai</option>
                       <option>Mai Tàng</option>
                     </select>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Giá thuê (triệu)"
@@ -1313,7 +1906,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Giá bán (triệu)"
@@ -1337,7 +1929,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Chiều cao (m)"
@@ -1361,7 +1952,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Ngang (m)"
@@ -1385,7 +1975,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Hoành (cm)"
@@ -1409,7 +1998,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <input
                         placeholder="Chậu (m)"
@@ -1433,7 +2021,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-
                     <textarea
                       placeholder="Ghi chú hiển thị"
                       className="border p-2 rounded col-span-2"
@@ -1444,7 +2031,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       disabled={modalMode === "view"}
                     />
                   </div>
-
                   <div className="mt-4 pt-4">
                     <p className="text-sm font-semibold text-slate-700 mb-3">
                       Thông tin nâng cao
@@ -1559,7 +2145,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       </label>
                     </div>
                   </div>
-
                   <div className="flex justify-end gap-3 mt-6">
                     <button
                       onClick={() => {
@@ -1610,87 +2195,63 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                                   showToast("Mã cây đã tồn tại", "error");
                                   return;
                                 }
-                                await showPromise(
-                                  (async () => {
-                                    let fileData = "";
-                                    if (productImageFile) {
-                                      fileData = await new Promise<string>(
-                                        (resolve, reject) => {
-                                          const reader = new FileReader();
-                                          reader.readAsDataURL(
-                                            productImageFile,
-                                          );
-                                          reader.onload = () =>
-                                            resolve(reader.result as string);
-                                          reader.onerror = reject;
-                                        },
-                                      );
-                                    }
-                                    const res = await fetch(
-                                      `${import.meta.env.VITE_PRODUCTS_API_BASE}?api=createProduct`,
-                                      {
-                                        method: "POST",
-                                        body: JSON.stringify({
-                                          api: "createProduct",
-                                          ...formData,
-                                          id,
-                                          fileData,
-                                        }),
-                                      },
-                                    );
-                                    const data = await res.json();
-                                    if (!data.ok) {
-                                      throw new Error(
-                                        data.error || "Tạo sản phẩm thất bại",
-                                      );
-                                    }
-                                    setShowModal(false);
-                                    setProductImageFile(null);
-                                    setPreviewImage(null);
-                                    setIdError("");
-                                    setIsIdTouched(false);
-                                    setErrors({
-                                      rentPrice: "",
-                                      price: "",
-                                      height: "",
-                                      width: "",
-                                      hoanh: "",
-                                      chau: "",
-                                    });
-                                    const resReload =
-                                      await fetchProductsBundleRevalidateMapped(
-                                        {
-                                          type: productsType,
-                                        },
-                                      );
-                                    const productsReloaded =
-                                      resReload.products || [];
-                                    const sortedData = [
-                                      ...productsReloaded,
-                                    ].sort((a, b) => {
-                                      const getNum = (id: string) =>
-                                        parseInt(id.replace(/[^\d]/g, "")) || 0;
-                                      return getNum(b.id) - getNum(a.id);
-                                    });
-                                    setProducts(sortedData);
-                                    const bonsaiCount = productsReloaded.filter(
-                                      (p: any) => p.category === "Mai Bonsai",
-                                    ).length;
-                                    const tangCount = productsReloaded.filter(
-                                      (p: any) => p.category === "Mai Tàng",
-                                    ).length;
-                                    setStats({
-                                      total: productsReloaded.length,
-                                      bonsai: bonsaiCount,
-                                      tang: tangCount,
-                                    });
-                                  })(),
-                                  {
-                                    loading: "Đang tạo sản phẩm...",
-                                    success: "Tạo sản phẩm thành công",
-                                    error: "Tạo sản phẩm thất bại",
-                                  },
-                                );
+                                let fileData = "";
+                                if (productImageFile) {
+                                  fileData = await new Promise<string>(
+                                    (resolve, reject) => {
+                                      const reader = new FileReader();
+                                      reader.readAsDataURL(productImageFile);
+                                      reader.onload = () =>
+                                        resolve(reader.result as string);
+                                      reader.onerror = reject;
+                                    },
+                                  );
+                                }
+                                await createProduct({
+                                  ...formData,
+                                  id,
+                                  fileData,
+                                });
+                                const optimisticProduct =
+                                  buildOptimisticProduct(
+                                    { ...formData, id },
+                                    previewImage || null,
+                                  );
+                                const nextProducts = matchesProductsType(
+                                  optimisticProduct.category,
+                                  productsType,
+                                )
+                                  ? [
+                                      optimisticProduct,
+                                      ...products.filter(
+                                        (item) =>
+                                          normalizeId(item.id || "") !==
+                                          normalizeId(
+                                            optimisticProduct.id || "",
+                                          ),
+                                      ),
+                                    ]
+                                  : products;
+                                commitOptimisticProducts(nextProducts);
+                                setShowModal(false);
+                                setProductImageFile(null);
+                                setPreviewImage(null);
+                                setIdError("");
+                                setIsIdTouched(false);
+                                setErrors({
+                                  rentPrice: "",
+                                  price: "",
+                                  height: "",
+                                  width: "",
+                                  hoanh: "",
+                                  chau: "",
+                                });
+                                showToast("Tạo sản phẩm thành công", "success");
+                                void refreshProducts({
+                                  force: true,
+                                  silent: true,
+                                  resetPage: false,
+                                });
                               } catch (err) {
                                 console.error(err);
                                 showToast("Lỗi kết nối server", "error");
@@ -1715,8 +2276,19 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
 
           {/* Các modal khác giữ nguyên */}
           {showCancelModal && selectedBooking && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl p-6 w-[400px]">
+            <div
+              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+              onClick={() => {
+                setShowCancelModal(false);
+                setSelectedBooking(null);
+                setCancelReason("");
+                setOtherReason("");
+              }}
+            >
+              <div
+                className="bg-white rounded-xl p-6 w-[400px]"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <h2 className="text-lg font-semibold mb-4">Chọn lý do hủy</h2>
                 <div className="space-y-2">
                   {[
@@ -1777,20 +2349,28 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         return;
                       }
                       const finalReason = `${rawReason}`;
-                      await showPromise(
-                        updateBookingStatus(
-                          selectedBooking.maDatLich,
-                          "Đã hủy",
-                          finalReason,
-                        ),
-                        {
-                          loading: "Đang hủy...",
-                          success: "Đã hủy lịch",
-                          error: "Thất bại",
-                        },
+                      const previousBookings = [...bookings];
+                      const nextBookings = previousBookings.map((item) =>
+                        item.maDatLich === selectedBooking.maDatLich
+                          ? {
+                              ...item,
+                              trangThai: "Đã hủy" as const,
+                              ghiChu: `🔴 LÝ DO HỦY: ${finalReason}`,
+                            }
+                          : item,
                       );
-                      const data = await fetchBookings();
-                      setBookings(data);
+                      commitOptimisticBookings(nextBookings);
+                      const ok = await updateBookingStatus(
+                        selectedBooking.maDatLich,
+                        "Đã hủy",
+                        finalReason,
+                      );
+                      if (!ok) {
+                        commitOptimisticBookings(previousBookings);
+                        showToast("Hủy lịch thất bại", "error");
+                        return;
+                      }
+                      showToast("Đã hủy lịch", "success");
                       setShowCancelModal(false);
                       setSelectedBooking(null);
                       setCancelReason("");
@@ -1889,26 +2469,26 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         );
                         return;
                       }
-                      setBookings((prev) =>
-                        prev.map((b) =>
-                          b.maDatLich === editingBooking.maDatLich
-                            ? { ...b, ghiChu: editingBookingNote }
-                            : b,
-                        ),
+                      const targetBookingId = editingBooking.maDatLich;
+                      const previousBookings = [...bookings];
+                      const nextBookings = previousBookings.map((item) =>
+                        item.maDatLich === targetBookingId
+                          ? { ...item, ghiChu: editingBookingNote }
+                          : item,
                       );
+                      commitOptimisticBookings(nextBookings);
                       setEditingBooking(null);
                       setEditingBookingNote("");
-                      updateBookingNote(
-                        editingBooking.maDatLich,
+                      const ok = await updateBookingNote(
+                        targetBookingId,
                         editingBookingNote,
-                      )
-                        .then(async () => {
-                          const data = await fetchBookings();
-                          setBookings(data);
-                        })
-                        .catch((err) => {
-                          console.error("Update note error:", err);
-                        });
+                      );
+                      if (!ok) {
+                        commitOptimisticBookings(previousBookings);
+                        showToast("Lưu ghi chú thất bại", "error");
+                        return;
+                      }
+                      showToast("Đã lưu ghi chú", "success");
                     }}
                     className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 font-medium"
                   >
@@ -1934,12 +2514,19 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
           )}
 
           {showPermissionModal && selectedUser && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl p-6 w-[420px] space-y-4">
+            <div
+              className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+              onClick={() => {
+                setShowPermissionModal(false);
+                setSelectedUser(null);
+              }}
+            >
+              <div
+                className="bg-white rounded-xl p-6 w-[420px] space-y-4"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <h2 className="text-lg font-semibold">Phân quyền người dùng</h2>
                 <p className="text-sm text-slate-500">{selectedUser.email}</p>
-
-                {/* Chọn Vai trò */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-700">
                     Vai trò
@@ -1957,8 +2544,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     <option value="admin">admin</option>
                   </select>
                 </div>
-
-                {/* Quyền */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
                     <input
@@ -1999,15 +2584,18 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     Quản trị lịch hẹn
                   </label>
                 </div>
-
                 <input
                   type="password"
+                  name="admin-confirm-password"
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="Nhập mật khẩu admin..."
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   className="w-full border rounded px-3 py-2"
                 />
-
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => {
@@ -2043,9 +2631,17 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         showToast("Cập nhật thất bại", "error");
                         return;
                       }
+                      const nextUsers = users.map((user) =>
+                        user.email === selectedUser.email
+                          ? {
+                              ...user,
+                              role: selectedRole,
+                              permissions: [...selectedPermissions],
+                            }
+                          : user,
+                      );
+                      commitOptimisticUsers(nextUsers);
                       showToast("Đã cập nhật quyền", "success");
-                      const data = await fetchUsers();
-                      setUsers(data);
                       setShowPermissionModal(false);
                       setSelectedUser(null);
                     }}

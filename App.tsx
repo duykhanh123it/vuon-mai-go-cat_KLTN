@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Page, Product, AuthUser, normalizeAuthUser } from "./types";
-import { fetchProductsBundle } from "./utils/productsApi";
+import {
+  Page,
+  Product,
+  AuthUser,
+  canAccessAdmin,
+  normalizeAuthUser,
+} from "./types";
+import { fetchProductsBundleRevalidateMapped } from "./utils/productsApi";
 import { Navbar, Footer } from "./components/Layout";
 
 import Home from "./pages/Home";
@@ -231,77 +237,15 @@ const App: React.FC = () => {
 
     (async () => {
       try {
-        const bundle = await fetchProductsBundle();
-        if (!alive) return;
-
-        const c = safeReadProductsCacheAllMerged();
-        if (c?.items?.length) {
-          setAppProducts(c.items as Product[]);
-          return;
+        const cached = safeReadProductsCacheAllMerged();
+        if (alive && cached?.items?.length) {
+          setAppProducts(cached.items as Product[]);
         }
 
-        const rawItems = (bundle as any)?.items ?? [];
-        const imgVersion = String((bundle as any)?.imgVersion || "");
+        const res = await fetchProductsBundleRevalidateMapped({ type: "All" });
+        if (!alive) return;
 
-        const minimal = rawItems.map((sp: any) => {
-          const id = String(sp?.maCay || sp?.id || "").trim();
-
-          const toVnd = (million: any) =>
-            million == null || !Number.isFinite(Number(million))
-              ? null
-              : Math.round(Number(million) * 1_000_000);
-
-          const parts: string[] = [];
-          if (sp?.cao_m != null) parts.push(`Cao ~ ${sp.cao_m}m`);
-          if (sp?.ngang_m != null) parts.push(`Tán ~ ${sp.ngang_m}m`);
-          if (sp?.hoanh_cm != null) parts.push(`Hoành ${sp.hoanh_cm}cm`);
-          if (sp?.chau_m != null) parts.push(`Chậu ~ ${sp.chau_m}m`);
-
-          const specs = parts.length ? parts.join(" · ") : "";
-          const note = String(sp?.note || "").trim();
-          const description =
-            specs && note
-              ? `${specs}. ${note}`
-              : specs
-                ? `${specs}.`
-                : note || "";
-
-          const norm = id.replace(/\s+/g, "").toUpperCase();
-          const category = norm.startsWith("BS")
-            ? "Mai Bonsai"
-            : norm.startsWith("T")
-              ? "Mai Tàng"
-              : "Khác";
-
-          const image = sp?.imageUrl
-            ? `${sp.imageUrl}${sp.imageUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(
-                imgVersion,
-              )}`
-            : "";
-
-          return {
-            id,
-            name: id,
-            category,
-
-            rentPrice: toVnd(sp?.giaThue),
-            price: toVnd(sp?.giaBan),
-
-            height: sp?.cao_m != null ? `${sp.cao_m}m` : null,
-            width: sp?.ngang_m != null ? `${sp.ngang_m}m` : null,
-            age: null,
-
-            image,
-            thumbnails: image ? [image] : [],
-
-            description,
-
-            isRented: !!sp?.daThue,
-            isSold: !!sp?.daBan,
-          } as Product;
-        });
-
-        setAppProducts(minimal);
+        setAppProducts(res.products || []);
       } catch {
         // im lặng
       }
@@ -558,10 +502,7 @@ const App: React.FC = () => {
         }
 
         // ❌ không có quyền admin
-        const hasPermission =
-          authUser.role === "admin" ||
-          authUser.permissions?.includes("products") ||
-          authUser.permissions?.includes("bookings");
+        const hasPermission = canAccessAdmin(authUser);
 
         if (!hasPermission) {
           return (

@@ -9,7 +9,7 @@ import { Page } from "../types";
  * Navbar: Mobile có hamburger + sidebar drawer
  */
 
-import { AuthUser } from "../types";
+import { AuthUser, canAccessAdmin } from "../types";
 
 interface NavbarProps {
   currentPage: Page;
@@ -187,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile User Dropdown */}
             {authUser !== null && userMenuOpen && (
               <div className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
-                {authUser.role === "admin" && (
+                {canAccessAdmin(authUser) && (
                   <button
                     type="button"
                     className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
@@ -317,7 +317,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop User Dropdown */}
             {authUser !== null && userMenuOpen && (
               <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
-                {authUser.role === "admin" && (
+                {canAccessAdmin(authUser) && (
                   <button
                     type="button"
                     className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"

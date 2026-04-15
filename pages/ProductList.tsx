@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Product, Page } from "../types";
 import {
+  fetchProductsBundle,
   fetchProductsBundleRevalidateMapped,
   fetchProductsMeta,
   fetchProductsBundleRevalidate,

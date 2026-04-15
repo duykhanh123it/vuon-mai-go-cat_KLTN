@@ -15,9 +15,34 @@ import { useToast } from "../components/Toast";
 const formatPrice = (value: number | string | null | undefined) => {
   if (value == null || value === "") return "Liên hệ";
   const num =
-    typeof value === "number" ? value : Number(String(value).replace(",", "."));
+    typeof value === "number"
+      ? value
+      : Number(
+          String(value)
+            .replace(/[^\d.,-]/g, "")
+            .replace(/\./g, "")
+            .replace(",", "."),
+        );
   if (!Number.isFinite(num) || num <= 0) return "Liên hệ";
-  return (num * 1_000_000).toLocaleString("vi-VN") + "đ";
+  return Number(num).toLocaleString("vi-VN") + "đ";
+};
+
+const toMillionInput = (value: number | string | null | undefined) => {
+  if (value == null || value === "") return "";
+  const num =
+    typeof value === "number"
+      ? value
+      : Number(
+          String(value)
+            .replace(/[^\d.,-]/g, "")
+            .replace(/\./g, "")
+            .replace(",", "."),
+        );
+  if (!Number.isFinite(num) || num <= 0) return "";
+  const million = Number(num) / 1_000_000;
+  return Number.isInteger(million)
+    ? String(million)
+    : String(million).replace(".", ",");
 };
 
 const RECENT_USER_DAYS = 7;
@@ -31,7 +56,6 @@ const DEFAULT_AVATAR_URLS = [
 const hasRealAvatar = (avatarUrl?: string | null) => {
   const value = String(avatarUrl || "").trim();
   if (!value) return false;
-
   const lower = value.toLowerCase();
   return !DEFAULT_AVATAR_URLS.some((item) =>
     lower.endsWith(item.toLowerCase()),
@@ -41,12 +65,21 @@ const hasRealAvatar = (avatarUrl?: string | null) => {
 const formatGender = (value?: string | null) => {
   const raw = String(value || "").trim();
   if (!raw) return "--";
-
   const normalized = raw.toLowerCase();
   if (["nam", "male", "m"].includes(normalized)) return "Nam";
   if (["nữ", "nu", "female", "f"].includes(normalized)) return "Nữ";
-
   return raw;
+};
+
+const extractUserNote = (description?: string | null) => {
+  const s = String(description || "").trim();
+  if (!s) return "";
+  const idx = s.indexOf(". ");
+  if (idx < 0) return s;
+  const first = s.slice(0, idx).trim();
+  const looksLikeSpecs =
+    first.includes("·") || /Cao\s*~|Tán\s*~|Hoành\s*\d+/i.test(first);
+  return looksLikeSpecs ? s.slice(idx + 2).trim() : s;
 };
 
 type AdminTab = "products" | "bookings" | "users";
@@ -66,17 +99,17 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   });
   const [products, setProducts] = React.useState<Product[]>([]);
   const [bookings, setBookings] = React.useState<any[]>([]);
-  // ✅ BƯỚC 2.1 — THÊM STATE
   const [users, setUsers] = React.useState<AuthUser[]>([]);
 
-  // 🔴 BƯỚC 1: THÊM STATE MODAL
   const [showPermissionModal, setShowPermissionModal] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<AuthUser | null>(null);
   const [selectedPermissions, setSelectedPermissions] = React.useState<
     string[]
   >([]);
+  const [selectedRole, setSelectedRole] = React.useState<"user" | "admin">(
+    "user",
+  );
   const [adminPassword, setAdminPassword] = React.useState("");
-
   const [showCancelModal, setShowCancelModal] = React.useState(false);
   const [selectedBooking, setSelectedBooking] = React.useState<any | null>(
     null,
@@ -98,30 +131,13 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageInput, setPageInput] = React.useState("1");
   const itemsPerPage = 10;
-  // Thêm state thống kê
+
   const [stats, setStats] = React.useState({
     total: 0,
     bonsai: 0,
     tang: 0,
   });
   const [showModal, setShowModal] = React.useState(false);
-  React.useEffect(() => {
-    const scrollBarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
-    if (showModal) {
-      document.body.style.overflow = "hidden";
-      if (scrollBarWidth > 0) {
-        document.body.style.paddingRight = scrollBarWidth + "px";
-      }
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    };
-  }, [showModal]);
   const [modalMode, setModalMode] = React.useState<"create" | "view" | "edit">(
     "create",
   );
@@ -143,7 +159,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   });
   const [idError, setIdError] = React.useState("");
   const [isIdTouched, setIsIdTouched] = React.useState(false);
-  // ✅ BƯỚC 1: Thêm state validate toàn form
   const [errors, setErrors] = React.useState({
     rentPrice: "",
     price: "",
@@ -159,7 +174,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
   const [fullImage, setFullImage] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  // Bonus: Đóng modal bằng phím ESC
+
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowModal(false);
@@ -167,20 +182,14 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-  // Khi mở modal edit hoặc view → đổ dữ liệu vào form
+
   React.useEffect(() => {
     if (!selectedProduct) return;
     setFormData({
       id: selectedProduct.id || "",
       category: selectedProduct.category || "Mai Bonsai",
-      rentPrice:
-        selectedProduct.rentPrice != null
-          ? String(selectedProduct.rentPrice).replace(".", ",")
-          : "",
-      price:
-        selectedProduct.price != null
-          ? String(selectedProduct.price).replace(".", ",")
-          : "",
+      rentPrice: toMillionInput(selectedProduct.rentPrice),
+      price: toMillionInput(selectedProduct.price),
       height:
         selectedProduct.height != null
           ? String(selectedProduct.height).replace(".", ",")
@@ -197,16 +206,18 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         (selectedProduct as any).chau_m != null
           ? String((selectedProduct as any).chau_m).replace(".", ",")
           : "",
-      note: selectedProduct.description || "",
+      note: extractUserNote(selectedProduct.description || ""),
       daThue: selectedProduct.isRented || false,
       daBan: selectedProduct.isSold || false,
     });
     setPreviewImage(selectedProduct.image || null);
     setProductImageFile(null);
   }, [selectedProduct]);
+
   React.useEffect(() => {
     setPageInput(String(currentPage));
   }, [currentPage]);
+
   React.useEffect(() => {
     if (activeTab !== "products" || products.length > 0) return;
     const fetchData = async () => {
@@ -244,7 +255,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     };
     fetchData();
   }, [activeTab, productsType]);
-  // Load Booking
+
   React.useEffect(() => {
     if (activeTab !== "bookings" || bookings.length > 0) return;
     (async () => {
@@ -260,7 +271,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       }
     })();
   }, [activeTab]);
-  // Load Users
+
   React.useEffect(() => {
     if (activeTab !== "users" || users.length > 0) return;
     (async () => {
@@ -276,6 +287,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       }
     })();
   }, [activeTab]);
+
   const filteredProducts = products.filter((p) =>
     p.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -284,6 +296,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
+
   const bookingStats = React.useMemo(() => {
     const total = bookings.length;
     const pending = bookings.filter((b) => b.trangThai === "Mới").length;
@@ -292,10 +305,12 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     ).length;
     return { total, pending, confirmed };
   }, [bookings]);
+
   const filteredBookings = bookings.filter((b) => {
     if (bookingFilter === "Tất cả") return true;
     return b.trangThai === bookingFilter;
   });
+
   const filteredUsers = React.useMemo(() => {
     const keyword = userSearch.trim().toLowerCase();
     if (!keyword) return users;
@@ -359,6 +374,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       recentDays: RECENT_USER_DAYS,
     };
   }, [users]);
+
   const sidebarItems = [
     {
       key: "products",
@@ -383,9 +399,10 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       label: "Người dùng",
       icon: "👤",
       description: "Phân quyền tài khoản",
-      allow: authUser?.role === "admin", // chỉ admin thấy
+      allow: authUser?.role === "admin",
     },
   ];
+
   const validateTreeId = (id: string, category: string) => {
     const value = id.trim().toUpperCase();
     if (!value) return "Vui lòng nhập mã cây";
@@ -398,6 +415,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     }
     return "";
   };
+
   const normalizeId = (val: string) => val.replace(/\s+/g, "").toUpperCase();
   const isDuplicateId = (id: string) => {
     const normalizedInput = normalizeId(id);
@@ -409,6 +427,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       );
     });
   };
+
   const validateNumber = (value: string, field: string) => {
     if (!value) return "";
     if (field === "hoanh") {
@@ -422,6 +441,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
     }
     return "";
   };
+
   const renderHeaderTitle = () => {
     switch (activeTab) {
       case "products":
@@ -448,7 +468,9 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         };
     }
   };
+
   const headerInfo = renderHeaderTitle();
+
   const handleUpdateProduct = async () => {
     try {
       const id = formData.id.trim().toUpperCase();
@@ -456,35 +478,51 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         showToast("Vui lòng nhập mã cây", "error");
         return;
       }
+
       const idErrorCheck = validateTreeId(id, formData.category);
       if (idErrorCheck) {
         showToast(idErrorCheck, "error");
         return;
       }
+
       if (isDuplicateId(id)) {
         showToast("Mã cây đã tồn tại", "error");
         return;
       }
-      const res = await fetch(
-        `${import.meta.env.VITE_PRODUCTS_API_BASE}?api=updateProduct`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            api: "updateProduct",
-            id,
-            category: formData.category,
-            rentPrice: formData.rentPrice,
-            price: formData.price,
-            height: formData.height,
-            width: formData.width,
-            hoanh: formData.hoanh,
-            chau: formData.chau,
-            note: formData.note,
-            daThue: formData.daThue,
-            daBan: formData.daBan,
-          }),
+
+      let fileData = "";
+      if (productImageFile) {
+        fileData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(productImageFile);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+        });
+      }
+
+      const res = await fetch(import.meta.env.VITE_PRODUCTS_API_BASE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
         },
-      );
+        body: JSON.stringify({
+          api: "updateProduct",
+          originalId: selectedProduct?.id || id,
+          id,
+          category: formData.category,
+          rentPrice: formData.rentPrice,
+          price: formData.price,
+          height: formData.height,
+          width: formData.width,
+          hoanh: formData.hoanh,
+          chau: formData.chau,
+          note: formData.note,
+          daThue: formData.daThue,
+          daBan: formData.daBan,
+          fileData,
+        }),
+      });
+
       const data = await res.json();
       if (!data.ok) {
         showToast(
@@ -523,6 +561,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
       showToast("Lỗi kết nối server", "error");
     }
   };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "products":
@@ -779,7 +818,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                   </tbody>
                 </table>
               </div>
-              {/* Pagination */}
               <div className="flex items-center justify-center gap-4 mt-6">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -1056,6 +1094,9 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                               onClick={() => {
                                 setSelectedUser(u);
                                 setSelectedPermissions(u.permissions || []);
+                                setSelectedRole(
+                                  u.role === "admin" ? "admin" : "user",
+                                );
                                 setAdminPassword("");
                                 setShowPermissionModal(true);
                               }}
@@ -1077,6 +1118,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
         return null;
     }
   };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -1176,6 +1218,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
             </div>
           </header>
           {renderTabContent()}
+
           {/* Modal tạo/sửa/xem sản phẩm */}
           {showModal && (
             <div
@@ -1197,7 +1240,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     </h2>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    {/* ID + CATEGORY */}
                     <div className="flex flex-col">
                       <input
                         placeholder="Mã cây (VD: BS01A, T12)"
@@ -1247,7 +1289,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       <option>Mai Bonsai</option>
                       <option>Mai Tàng</option>
                     </select>
-                    {/* Giá thuê */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Giá thuê (triệu)"
@@ -1271,7 +1313,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* Giá bán */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Giá bán (triệu)"
@@ -1295,7 +1337,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* Chiều cao */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Chiều cao (m)"
@@ -1319,7 +1361,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* Ngang */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Ngang (m)"
@@ -1343,7 +1385,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* Hoành */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Hoành (cm)"
@@ -1367,7 +1409,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* Chậu */}
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Chậu (m)"
@@ -1391,7 +1433,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         </p>
                       )}
                     </div>
-                    {/* NOTE */}
+
                     <textarea
                       placeholder="Ghi chú hiển thị"
                       className="border p-2 rounded col-span-2"
@@ -1402,7 +1444,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       disabled={modalMode === "view"}
                     />
                   </div>
-                  {/* ADVANCED - Luôn hiển thị */}
+
                   <div className="mt-4 pt-4">
                     <p className="text-sm font-semibold text-slate-700 mb-3">
                       Thông tin nâng cao
@@ -1410,11 +1452,11 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div
                         className={`col-span-2 border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition
-  ${
-    isDragging
-      ? "border-amber-400 bg-amber-50 scale-[1.02]"
-      : "border-slate-300 bg-slate-50 hover:bg-slate-100"
-  }`}
+                          ${
+                            isDragging
+                              ? "border-amber-400 bg-amber-50 scale-[1.02]"
+                              : "border-slate-300 bg-slate-50 hover:bg-slate-100"
+                          }`}
                         onClick={() =>
                           modalMode !== "view" && fileInputRef.current?.click()
                         }
@@ -1517,6 +1559,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                       </label>
                     </div>
                   </div>
+
                   <div className="flex justify-end gap-3 mt-6">
                     <button
                       onClick={() => {
@@ -1669,7 +1712,8 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           )}
-          {/* ✅ BƯỚC 2.3 — MODAL CHỌN LÝ DO HỦY */}
+
+          {/* Các modal khác giữ nguyên */}
           {showCancelModal && selectedBooking && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
               <div className="bg-white rounded-xl p-6 w-[400px]">
@@ -1760,6 +1804,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           )}
+
           {showBookingNoteModal && (
             <div
               className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4"
@@ -1791,6 +1836,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           )}
+
           {editingBooking && (
             <div
               className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4"
@@ -1843,7 +1889,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                         );
                         return;
                       }
-                      // NÂNG CẤP NHẸ - Cập nhật UI ngay lập tức
                       setBookings((prev) =>
                         prev.map((b) =>
                           b.maDatLich === editingBooking.maDatLich
@@ -1851,10 +1896,8 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                             : b,
                         ),
                       );
-                      // Đóng modal ngay lập tức
                       setEditingBooking(null);
                       setEditingBookingNote("");
-                      // Gọi API chạy ngầm
                       updateBookingNote(
                         editingBooking.maDatLich,
                         editingBookingNote,
@@ -1875,6 +1918,7 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
               </div>
             </div>
           )}
+
           {fullImage && (
             <div
               className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
@@ -1889,13 +1933,30 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
             </div>
           )}
 
-          {/* 🔴 BƯỚC 3: THÊM MODAL PHÂN QUYỀN */}
           {showPermissionModal && selectedUser && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
               <div className="bg-white rounded-xl p-6 w-[420px] space-y-4">
                 <h2 className="text-lg font-semibold">Phân quyền người dùng</h2>
-
                 <p className="text-sm text-slate-500">{selectedUser.email}</p>
+
+                {/* Chọn Vai trò */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Vai trò
+                  </label>
+                  <select
+                    value={selectedRole}
+                    onChange={(e) =>
+                      setSelectedRole(
+                        e.target.value === "admin" ? "admin" : "user",
+                      )
+                    }
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
 
                 {/* Quyền */}
                 <div className="space-y-2">
@@ -1918,7 +1979,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                     />
                     Quản trị sản phẩm
                   </label>
-
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1940,7 +2000,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                   </label>
                 </div>
 
-                {/* Password */}
                 <input
                   type="password"
                   placeholder="Nhập mật khẩu admin..."
@@ -1949,7 +2008,6 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                   className="w-full border rounded px-3 py-2"
                 />
 
-                {/* Actions */}
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => {
@@ -1960,40 +2018,34 @@ const Admin: React.FC<AdminProps> = ({ authUser, onBackToSite }) => {
                   >
                     Hủy
                   </button>
-
                   <button
                     onClick={async () => {
                       if (!adminPassword) {
                         showToast("Nhập mật khẩu admin", "error");
                         return;
                       }
-
                       const ok = await verifyAdminPassword(
                         authUser?.email || "",
                         adminPassword,
                       );
-
                       if (!ok) {
                         showToast("Sai mật khẩu admin", "error");
                         return;
                       }
-
-                      const success = await updateUserPermissions(
-                        selectedUser.email,
-                        selectedPermissions,
-                      );
-
+                      const success = await updateUserPermissions({
+                        adminEmail: authUser?.email || "",
+                        adminPassword,
+                        targetEmail: selectedUser.email,
+                        role: selectedRole,
+                        permissions: selectedPermissions,
+                      });
                       if (!success) {
                         showToast("Cập nhật thất bại", "error");
                         return;
                       }
-
                       showToast("Đã cập nhật quyền", "success");
-
-                      // reload users
                       const data = await fetchUsers();
                       setUsers(data);
-
                       setShowPermissionModal(false);
                       setSelectedUser(null);
                     }}

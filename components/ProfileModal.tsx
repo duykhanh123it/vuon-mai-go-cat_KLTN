@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { AuthUser } from "../types";
+import { AuthUser, normalizeAuthUser } from "../types";
 import { useToast } from "./Toast";
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec";
+const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 interface ProfileModalProps {
   user: AuthUser;
   onClose: () => void;
@@ -16,13 +15,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   showPasswordSection = true,
 }) => {
   const { showToast } = useToast();
-  // BƯỚC 1: LẤY USER từ localStorage
-  const localUser = JSON.parse(localStorage.getItem("user") || "null");
   const [fullName, setFullName] = useState(user.name || "");
   const [phone, setPhone] = useState(user.phone || "");
   const [email, setEmail] = useState(user.email || "");
-  const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState("nam");
+  const [birthDate, setBirthDate] = useState(user.birthDate || "");
+  const [gender, setGender] = useState(user.gender || "nam");
   const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
@@ -33,7 +30,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const currentAvatar =
     previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
   const isUsingDefaultAvatar = !previewAvatar && !user.avatarUrl;
-  // (đã bỏ logout - xử lý ở Navbar)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -112,10 +108,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           setPreviewAvatar(null);
           return;
         }
-        onUpdateUser({
-          ...user,
-          avatarUrl: data.avatarUrl,
-        });
+        onUpdateUser(
+          normalizeAuthUser({
+            ...user,
+            avatarUrl: data.avatarUrl,
+          }),
+        );
         setPreviewAvatar(null);
       } catch {
         showToast("Lỗi upload avatar", "error");
@@ -127,65 +125,62 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleUpdate = async () => {
     try {
       setSaving(true);
-            const isChangingPassword =
-              !!currentPassword || !!newPassword || !!confirmPassword;
+      const isChangingPassword =
+        !!currentPassword || !!newPassword || !!confirmPassword;
 
-            if (isChangingPassword) {
-              if (!currentPassword || !newPassword || !confirmPassword) {
-                showToast("Thiếu thông tin đổi mật khẩu", "error");
-                setSaving(false);
-                return;
-              }
+      if (isChangingPassword) {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          showToast("Thiếu thông tin đổi mật khẩu", "error");
+          setSaving(false);
+          return;
+        }
 
-              if (newPassword.length < 6) {
-                showToast("Mật khẩu mới tối thiểu 6 ký tự", "error");
-                setSaving(false);
-                return;
-              }
+        if (newPassword.length < 6) {
+          showToast("Mật khẩu mới tối thiểu 6 ký tự", "error");
+          setSaving(false);
+          return;
+        }
 
-              if (newPassword !== confirmPassword) {
-                showToast("Xác nhận mật khẩu không khớp", "error");
-                setSaving(false);
-                return;
-              }
-              const resPass = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "text/plain;charset=utf-8",
-                },
-                body: JSON.stringify({
-                  api: "changePassword",
-                  email: user.email,
-                  currentPassword: currentPassword,
-                  newPassword: newPassword,
-                }),
-              });
-              const dataPass = await resPass.json();
-              if (!dataPass.ok) {
-                showToast(dataPass.error || "Đổi mật khẩu thất bại", "error");
-                setSaving(false);
-                return;
-              }
+        if (newPassword !== confirmPassword) {
+          showToast("Xác nhận mật khẩu không khớp", "error");
+          setSaving(false);
+          return;
+        }
+        const resPass = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            api: "changePassword",
+            email: user.email,
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+          }),
+        });
+        const dataPass = await resPass.json();
+        if (!dataPass.ok) {
+          showToast(dataPass.error || "Đổi mật khẩu thất bại", "error");
+          setSaving(false);
+          return;
+        }
 
-              // ✅ SUCCESS → LOGOUT NGAY
-              showToast(
-                "Đổi mật khẩu thành công, vui lòng đăng nhập lại",
-                "success",
-              );
+        // ✅ SUCCESS → LOGOUT NGAY
+        showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
 
-              // ❗ dùng đúng key bạn đang dùng trong app
-              localStorage.removeItem("vmgc_user");
+        // ❗ dùng đúng key bạn đang dùng trong app
+        localStorage.removeItem("vmgc_user");
 
-              // ⏳ delay để thấy toast
-              setTimeout(() => {
-                window.location.reload();
-              }, 1200);
+        // ⏳ delay để thấy toast
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
 
-              setSaving(false);
+        setSaving(false);
 
-              // ⛔ QUAN TRỌNG: dừng luôn tại đây
-              return;
-            }
+        // ⛔ QUAN TRỌNG: dừng luôn tại đây
+        return;
+      }
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -206,7 +201,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         setSaving(false);
         return;
       }
-      onUpdateUser(data.user);
+      onUpdateUser(
+        normalizeAuthUser({
+          ...user,
+          ...data.user,
+          birthDate,
+          gender,
+        }),
+      );
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");

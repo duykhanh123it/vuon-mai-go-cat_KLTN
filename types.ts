@@ -133,6 +133,16 @@ export function normalizeAuthUser(
   };
 }
 
+export function canAccessAdmin(user: AuthUser | null | undefined): boolean {
+  if (!user) return false;
+
+  if (user.role === "admin") return true;
+
+  const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+
+  return permissions.includes("products") || permissions.includes("bookings");
+}
+
 export interface LoginFormData {
   email: string;
   password: string;

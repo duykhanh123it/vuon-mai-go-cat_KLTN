@@ -58,24 +58,28 @@ export const products: Product[] = (raw as RawRow[])
     });
 
     return {
-      id: code,
-      name: `Mai ${displayCode}`,
+  id: code,
+  name: `Mai ${displayCode}`,
 
-      category: "Mai Bonsai",
+  category: "Mai Bonsai",
 
-      price: toVND(row["Giá Bán (triệu)"]),
-      rentPrice: toVND(row["Giá Thuê (triệu)"]),
+  price: toVND(row["Giá Bán (triệu)"]),
+  rentPrice: toVND(row["Giá Thuê (triệu)"]),
 
-      height: fmtMeter(row.Cao_m),
-      width: fmtMeter(row.Ngang_m),
-      age: null,
+  height: fmtMeter(row.Cao_m),
+  width: fmtMeter(row.Ngang_m),
+  age: null,
 
-      image,
-      thumbnails: hasImage ? [image] : [],
+  image,
+  thumbnails: hasImage ? [image] : [],
 
-      // mô tả bớt “cứng”: ưu tiên show specs nếu có
-      description: specsText
-        ? `${specsText}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`
-        : `Mã cây ${displayCode}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`,
-    };
+  description: specsText
+    ? `${specsText}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`
+    : `Mã cây ${displayCode}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`,
+
+  hoanh_cm: row.Hoành_cm ?? null,
+  chau_m: row.Chậu_m ?? null,
+  isRented: false,
+  isSold: false,
+};
   });

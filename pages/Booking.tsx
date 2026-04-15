@@ -11,8 +11,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
  * - Vì vậy mình dùng fetch({ mode: "no-cors" }) để gửi dữ liệu "fire-and-forget".
  * - Nếu bạn muốn nhận lại "mã đặt lịch" từ server, mình sẽ đưa phương án iframe+postMessage.
  */
-const APPS_SCRIPT_WEBAPP_URL =
-  "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec"; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
+const APPS_SCRIPT_WEBAPP_URL = import.meta.env.VITE_PRODUCTS_API_BASE; // TODO: dán URL dạng https://script.google.com/macros/s/XXXX/exec
 type BookingForm = {
   name: string;
   phone: string;
@@ -137,6 +136,7 @@ const Booking: React.FC<{
     setFormData((prev) => ({
       ...prev,
       name: prev.name || authUser.name || "",
+      phone: prev.phone || authUser.phone || "",
       email: prev.email || authUser.email || "",
     }));
   }, [authUser]);
@@ -184,27 +184,29 @@ const Booking: React.FC<{
     setError("");
     setSuccessCode("");
     setTimeError("");
+
     if (formData.website.trim()) return;
     if (!formData.name.trim()) return setError("Vui lòng nhập họ và tên.");
-    if (!phoneVN(formData.phone))
+    if (!phoneVN(formData.phone)) {
       return setError(
         "Số điện thoại không hợp lệ (0xxxxxxxxx hoặc +84xxxxxxxxx).",
       );
+    }
     if (!formData.date) return setError("Vui lòng chọn ngày tham quan.");
-    if (!isFutureOrToday(formData.date))
+    if (!isFutureOrToday(formData.date)) {
       return setError("Ngày tham quan phải từ hôm nay trở đi.");
+    }
     if (!formData.time) return setError("Vui lòng chọn giờ hẹn.");
     if (!isFutureOrNowDateTime(formData.date, formData.time)) {
       setTimeError("Giờ hẹn phải từ thời điểm hiện tại trở đi.");
       return;
     }
     if (!APPS_SCRIPT_WEBAPP_URL) {
-      return setError(
-        "Chưa cấu hình APPS_SCRIPT_WEBAPP_URL. Bạn hãy dán URL Web App (Apps Script) vào Booking.tsx.",
-      );
+      return setError("Chưa cấu hình VITE_PRODUCTS_API_BASE.");
     }
+
     const payload = {
-      api: "booking", // 🔥 bắt buộc
+      api: "booking",
       name: formData.name,
       phone: toVNPhone(formData.phone),
       email: formData.email,
@@ -220,39 +222,42 @@ const Booking: React.FC<{
     try {
       const res = await fetch(APPS_SCRIPT_WEBAPP_URL, {
         method: "POST",
-        mode: "no-cors",
         headers: {
           "Content-Type": "text/plain;charset=utf-8",
         },
         body: JSON.stringify(payload),
       });
 
-      setIsSubmitted(true);
-      resetForm();
-      setLoading(false);
-
-      if (!data.ok) {
-        throw new Error(data.error || "Đặt lịch thất bại");
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server không trả JSON hợp lệ");
       }
 
-      setSuccessCode(data.bookingCode || "");
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Đặt lịch thất bại");
+      }
+
+      setSuccessCode(String(data.bookingCode || ""));
       setIsSubmitted(true);
+
+      const saved: BookingHistoryItem = {
+        name: payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        note: payload.note,
+        submittedAt: new Date().toISOString(),
+      };
+      saveBookingHistory(saved);
+      setHistory(loadBookingHistory());
+
       resetForm();
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra");
+      setError(err?.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
-
-    const saved: BookingHistoryItem = {
-      name: payload.name,
-      phone: payload.phone,
-      email: payload.email,
-      note: payload.note,
-      submittedAt: new Date().toISOString(),
-    };
-    saveBookingHistory(saved);
-    setHistory(loadBookingHistory());
   };
   return (
     <div className="min-h-screen bg-slate-50">
@@ -346,7 +351,11 @@ const Booking: React.FC<{
                       form.querySelectorAll<HTMLElement>(
                         'input:not([type="hidden"]), textarea, button, select',
                       ),
-                    ).filter((el) => el.offsetParent !== null);
+                    ).filter((el) => {
+                      const node = el as HTMLElement;
+                      return node.offsetParent !== null;
+                    }) as HTMLElement[];
+
                     const index = focusables.indexOf(target);
                     focusables[index + 1]?.focus();
                   }}

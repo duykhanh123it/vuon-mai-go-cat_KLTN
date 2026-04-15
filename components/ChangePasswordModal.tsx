@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { AuthUser } from "../types";
 import { useToast } from "./Toast";
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbyWjdVL_xW3h1ViUc7yUwe4AT6leoCH_fMF_DvZsHns16m0T5OLh_mS2slxPROdnbvH/exec";
+const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 interface Props {
   user: AuthUser;
   onClose: () => void;

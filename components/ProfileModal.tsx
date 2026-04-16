@@ -27,6 +27,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
+  const isGoogleUser = !user.hasPassword;
   const currentAvatar =
     previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
   const isUsingDefaultAvatar = !previewAvatar && !user.avatarUrl;
@@ -125,18 +126,52 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleUpdate = async () => {
     try {
       setSaving(true);
-      const isChangingPassword =
-        !!currentPassword || !!newPassword || !!confirmPassword;
+      const isChangingPassword = isGoogleUser
+        ? !!newPassword || !!confirmPassword
+        : !!currentPassword || !!newPassword || !!confirmPassword;
 
       if (isChangingPassword) {
-        if (!currentPassword || !newPassword || !confirmPassword) {
-          showToast("Thiếu thông tin đổi mật khẩu", "error");
+        if (
+          (!isGoogleUser && !currentPassword) ||
+          !newPassword ||
+          !confirmPassword
+        ) {
+          showToast(
+            isGoogleUser
+              ? "Thiếu thông tin thiết lập mật khẩu"
+              : "Thiếu thông tin đổi mật khẩu",
+            "error",
+          );
           setSaving(false);
           return;
         }
 
-        if (newPassword.length < 6) {
-          showToast("Mật khẩu mới tối thiểu 6 ký tự", "error");
+        if (newPassword.length < 8) {
+          showToast("Mật khẩu mới phải có ít nhất 8 ký tự", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (!/[A-Z]/.test(newPassword)) {
+          showToast("Mật khẩu mới phải có ít nhất 1 chữ in hoa", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (!/[a-z]/.test(newPassword)) {
+          showToast("Mật khẩu mới phải có ít nhất 1 chữ thường", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (!/[0-9]/.test(newPassword)) {
+          showToast("Mật khẩu mới phải có ít nhất 1 chữ số", "error");
+          setSaving(false);
+          return;
+        }
+
+        if (!/[^A-Za-z0-9]/.test(newPassword)) {
+          showToast("Mật khẩu mới phải có ít nhất 1 ký tự đặc biệt", "error");
           setSaving(false);
           return;
         }
@@ -146,6 +181,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           setSaving(false);
           return;
         }
+
+        if (!isGoogleUser && newPassword === currentPassword) {
+          showToast("Mật khẩu mới không được trùng mật khẩu cũ", "error");
+          setSaving(false);
+          return;
+        }
+
         const resPass = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -154,7 +196,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           body: JSON.stringify({
             api: "changePassword",
             email: user.email,
-            currentPassword: currentPassword,
+            currentPassword: isGoogleUser ? "" : currentPassword,
             newPassword: newPassword,
           }),
         });
@@ -166,7 +208,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         }
 
         // ✅ SUCCESS → LOGOUT NGAY
-        showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
+        showToast(
+          isGoogleUser
+            ? "Thiết lập mật khẩu thành công, vui lòng đăng nhập lại"
+            : "Đổi mật khẩu thành công, vui lòng đăng nhập lại",
+          "success",
+        );
 
         // ❗ dùng đúng key bạn đang dùng trong app
         localStorage.removeItem("vmgc_user");
@@ -366,28 +413,35 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           {showPasswordSection && (
             <div className="mt-6 pt-5 border-t border-slate-200">
               <h3 className="text-base font-semibold text-slate-800 mb-4">
-                Đổi mật khẩu
+                {isGoogleUser ? "Thiết lập mật khẩu" : "Đổi mật khẩu"}
               </h3>
+
               <div className="space-y-3">
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Mật khẩu hiện tại"
-                  className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
-                />
+                {!isGoogleUser && (
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Mật khẩu hiện tại"
+                    className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                )}
+
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mật khẩu mới"
+                  placeholder={isGoogleUser ? "Mật khẩu mới" : "Mật khẩu mới"}
                   className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
                 />
+
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Xác nhận mật khẩu"
+                  placeholder={
+                    isGoogleUser ? "Xác nhận mật khẩu mới" : "Xác nhận mật khẩu"
+                  }
                   className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>

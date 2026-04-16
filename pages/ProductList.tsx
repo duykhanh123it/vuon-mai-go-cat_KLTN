@@ -452,6 +452,7 @@ const ProductList: React.FC<ProductListProps> = ({
   onProductsUpdated,
 }) => {
   const [contactOpen, setContactOpen] = useState(false);
+  const topRef = useRef<HTMLDivElement | null>(null);
 
   const openContact = () => {
     if (isTouchDevice()) {
@@ -738,43 +739,40 @@ const ProductList: React.FC<ProductListProps> = ({
     });
   }, [products, filterType, searchTerm, priceMode, filterPrice, filterHeight]);
 
+  // ==================== PAGINATION - ĐÃ REPLACE ====================
   // Pagination
-  const [page, setPage] = useState<number>(productsPage || 1);
-  const [pageDraft, setPageDraft] = useState<string>(String(productsPage || 1));
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPage));
+  const safePage = Math.min(
+    Math.max(1, Math.trunc(productsPage || 1)),
+    totalPages,
+  );
+  const [pageDraft, setPageDraft] = useState<string>(String(safePage));
 
   // Khi đổi filter/search → quay về trang 1
   useEffect(() => {
-    setPage(1);
     setProductsPage(1);
-  }, [
-    filterType,
-    priceMode,
-    filterPrice,
-    filterHeight,
-    searchTerm,
-    setProductsPage,
-  ]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / perPage));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
+    setPageDraft("1");
+  }, [filterType, priceMode, filterPrice, filterHeight, searchTerm]);
 
   useEffect(() => {
-    if (page !== safePage) setPage(safePage);
-  }, [page, safePage]);
-
-  useEffect(() => {
-    setProductsPage(safePage);
-  }, [safePage, setProductsPage]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0 });
+    setPageDraft(String(safePage));
   }, [safePage]);
 
   useEffect(() => {
-    const p = Math.max(1, Math.trunc(productsPage || 1));
-    setPage((cur) => (cur === p ? cur : p));
-    setPageDraft(String(p));
-  }, [productsPage]);
+    if (!topRef.current) return;
+
+    const HEADER_OFFSET = 96;
+
+    const y =
+      topRef.current.getBoundingClientRect().top +
+      window.scrollY -
+      HEADER_OFFSET;
+
+    window.scrollTo({
+      top: Math.max(0, y),
+      behavior: "smooth",
+    });
+  }, [safePage]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -783,25 +781,27 @@ const ProductList: React.FC<ProductListProps> = ({
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
         target?.isContentEditable
-      )
+      ) {
         return;
-      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-      if (e.key === "ArrowLeft" || e.key === "PageUp") {
-        if (safePage > 1) {
-          setPage(safePage - 1);
-          setProductsPage(safePage - 1);
-        }
       }
-      if (e.key === "ArrowRight" || e.key === "PageDown") {
-        if (safePage < totalPages) {
-          setPage(safePage + 1);
-          setProductsPage(safePage + 1);
-        }
+
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+
+      if ((e.key === "ArrowLeft" || e.key === "PageUp") && safePage > 1) {
+        setProductsPage(safePage - 1);
+      }
+
+      if (
+        (e.key === "ArrowRight" || e.key === "PageDown") &&
+        safePage < totalPages
+      ) {
+        setProductsPage(safePage + 1);
       }
     };
+
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [safePage, totalPages, setProductsPage]);
+  }, [safePage, totalPages]);
 
   const start = (safePage - 1) * perPage;
   const end = start + perPage;
@@ -813,7 +813,7 @@ const ProductList: React.FC<ProductListProps> = ({
     setFilterPrice("All");
     setFilterHeight("All");
     setSearchTerm("");
-    setPage(1);
+    setPageDraft("1");
     setProductsPage(1);
     setIsFilterOpen(false);
   };
@@ -846,7 +846,7 @@ const ProductList: React.FC<ProductListProps> = ({
         </div>
       </section>
 
-      <div className="container mx-auto px-4 mt-10">
+      <div ref={topRef} className="container mx-auto px-4 mt-10">
         {/* Loading / Error */}
         {loadingProducts && products.length === 0 && (
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
@@ -866,7 +866,7 @@ const ProductList: React.FC<ProductListProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
           {/* Sidebar filters */}
-          <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full lg:w-80">
+          <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full">
             <button
               type="button"
               onClick={() => setIsFilterOpen((v) => !v)}
@@ -1022,7 +1022,7 @@ const ProductList: React.FC<ProductListProps> = ({
           </aside>
 
           {/* Main content */}
-          <div>
+          <div className="min-w-0">
             {/* Search + count */}
             <div className="flex items-center justify-between gap-4 mb-6">
               <div className="relative flex-1">
@@ -1053,7 +1053,7 @@ const ProductList: React.FC<ProductListProps> = ({
             </div>
 
             {/* Grid Sản Phẩm */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               {pagedProducts.map((p: any) => (
                 <ProductCard
                   key={p.id}
@@ -1107,13 +1107,13 @@ const ProductList: React.FC<ProductListProps> = ({
               </a>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination - ĐÃ REPLACE */}
             {totalPages > 1 && (
               <div className="mt-8 sm:mt-9 mb-6 flex items-center justify-center">
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 bg-white text-slate-800 rounded-full shadow-md px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white text-slate-800 rounded-full shadow-md px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200">
                   <button
                     type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setProductsPage(Math.max(1, safePage - 1))}
                     disabled={safePage <= 1}
                     className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
                       safePage <= 1
@@ -1124,52 +1124,73 @@ const ProductList: React.FC<ProductListProps> = ({
                   >
                     ←
                   </button>
+
                   <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 whitespace-nowrap">
                     <span className="text-xs text-slate-600 hidden sm:inline">
                       Trang
                     </span>
+
                     <input
                       value={pageDraft}
                       onChange={(e) => {
-                        const v = e.target.value.replace(/[^\d]/g, "");
-                        setPageDraft(v);
+                        setPageDraft(e.target.value.replace(/[^\d]/g, ""));
                       }}
                       onKeyDown={(e) => {
                         if (e.key !== "Enter") return;
+
+                        if (pageDraft === "") {
+                          setPageDraft(String(safePage));
+                          return;
+                        }
+
                         const n = Number(pageDraft);
-                        if (!Number.isFinite(n) || pageDraft === "") return;
-                        setPage(
-                          Math.min(Math.max(1, Math.trunc(n)), totalPages),
+                        if (!Number.isFinite(n)) {
+                          setPageDraft(String(safePage));
+                          return;
+                        }
+
+                        const nextPage = Math.min(
+                          Math.max(1, Math.trunc(n)),
+                          totalPages,
                         );
+
+                        setProductsPage(nextPage);
                       }}
                       onBlur={() => {
                         if (pageDraft === "") {
                           setPageDraft(String(safePage));
                           return;
                         }
+
                         const n = Number(pageDraft);
                         if (!Number.isFinite(n)) {
                           setPageDraft(String(safePage));
                           return;
                         }
-                        const next = Math.min(
+
+                        const nextPage = Math.min(
                           Math.max(1, Math.trunc(n)),
                           totalPages,
                         );
-                        setPage(next);
+
+                        setProductsPage(nextPage);
                       }}
                       className="w-12 sm:w-14 text-center bg-slate-100 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-amber-300 text-xs text-slate-800"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       type="text"
                     />
+
                     <span className="text-xs text-slate-600">
                       / {totalPages}
                     </span>
                   </div>
+
                   <button
                     type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setProductsPage(Math.min(totalPages, safePage + 1))
+                    }
                     disabled={safePage >= totalPages}
                     className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
                       safePage >= totalPages

@@ -247,13 +247,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-    const publicRent = parseMoney(p?.rentPrice);
-    const publicSell = parseMoney(p?.price);
-    const rentParts = formatVndParts(publicRent);
-    const sellParts = formatVndParts(publicSell);
-    const hasPriceToShow =
-      (publicRent != null && publicRent > 0) ||
-      (publicSell != null && publicSell > 0);
+  const publicRent = parseMoney(p?.rentPrice);
+  const publicSell = parseMoney(p?.price);
+  const rentParts = formatVndParts(publicRent);
+  const sellParts = formatVndParts(publicSell);
+  const hasPriceToShow =
+    (publicRent != null && publicRent > 0) ||
+    (publicSell != null && publicSell > 0);
 
   const specs = [
     { label: "Cao", value: (p as any)?.height || "—" },
@@ -443,6 +443,126 @@ const ProductCard: React.FC<ProductCardProps> = ({
     </div>
   );
 };
+
+const ProductCardSkeleton = () => (
+  <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+    <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
+      <div className="absolute inset-0 animate-pulse bg-slate-200" />
+      <div className="absolute left-4 top-4 h-7 w-24 rounded-full bg-white/60 animate-pulse" />
+      <div className="absolute right-4 top-4 h-7 w-24 rounded-full bg-white/50 animate-pulse" />
+    </div>
+
+    <div className="p-5">
+      <div className="mb-4">
+        <div className="h-3 w-16 rounded bg-slate-200 animate-pulse mb-2" />
+        <div className="h-8 w-28 rounded bg-slate-200 animate-pulse" />
+      </div>
+
+      <div className="mb-4 grid grid-cols-4 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
+          >
+            <div className="mb-1 h-2.5 w-8 rounded bg-slate-200 animate-pulse" />
+            <div className="h-4 w-10 rounded bg-slate-200 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-3">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+            <div className="mb-2 h-2.5 w-12 rounded bg-slate-200 animate-pulse" />
+            <div className="h-5 w-16 rounded bg-slate-200 animate-pulse" />
+          </div>
+          <div className="min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+            <div className="mb-2 h-2.5 w-8 rounded bg-slate-200 animate-pulse" />
+            <div className="h-5 w-16 rounded bg-slate-200 animate-pulse" />
+          </div>
+          <div className="col-span-2 h-12 rounded-xl bg-amber-200/70 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ProductListSkeleton = () => (
+  <div className="animate-in fade-in duration-300">
+    <div className="mb-6 rounded-2xl border border-slate-200 bg-white/80 p-4 sm:p-5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="h-4 w-36 rounded bg-slate-200 animate-pulse mb-2" />
+          <div className="h-3 w-56 rounded bg-slate-200 animate-pulse" />
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm text-amber-900 border border-amber-200 w-fit">
+          <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+          Đang tải sản phẩm...
+        </div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
+      <aside className="hidden lg:block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-5 h-5 w-24 rounded bg-slate-200 animate-pulse" />
+        <div className="space-y-6">
+          <div>
+            <div className="mb-3 h-4 w-20 rounded bg-slate-200 animate-pulse" />
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-10 rounded-xl bg-slate-100 animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 h-4 w-20 rounded bg-slate-200 animate-pulse" />
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+              <div className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-10 rounded-xl bg-slate-100 animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 h-4 w-20 rounded bg-slate-200 animate-pulse" />
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-10 rounded-xl bg-slate-100 animate-pulse ${i === 4 ? "col-span-2" : ""}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div className="min-w-0">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="h-12 flex-1 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+          <div className="h-4 w-24 rounded bg-slate-200 animate-pulse" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const FilterIcon = ({ className = "" }: { className?: string }) => (
   <svg
@@ -923,365 +1043,365 @@ const ProductList: React.FC<ProductListProps> = ({
       </section>
 
       <div ref={topRef} className="container mx-auto px-4 mt-10">
-        {/* Loading / Error */}
-        {loadingProducts && products.length === 0 && (
-          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[280px] bg-slate-200 rounded-2xl animate-pulse"
-              />
-            ))}
-          </div>
-        )}
-        {productsError && (
-          <div className="mb-6 text-center text-red-600 text-sm">
-            Lỗi tải sản phẩm: {productsError}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
-          {/* Sidebar filters */}
-          <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full">
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen((v) => !v)}
-              className="w-full lg:hidden flex items-center justify-between gap-3 font-bold py-2"
-            >
-              <span className="flex items-center gap-2">
-                <FilterIcon className="text-amber-500" />
-                Bộ Lọc
-              </span>
-              <svg
-                className={`h-5 w-5 text-slate-600 transition-transform duration-200 ${
-                  isFilterOpen ? "rotate-180" : ""
-                }`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            <h3 className="hidden lg:flex font-bold items-center gap-2 mb-5">
-              <FilterIcon className="text-amber-500" />
-              Bộ Lọc
-            </h3>
-            <div className={`${isFilterOpen ? "block" : "hidden"} lg:block`}>
-              <div className="space-y-6">
-                {/* Sản phẩm */}
-                <div>
-                  <label className="text-sm text-slate-500 block mb-3">
-                    Sản Phẩm
-                  </label>
-                  <div className="flex flex-col gap-2">
-                    {categoryOptions.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => {
-                          setFilterType(type);
-                          setPriceMode("rent");
-                          setFilterPrice("All");
-                          setFilterHeight("All");
-                          setSearchTerm("");
-                          setIsFilterOpen(false);
-                        }}
-                        className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                          filterType === type
-                            ? "bg-amber-400 text-amber-950"
-                            : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                        }`}
-                        type="button"
-                      >
-                        {type === "All" ? "Tất cả" : type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Khung Giá */}
-                <div>
-                  <label className="text-sm text-slate-500 block mb-3">
-                    Khung giá
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setPriceMode("rent")}
-                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        priceMode === "rent"
-                          ? "bg-amber-400 text-amber-950"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      Thuê
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPriceMode("sell")}
-                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        priceMode === "sell"
-                          ? "bg-amber-400 text-amber-950"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      Bán
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {PRICE_OPTIONS.map((item) => (
-                      <button
-                        key={item.key}
-                        onClick={() => {
-                          setFilterPrice(item.key);
-                          setIsFilterOpen(false);
-                        }}
-                        className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                          filterPrice === item.key
-                            ? "bg-amber-400 text-amber-950"
-                            : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                        }`}
-                        type="button"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Chiều cao */}
-                <div>
-                  <label className="text-sm text-slate-500 block mb-3">
-                    Chiều cao
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        ["All", "Tất cả"],
-                        ["under1_5", "Dưới 1.5m"],
-                        ["1_5to2", "1.5m - 2m"],
-                        ["2to2_5", "2m - 2.5m"],
-                        ["over2_5", "Trên 2.5m"],
-                      ] as Array<[HeightKey, string]>
-                    ).map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => setFilterHeight(key)}
-                        className={`
-                          px-4 py-2 rounded-xl text-sm font-bold transition-all
-                          ${key === "over2_5" ? "col-span-2" : ""}
-                          ${
-                            filterHeight === key
-                              ? "bg-amber-400 text-amber-950"
-                              : "bg-slate-50 hover:bg-slate-100 text-slate-700"
-                          }
-                        `}
-                        type="button"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all select-none"
-                  >
-                    Reset bộ lọc
-                  </button>
-                </div>
+        {/* Loading lần đầu: chỉ hiện skeleton */}
+        {loadingProducts && products.length === 0 ? (
+          <ProductListSkeleton />
+        ) : (
+          <>
+            {productsError && (
+              <div className="mb-6 text-center text-red-600 text-sm">
+                Lỗi tải sản phẩm: {productsError}
               </div>
-            </div>
-          </aside>
+            )}
 
-          {/* Main content */}
-          <div className="min-w-0">
-            {/* Search + count */}
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <div className="relative flex-1">
-                <input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm mã/tên sản phẩm..."
-                  className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-11 pr-4 outline-none focus:ring-2 focus:ring-amber-200 transition"
-                />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
+              {/* Sidebar filters */}
+              <aside className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 w-full">
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen((v) => !v)}
+                  className="w-full lg:hidden flex items-center justify-between gap-3 font-bold py-2"
+                >
+                  <span className="flex items-center gap-2">
+                    <FilterIcon className="text-amber-500" />
+                    Bộ Lọc
+                  </span>
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
+                    className={`h-5 w-5 text-slate-600 transition-transform duration-200 ${
+                      isFilterOpen ? "rotate-180" : ""
+                    }`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
                     <path
                       fillRule="evenodd"
-                      d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
                       clipRule="evenodd"
                     />
                   </svg>
-                </div>
-              </div>
-              <p className="text-slate-500 text-sm whitespace-nowrap">
-                {filteredProducts.length}/{denominator} sản phẩm
-              </p>
-            </div>
+                </button>
+                <h3 className="hidden lg:flex font-bold items-center gap-2 mb-5">
+                  <FilterIcon className="text-amber-500" />
+                  Bộ Lọc
+                </h3>
+                <div
+                  className={`${isFilterOpen ? "block" : "hidden"} lg:block`}
+                >
+                  <div className="space-y-6">
+                    {/* Sản phẩm */}
+                    <div>
+                      <label className="text-sm text-slate-500 block mb-3">
+                        Sản Phẩm
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        {categoryOptions.map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setFilterType(type);
+                              setPriceMode("rent");
+                              setFilterPrice("All");
+                              setFilterHeight("All");
+                              setSearchTerm("");
+                              setIsFilterOpen(false);
+                            }}
+                            className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                              filterType === type
+                                ? "bg-amber-400 text-amber-950"
+                                : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                            }`}
+                            type="button"
+                          >
+                            {type === "All" ? "Tất cả" : type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-            {/* Grid Sản Phẩm */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
-              {pagedProducts.map((p: any) => (
-                <ProductCard
-                  key={p.id}
-                  p={p}
-                  onOpenDetail={(product) => {
-                    onOpenProduct(product, safePage);
-                    window.scrollTo(0, 0);
-                  }}
-                  onContact={openContact}
-                />
-              ))}
-            </div>
+                    {/* Khung Giá */}
+                    <div>
+                      <label className="text-sm text-slate-500 block mb-3">
+                        Khung giá
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setPriceMode("rent")}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            priceMode === "rent"
+                              ? "bg-amber-400 text-amber-950"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          Thuê
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPriceMode("sell")}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            priceMode === "sell"
+                              ? "bg-amber-400 text-amber-950"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          Bán
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {PRICE_OPTIONS.map((item) => (
+                          <button
+                            key={item.key}
+                            onClick={() => {
+                              setFilterPrice(item.key);
+                              setIsFilterOpen(false);
+                            }}
+                            className={`text-left px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                              filterPrice === item.key
+                                ? "bg-amber-400 text-amber-950"
+                                : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                            }`}
+                            type="button"
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-            {/* Gợi ý tư vấn */}
-            <div className="mt-12 bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-slate-700 text-center md:text-left">
-                <p className="font-bold text-lg">
-                  Bạn chưa tìm được cây phù hợp?
-                </p>
-                <p className="text-sm text-slate-600 mt-1">
-                  🌼 Nhà vườn còn nhiều cây chưa đăng đủ thông tin.
-                </p>
-                <p className="text-sm text-slate-600 mt-1">
-                  👉 Gọi ngay để được dẫn xem cây đúng ngân sách & không gian
-                  của bạn.
-                </p>
-              </div>
-              <a
-                href={`tel:${PHONE}`}
-                className="
-                  group relative overflow-hidden inline-flex items-center gap-2
-                  bg-red-600 hover:bg-red-700 text-white
-                  px-6 py-3 rounded-xl font-bold shadow-md
-                  transition-transform duration-200 ease-out
-                  hover:scale-[1.03] active:scale-[0.97]
-                "
-              >
-                <span className="inline-flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110">
-                  📞
-                </span>
-                <span>Gọi Ngay</span>
-                <span
-                  aria-hidden
-                  className="
-                    pointer-events-none absolute inset-0
-                    bg-gradient-to-r from-transparent via-white/35 to-transparent
-                    translate-x-[-140%] group-hover:translate-x-[140%]
-                    transition-transform duration-500 ease-out blur-[2px]
-                  "
-                />
-              </a>
-            </div>
-
-            {/* Pagination - ĐÃ REPLACE */}
-            {totalPages > 1 && (
-              <div className="mt-8 sm:mt-9 mb-6 flex items-center justify-center">
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white text-slate-800 rounded-full shadow-md px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setProductsPage(Math.max(1, safePage - 1))}
-                    disabled={safePage <= 1}
-                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
-                      safePage <= 1
-                        ? "opacity-40 cursor-not-allowed"
-                        : "hover:bg-slate-100"
-                    }`}
-                    aria-label="Trang trước"
-                  >
-                    ←
-                  </button>
-
-                  <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 whitespace-nowrap">
-                    <span className="text-xs text-slate-600 hidden sm:inline">
-                      Trang
-                    </span>
-
-                    <input
-                      value={pageDraft}
-                      onChange={(e) => {
-                        setPageDraft(e.target.value.replace(/[^\d]/g, ""));
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key !== "Enter") return;
-
-                        if (pageDraft === "") {
-                          setPageDraft(String(safePage));
-                          return;
-                        }
-
-                        const n = Number(pageDraft);
-                        if (!Number.isFinite(n)) {
-                          setPageDraft(String(safePage));
-                          return;
-                        }
-
-                        const nextPage = Math.min(
-                          Math.max(1, Math.trunc(n)),
-                          totalPages,
-                        );
-
-                        setProductsPage(nextPage);
-                      }}
-                      onBlur={() => {
-                        if (pageDraft === "") {
-                          setPageDraft(String(safePage));
-                          return;
-                        }
-
-                        const n = Number(pageDraft);
-                        if (!Number.isFinite(n)) {
-                          setPageDraft(String(safePage));
-                          return;
-                        }
-
-                        const nextPage = Math.min(
-                          Math.max(1, Math.trunc(n)),
-                          totalPages,
-                        );
-
-                        setProductsPage(nextPage);
-                      }}
-                      className="w-12 sm:w-14 text-center bg-slate-100 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-amber-300 text-xs text-slate-800"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      type="text"
-                    />
-
-                    <span className="text-xs text-slate-600">
-                      / {totalPages}
-                    </span>
+                    {/* Chiều cao */}
+                    <div>
+                      <label className="text-sm text-slate-500 block mb-3">
+                        Chiều cao
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(
+                          [
+                            ["All", "Tất cả"],
+                            ["under1_5", "Dưới 1.5m"],
+                            ["1_5to2", "1.5m - 2m"],
+                            ["2to2_5", "2m - 2.5m"],
+                            ["over2_5", "Trên 2.5m"],
+                          ] as Array<[HeightKey, string]>
+                        ).map(([key, label]) => (
+                          <button
+                            key={key}
+                            onClick={() => setFilterHeight(key)}
+                            className={`
+                              px-4 py-2 rounded-xl text-sm font-bold transition-all
+                              ${key === "over2_5" ? "col-span-2" : ""}
+                              ${
+                                filterHeight === key
+                                  ? "bg-amber-400 text-amber-950"
+                                  : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                              }
+                            `}
+                            type="button"
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all select-none"
+                      >
+                        Reset bộ lọc
+                      </button>
+                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setProductsPage(Math.min(totalPages, safePage + 1))
-                    }
-                    disabled={safePage >= totalPages}
-                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
-                      safePage >= totalPages
-                        ? "opacity-40 cursor-not-allowed"
-                        : "hover:bg-slate-100"
-                    }`}
-                    aria-label="Trang sau"
-                  >
-                    →
-                  </button>
                 </div>
+              </aside>
+
+              {/* Main content */}
+              <div className="min-w-0">
+                {/* Search + count */}
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div className="relative flex-1">
+                    <input
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Tìm kiếm mã/tên sản phẩm..."
+                      className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-11 pr-4 outline-none focus:ring-2 focus:ring-amber-200 transition"
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-slate-500 text-sm whitespace-nowrap">
+                    {filteredProducts.length}/{denominator} sản phẩm
+                  </p>
+                </div>
+
+                {/* Grid Sản Phẩm */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
+                  {pagedProducts.map((p: any) => (
+                    <ProductCard
+                      key={p.id}
+                      p={p}
+                      onOpenDetail={(product) => {
+                        onOpenProduct(product, safePage);
+                        window.scrollTo(0, 0);
+                      }}
+                      onContact={openContact}
+                    />
+                  ))}
+                </div>
+
+                {/* Gợi ý tư vấn */}
+                <div className="mt-12 bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="text-slate-700 text-center md:text-left">
+                    <p className="font-bold text-lg">
+                      Bạn chưa tìm được cây phù hợp?
+                    </p>
+                    <p className="text-sm text-slate-600 mt-1">
+                      🌼 Nhà vườn còn nhiều cây chưa đăng đủ thông tin.
+                    </p>
+                    <p className="text-sm text-slate-600 mt-1">
+                      👉 Gọi ngay để được dẫn xem cây đúng ngân sách & không
+                      gian của bạn.
+                    </p>
+                  </div>
+                  <a
+                    href={`tel:${PHONE}`}
+                    className="
+                      group relative overflow-hidden inline-flex items-center gap-2
+                      bg-red-600 hover:bg-red-700 text-white
+                      px-6 py-3 rounded-xl font-bold shadow-md
+                      transition-transform duration-200 ease-out
+                      hover:scale-[1.03] active:scale-[0.97]
+                    "
+                  >
+                    <span className="inline-flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110">
+                      📞
+                    </span>
+                    <span>Gọi Ngay</span>
+                    <span
+                      aria-hidden
+                      className="
+                        pointer-events-none absolute inset-0
+                        bg-gradient-to-r from-transparent via-white/35 to-transparent
+                        translate-x-[-140%] group-hover:translate-x-[140%]
+                        transition-transform duration-500 ease-out blur-[2px]
+                      "
+                    />
+                  </a>
+                </div>
+
+                {/* Pagination - ĐÃ REPLACE */}
+                {totalPages > 1 && (
+                  <div className="mt-8 sm:mt-9 mb-6 flex items-center justify-center">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-white text-slate-800 rounded-full shadow-md px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProductsPage(Math.max(1, safePage - 1))
+                        }
+                        disabled={safePage <= 1}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
+                          safePage <= 1
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:bg-slate-100"
+                        }`}
+                        aria-label="Trang trước"
+                      >
+                        ←
+                      </button>
+
+                      <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 whitespace-nowrap">
+                        <span className="text-xs text-slate-600 hidden sm:inline">
+                          Trang
+                        </span>
+
+                        <input
+                          value={pageDraft}
+                          onChange={(e) => {
+                            setPageDraft(e.target.value.replace(/[^\d]/g, ""));
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter") return;
+
+                            if (pageDraft === "") {
+                              setPageDraft(String(safePage));
+                              return;
+                            }
+
+                            const n = Number(pageDraft);
+                            if (!Number.isFinite(n)) {
+                              setPageDraft(String(safePage));
+                              return;
+                            }
+
+                            const nextPage = Math.min(
+                              Math.max(1, Math.trunc(n)),
+                              totalPages,
+                            );
+
+                            setProductsPage(nextPage);
+                          }}
+                          onBlur={() => {
+                            if (pageDraft === "") {
+                              setPageDraft(String(safePage));
+                              return;
+                            }
+
+                            const n = Number(pageDraft);
+                            if (!Number.isFinite(n)) {
+                              setPageDraft(String(safePage));
+                              return;
+                            }
+
+                            const nextPage = Math.min(
+                              Math.max(1, Math.trunc(n)),
+                              totalPages,
+                            );
+
+                            setProductsPage(nextPage);
+                          }}
+                          className="w-12 sm:w-14 text-center bg-slate-100 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-amber-300 text-xs text-slate-800"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          type="text"
+                        />
+
+                        <span className="text-xs text-slate-600">
+                          / {totalPages}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProductsPage(Math.min(totalPages, safePage + 1))
+                        }
+                        disabled={safePage >= totalPages}
+                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full grid place-items-center transition text-sm ${
+                          safePage >= totalPages
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:bg-slate-100"
+                        }`}
+                        aria-label="Trang sau"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Contact Action Sheet (mobile/tablet) */}

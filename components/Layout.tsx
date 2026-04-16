@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import LoginModal from "./LoginModal";
 import ProfileModal from "./ProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { Page } from "../types";
@@ -35,6 +34,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<
+    "login" | "register" | "forgot_password"
+  >("login");
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -62,6 +64,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const goPage = (page: Page) => {
     setCurrentPage(page);
     setDrawerOpen(false);
+  };
+
+  const handleForgotPassword = () => {
+    setShowChangePasswordModal(false);
+    setLoginModalMode("forgot_password");
+    onOpenLogin();
   };
 
   // ESC để đóng + khóa scroll nền khi drawer mở
@@ -457,6 +465,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <ChangePasswordModal
           user={authUser}
           onClose={() => setShowChangePasswordModal(false)}
+          onForgotPassword={handleForgotPassword}
         />
       )}
     </nav>

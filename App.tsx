@@ -1,10 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Page,
   Product,
   AuthUser,
+  AppRouteState,
   canAccessAdmin,
+  canAccessAdminTab,
+  clampPositiveInt,
+  getDefaultAdminTab,
+  isAdminTab,
   normalizeAuthUser,
+  normalizeProductId,
 } from "./types";
 import { fetchProductsBundleRevalidateMapped } from "./utils/productsApi";
 import { Navbar, Footer } from "./components/Layout";
@@ -14,8 +20,10 @@ import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import Booking from "./pages/Booking";
 import Contact from "./pages/Contact";
-import Admin from "./pages/Admin";
+import AdminPage from "./pages/admin/AdminPage";
+import NotFound from "./pages/NotFound";
 import LoginModal from "./components/LoginModal";
+import RouteGuard from "./components/RouteGuard";
 
 const FloatingCTAStyle = () => (
   <style>{`
@@ -25,7 +33,6 @@ const FloatingCTAStyle = () => (
   55% { transform: scale(1.07); }
 }
 
-/* Chỉ chạy trên mobile (thiết bị cảm ứng) */
 @media (max-width: 768px) and (hover: none) and (pointer: coarse) {
   .cta-breathe {
     animation: ctaBreathe 2.6s ease-in-out infinite;
@@ -37,7 +44,6 @@ const FloatingCTAStyle = () => (
   }
 }
 
-/* Tôn trọng Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
   .cta-breathe,
   .cta-breathe-delay {
@@ -47,101 +53,12 @@ const FloatingCTAStyle = () => (
   `}</style>
 );
 
-/**
- * =========================
- * Hash routing
- * - Home:        #/
- * - Sản phẩm:    #/san-pham?p=1
- * - Liên hệ:     #/lien-he
- * - Chi tiết:    #/san-pham/<id>?p=1
- * =========================
- */
-const pageToHash = (
-  page: Page,
-  productId?: string | null,
-  productsPage: number = 1,
-) => {
-  const p = Math.max(1, Math.trunc(productsPage || 1));
-
-  switch (page) {
-    case "home":
-      return "#/";
-    case "products":
-      return `#/san-pham?p=${p}`;
-    case "booking":
-      return "#/dat-lich";
-    case "contact":
-      return "#/lien-he";
-    case "product-detail":
-      return productId
-        ? `#/san-pham/${encodeURIComponent(normPid(productId))}?p=${p}`
-        : `#/san-pham?p=${p}`;
-    default:
-      return "#/";
-  }
-};
-
-// ✅ Normalize ID dùng cho routing/resolve (tránh lệch "BS 505" vs "BS505", ký tự lạ, hoa/thường)
-function normPid(v: any) {
-  return String(v ?? "")
-    .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9]/g, "");
-}
-
-const hashToState = (
-  hash: string,
-): { page: Page; productId?: string; productsPage: number } => {
-  const raw = (hash || "#/").trim();
-  const h = raw.startsWith("#") ? raw.slice(1) : raw;
-
-  const [pathPart, queryPart] = h.split("?");
-  const parts = pathPart.split("/").filter(Boolean);
-
-  const params = new URLSearchParams(queryPart || "");
-  const p = Math.max(1, Math.trunc(Number(params.get("p") || "1") || 1));
-
-  if (parts.length === 0) return { page: "home", productsPage: p };
-
-  if (parts[0] === "admin") {
-    return { page: "admin", productsPage: 1 };
-  }
-
-  if (parts[0] === "san-pham") {
-    if (parts[1])
-      return {
-        page: "product-detail",
-        productId: decodeURIComponent(parts[1]),
-        productsPage: p,
-      };
-    return { page: "products", productsPage: p };
-  }
-
-  if (parts[0] === "dat-lich") return { page: "booking", productsPage: p };
-  if (parts[0] === "lien-he") return { page: "contact", productsPage: p };
-
-  return { page: "home", productsPage: p };
-};
-
-const getRouteState = (): {
-  page: Page;
-  productId?: string;
-  productsPage: number;
-} => {
-  if (window.location.pathname === "/admin") {
-    return { page: "admin", productsPage: 1 };
-  }
-
-  return hashToState(window.location.hash);
-};
-
-// ===== Products cache reader (để App restore detail khi F5) =====
 type ProductsType = "All" | "BS" | "T";
 const PRODUCTS_CACHE_KEY = (type: ProductsType) =>
   `vmgc_products_cache_v1_${type}`;
 
 type CacheShape = {
-  items: any[];
+  items: Product[];
   savedAt: number;
   imgVersion?: string;
   dataVersion?: string;
@@ -155,9 +72,9 @@ const safeReadProductsCacheByType = (type: ProductsType): CacheShape | null => {
     const parsed = JSON.parse(raw);
 
     const items = Array.isArray(parsed?.items)
-      ? parsed.items
+      ? (parsed.items as Product[])
       : Array.isArray(parsed)
-        ? parsed
+        ? (parsed as Product[])
         : null;
 
     if (!items) return null;
@@ -184,54 +101,138 @@ const safeReadProductsCacheAllMerged = (): CacheShape | null => {
   if (!merged.length) return null;
 
   const seen = new Set<string>();
-  const uniq: any[] = [];
-  for (const p of merged) {
-    const id = String(p?.id ?? "").trim();
+  const uniq: Product[] = [];
+  for (const item of merged) {
+    const id = String(item?.id ?? "").trim();
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    uniq.push(p);
+    uniq.push(item);
   }
 
   return { items: uniq, savedAt: Date.now() };
 };
 
+const readProductsPage = (params: URLSearchParams) =>
+  clampPositiveInt(params.get("page") ?? params.get("p") ?? 1, 1);
+
+const parseHashRoute = (hash: string): AppRouteState => {
+  const raw = String(hash || "#/home").trim();
+  const cleaned = raw.startsWith("#") ? raw.slice(1) : raw;
+  const normalized = cleaned.startsWith("/") ? cleaned : `/${cleaned}`;
+  const [pathPart, queryPart] = normalized.split("?");
+  const params = new URLSearchParams(queryPart || "");
+  const productsPage = readProductsPage(params);
+  const parts = pathPart.split("/").filter(Boolean);
+
+  if (parts.length === 0) {
+    return { page: "home", productsPage: 1 };
+  }
+
+  if (parts[0] === "san-pham") {
+    if (parts[1]) {
+      return {
+        page: "product-detail",
+        productId: decodeURIComponent(parts[1]),
+        productsPage,
+      };
+    }
+    return { page: "products", productsPage };
+  }
+
+  if (parts[0] === "dat-lich") {
+    return { page: "booking", productsPage: 1 };
+  }
+
+  if (parts[0] === "lien-he") {
+    return { page: "contact", productsPage: 1 };
+  }
+
+  if (parts[0] === "admin") {
+    const tabPart = parts[1];
+    return {
+      page: "admin",
+      productsPage: 1,
+      adminTab: isAdminTab(tabPart) ? tabPart : undefined,
+    };
+  }
+
+  if (parts[0] === "404") {
+    return { page: "not-found", productsPage: 1 };
+  }
+
+  if (parts[0] === "home") {
+    return { page: "home", productsPage: 1 };
+  }
+
+  return { page: "not-found", productsPage: 1 };
+};
+
+const buildHashRoute = (route: AppRouteState) => {
+  switch (route.page) {
+    case "home":
+      return "#/";
+    case "products": {
+      const page = clampPositiveInt(route.productsPage, 1);
+      return `#/san-pham?page=${page}`;
+    }
+    case "product-detail": {
+      const page = clampPositiveInt(route.productsPage, 1);
+      const productId = normalizeProductId(route.productId);
+      if (!productId) return `#/san-pham?page=${page}`;
+      return `#/san-pham/${encodeURIComponent(productId)}?page=${page}`;
+    }
+    case "booking":
+      return "#/dat-lich";
+    case "contact":
+      return "#/lien-he";
+    case "admin": {
+      const tab = route.adminTab && isAdminTab(route.adminTab)
+        ? route.adminTab
+        : "products";
+      return `#/admin/${tab}`;
+    }
+    default:
+      return "#/404";
+  }
+};
+
 const App: React.FC = () => {
   const [appProducts, setAppProducts] = useState<Product[]>(() => {
-    const c = safeReadProductsCacheAllMerged();
-    return (c?.items as Product[]) ?? [];
+    const cached = safeReadProductsCacheAllMerged();
+    return cached?.items ?? [];
+  });
+  const [productsReady, setProductsReady] = useState(false);
+  const appProductsRef = useRef<Product[]>(appProducts);
+
+  const [route, setRoute] = useState<AppRouteState>(() => {
+    if (typeof window === "undefined") {
+      return { page: "home", productsPage: 1 };
+    }
+    return parseHashRoute(window.location.hash);
   });
 
-  const appProductsRef = useRef<Product[]>([]);
-  useEffect(() => {
-    appProductsRef.current = appProducts;
-  }, [appProducts]);
-
-  const [currentPage, setCurrentPage] = useState<Page>("home");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [productsPage, setProductsPage] = useState<number>(1);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [isResolvingDetail, setIsResolvingDetail] = useState(false);
 
-  // ================= AUTH =================
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  // Load user từ localStorage khi app khởi động
+  useEffect(() => {
+    appProductsRef.current = appProducts;
+  }, [appProducts]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("vmgc_user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setAuthUser(normalizeAuthUser(parsed));
-      }
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      setAuthUser(normalizeAuthUser(parsed));
     } catch {
       // ignore
     }
   }, []);
 
-  // ✅ Load products cho App
   useEffect(() => {
     let alive = true;
 
@@ -239,15 +240,18 @@ const App: React.FC = () => {
       try {
         const cached = safeReadProductsCacheAllMerged();
         if (alive && cached?.items?.length) {
-          setAppProducts(cached.items as Product[]);
+          setAppProducts(cached.items);
         }
 
         const res = await fetchProductsBundleRevalidateMapped({ type: "All" });
         if (!alive) return;
-
         setAppProducts(res.products || []);
       } catch {
-        // im lặng
+        // giữ cache cũ nếu có
+      } finally {
+        if (alive) {
+          setProductsReady(true);
+        }
       }
     })();
 
@@ -256,11 +260,153 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const syncingRef = useRef(false);
+  const syncRouteFromLocation = useCallback(() => {
+    setRoute(parseHashRoute(window.location.hash));
+  }, []);
+
+  useEffect(() => {
+    const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+    if (pathname === "/admin") {
+      const nextHash = buildHashRoute({
+        page: "admin",
+        adminTab: getDefaultAdminTab(authUser),
+        productsPage: 1,
+      });
+      window.history.replaceState({}, "", `/${nextHash}`);
+      setRoute(parseHashRoute(nextHash));
+      return;
+    }
+
+    if (!window.location.hash) {
+      window.history.replaceState({}, "", "/#/");
+      setRoute({ page: "home", productsPage: 1 });
+      return;
+    }
+
+    syncRouteFromLocation();
+  }, [authUser, syncRouteFromLocation]);
+
+  useEffect(() => {
+    window.addEventListener("hashchange", syncRouteFromLocation);
+    window.addEventListener("popstate", syncRouteFromLocation);
+    return () => {
+      window.removeEventListener("hashchange", syncRouteFromLocation);
+      window.removeEventListener("popstate", syncRouteFromLocation);
+    };
+  }, [syncRouteFromLocation]);
+
+  const navigateHash = useCallback(
+    (
+      hash: string,
+      options?: { replace?: boolean; scroll?: ScrollBehavior | "none" },
+    ) => {
+      const { replace = false, scroll = "smooth" } = options || {};
+
+      if (replace) {
+        window.history.replaceState({}, "", `/${hash}`);
+        setRoute(parseHashRoute(hash));
+      } else if (window.location.hash !== hash) {
+        window.location.hash = hash;
+      } else {
+        setRoute(parseHashRoute(hash));
+      }
+
+      if (scroll !== "none") {
+        window.scrollTo({ top: 0, left: 0, behavior: scroll });
+      }
+    },
+    [],
+  );
+
+  const goHome = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "home", productsPage: 1 }));
+  }, [navigateHash]);
+
+  const goProducts = useCallback(
+    (page = 1, options?: { scroll?: ScrollBehavior | "none"; replace?: boolean }) => {
+      navigateHash(
+        buildHashRoute({ page: "products", productsPage: clampPositiveInt(page, 1) }),
+        options,
+      );
+    },
+    [navigateHash],
+  );
+
+  const goProductDetail = useCallback(
+    (
+      productId: string,
+      page = 1,
+      options?: { scroll?: ScrollBehavior | "none"; replace?: boolean },
+    ) => {
+      navigateHash(
+        buildHashRoute({
+          page: "product-detail",
+          productId: normalizeProductId(productId),
+          productsPage: clampPositiveInt(page, 1),
+        }),
+        options,
+      );
+    },
+    [navigateHash],
+  );
+
+  const goBooking = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "booking", productsPage: 1 }));
+  }, [navigateHash]);
+
+  const goContact = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "contact", productsPage: 1 }));
+  }, [navigateHash]);
+
+  const goAdmin = useCallback(
+    (tab?: AppRouteState["adminTab"], options?: { scroll?: ScrollBehavior | "none"; replace?: boolean }) => {
+      navigateHash(
+        buildHashRoute({
+          page: "admin",
+          adminTab:
+            tab && isAdminTab(tab) ? tab : getDefaultAdminTab(authUser),
+          productsPage: 1,
+        }),
+        options,
+      );
+    },
+    [authUser, navigateHash],
+  );
+
+  const navigateByPage = useCallback(
+    (page: Page) => {
+      switch (page) {
+        case "home":
+          goHome();
+          return;
+        case "products":
+          goProducts(1);
+          return;
+        case "booking":
+          goBooking();
+          return;
+        case "contact":
+          goContact();
+          return;
+        case "admin":
+          goAdmin();
+          return;
+        case "product-detail":
+          if (route.page === "product-detail" && route.productId) {
+            goProductDetail(route.productId, route.productsPage || 1);
+          } else {
+            goProducts(1);
+          }
+          return;
+        default:
+          goHome();
+      }
+    },
+    [goAdmin, goBooking, goContact, goHome, goProductDetail, goProducts, route],
+  );
 
   const handleLogin = (user: AuthUser) => {
     const normalizedUser = normalizeAuthUser(user);
-
     setAuthUser(normalizedUser);
     localStorage.setItem("vmgc_user", JSON.stringify(normalizedUser));
     setShowLogin(false);
@@ -269,10 +415,13 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setLogoutLoading(true);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       setAuthUser(null);
       localStorage.removeItem("vmgc_user");
       setLogoutLoading(false);
+      if (route.page === "admin") {
+        goHome();
+      }
     }, 600);
   };
 
@@ -285,11 +434,6 @@ const App: React.FC = () => {
     setAuthUser(mergedUser);
     localStorage.setItem("vmgc_user", JSON.stringify(mergedUser));
   };
-
-  const navigate = useCallback((page: Page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  }, []);
 
   useEffect(() => {
     let scrollTimeout: number | undefined;
@@ -314,137 +458,76 @@ const App: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const applyFromHash = (fromHashChange: boolean) => {
-      if (syncingRef.current) {
-        syncingRef.current = false;
-        return;
-      }
-
-      const { page, productId, productsPage: p } = getRouteState();
-      setProductsPage(p);
-
-      setCurrentPage(page);
-
-      if (page !== "product-detail") setSelectedProduct(null);
-
-      if (page === "product-detail" && productId) {
-        const pid = normPid(productId);
-        const found = appProductsRef.current.find((x) => normPid(x.id) === pid);
-
-        if (found) {
-          setSelectedProduct(found);
-          setIsResolvingDetail(false);
-        } else {
-          setSelectedProduct(null);
-          setIsResolvingDetail(true);
-        }
-      } else {
-        setIsResolvingDetail(false);
-      }
-
-      if (fromHashChange) {
-        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      }
-    };
-
-    applyFromHash(false);
-
-    const onHashChange = () => applyFromHash(true);
-    const onPopState = () => applyFromHash(true);
-
-    window.addEventListener("hashchange", onHashChange);
-    window.addEventListener("popstate", onPopState);
-
-    return () => {
-      window.removeEventListener("hashchange", onHashChange);
-      window.removeEventListener("popstate", onPopState);
-    };
-  }, []);
+  const activeAdminTab = useMemo(() => {
+    if (route.page !== "admin") return getDefaultAdminTab(authUser);
+    if (route.adminTab && (!authUser || canAccessAdminTab(authUser, route.adminTab))) {
+      return route.adminTab;
+    }
+    return getDefaultAdminTab(authUser);
+  }, [authUser, route.adminTab, route.page]);
 
   useEffect(() => {
-    const { page, productId } = getRouteState();
-    if (page !== "product-detail" || !productId) return;
-
-    if (selectedProduct) return;
-
-    const pid = normPid(productId);
-    const found = appProductsRef.current.find((x) => normPid(x.id) === pid);
-
-    if (found) {
-      setSelectedProduct(found);
-      setIsResolvingDetail(false);
-      return;
-    }
-
-    if (isResolvingDetail) {
-      const t = window.setTimeout(() => {
-        const st = getRouteState();
-        if (st.page === "product-detail" && st.productId === productId) {
-          setIsResolvingDetail(false);
-          navigate("products");
-        }
-      }, 6000);
-
-      return () => window.clearTimeout(t);
-    }
-  }, [appProducts, selectedProduct, isResolvingDetail, navigate]);
-
-  useEffect(() => {
-    if (currentPage === "admin") {
-      if (window.location.pathname !== "/admin") {
-        window.history.pushState({}, "", "/admin");
-      }
-      return;
-    }
-
-    if (window.location.pathname === "/admin") {
-      window.history.pushState({}, "", "/");
-    }
-
-    if (currentPage === "product-detail" && !selectedProduct) return;
-
-    const desired = pageToHash(
-      currentPage,
-      selectedProduct?.id ?? null,
-      productsPage,
-    );
-
+    if (route.page !== "admin") return;
+    const desired = buildHashRoute({
+      page: "admin",
+      adminTab: activeAdminTab,
+      productsPage: 1,
+    });
     if (window.location.hash !== desired) {
-      syncingRef.current = true;
-      window.location.hash = desired;
+      navigateHash(desired, { replace: true, scroll: "none" });
     }
-  }, [currentPage, selectedProduct, productsPage]);
+  }, [activeAdminTab, navigateHash, route.page]);
+
+  const resolvedProduct = useMemo(() => {
+    if (route.page !== "product-detail" || !route.productId) return null;
+    const pid = normalizeProductId(route.productId);
+    return appProducts.find((item) => normalizeProductId(item.id) === pid) || null;
+  }, [appProducts, route.page, route.productId]);
+
+  const currentLayoutPage: Page =
+    route.page === "product-detail"
+      ? "products"
+      : route.page === "not-found"
+        ? "home"
+        : route.page;
+
+  const showPublicChrome = route.page !== "admin";
 
   const renderPage = () => {
-    switch (currentPage) {
+    switch (route.page) {
       case "home":
-        return <Home setCurrentPage={navigate} />;
+        return <Home setCurrentPage={navigateByPage} />;
 
       case "products":
         return (
           <ProductList
-            setCurrentPage={navigate}
-            setSelectedProduct={setSelectedProduct}
-            productsPage={productsPage}
-            setProductsPage={setProductsPage}
+            productsPage={route.productsPage}
+            setProductsPage={(page) => goProducts(page, { scroll: "none" })}
+            onOpenProduct={(product, page) =>
+              goProductDetail(product.id, page, { scroll: "smooth" })
+            }
             onProductsUpdated={setAppProducts}
           />
         );
 
       case "product-detail":
-        if (selectedProduct) {
+        if (resolvedProduct) {
           return (
             <ProductDetail
-              product={selectedProduct}
+              product={resolvedProduct}
               products={appProducts}
-              setCurrentPage={navigate}
-              setSelectedProduct={setSelectedProduct}
+              productsPage={route.productsPage}
+              onGoHome={goHome}
+              onGoProducts={(page) => goProducts(page, { scroll: "smooth" })}
+              onGoContact={goContact}
+              onOpenProduct={(productId, page) =>
+                goProductDetail(productId, page, { scroll: "smooth" })
+              }
             />
           );
         }
 
-        if (isResolvingDetail) {
+        if (!productsReady) {
           return (
             <div className="container mx-auto px-4 py-16 text-center">
               <div className="inline-block rounded-2xl bg-white px-6 py-6 shadow-sm border border-slate-200">
@@ -454,73 +537,55 @@ const App: React.FC = () => {
                 <div className="text-slate-500 text-sm">
                   Vui lòng đợi trong giây lát.
                 </div>
-
-                <button
-                  type="button"
-                  className="mt-5 bg-amber-400 hover:bg-amber-500 text-amber-950 px-5 py-2 rounded-xl font-bold"
-                  onClick={() => navigate("products")}
-                >
-                  Quay về danh sách
-                </button>
               </div>
             </div>
           );
         }
 
         return (
-          <ProductList
-            setCurrentPage={navigate}
-            setSelectedProduct={setSelectedProduct}
-            productsPage={productsPage}
-            setProductsPage={setProductsPage}
-            onProductsUpdated={setAppProducts}
+          <NotFound
+            title="Không tìm thấy sản phẩm"
+            description="Liên kết này không còn hợp lệ hoặc mã cây không tồn tại trong dữ liệu hiện tại."
+            primaryActionLabel="Quay về danh sách sản phẩm"
+            onPrimaryAction={() => goProducts(route.productsPage || 1)}
+            secondaryActionLabel="Về trang chủ"
+            onSecondaryAction={goHome}
           />
         );
 
       case "contact":
-        return <Contact setCurrentPage={navigate} />;
+        return <Contact setCurrentPage={navigateByPage} />;
 
       case "booking":
-        return <Booking setCurrentPage={navigate} authUser={authUser} />;
+        return <Booking authUser={authUser} />;
 
       case "admin":
-        // ❌ chưa login
-        if (!authUser) {
-          return (
-            <div className="container mx-auto px-4 py-20 text-center">
-              <p className="text-lg text-red-600 font-semibold">
-                Bạn cần đăng nhập để truy cập trang quản trị
-              </p>
-              <button
-                onClick={() => setShowLogin(true)}
-                className="mt-4 px-6 py-2 bg-amber-400 rounded-lg font-bold"
-              >
-                Đăng nhập
-              </button>
-            </div>
-          );
-        }
-
-        // ❌ không có quyền admin
-        const hasPermission = canAccessAdmin(authUser);
-
-        if (!hasPermission) {
-          return (
-            <div className="container mx-auto px-4 py-20 text-center">
-              <p className="text-lg text-red-600 font-semibold">
-                Bạn không có quyền truy cập trang quản trị
-              </p>
-            </div>
-          );
-        }
-
-        // ✅ OK
         return (
-          <Admin authUser={authUser} onBackToSite={() => navigate("home")} />
+          <RouteGuard
+            authUser={authUser}
+            requiredAdminTab={activeAdminTab}
+            onRequestLogin={() => setShowLogin(true)}
+          >
+            <AdminPage
+              authUser={authUser}
+              activeTab={activeAdminTab}
+              onChangeTab={(tab) => goAdmin(tab, { scroll: "none" })}
+              onBackToSite={goHome}
+            />
+          </RouteGuard>
         );
 
       default:
-        return <Home setCurrentPage={navigate} />;
+        return (
+          <NotFound
+            title="Trang không tồn tại"
+            description="Liên kết bạn truy cập không đúng hoặc đã bị thay đổi."
+            primaryActionLabel="Về trang chủ"
+            onPrimaryAction={goHome}
+            secondaryActionLabel="Xem sản phẩm"
+            onSecondaryAction={() => goProducts(1)}
+          />
+        );
     }
   };
 
@@ -529,87 +594,90 @@ const App: React.FC = () => {
       {logoutLoading && (
         <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
           <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-sm font-medium text-amber-900">
-            Đang đăng xuất...
-          </p>
+          <p className="text-sm font-medium text-amber-900">Đang đăng xuất...</p>
         </div>
       )}
 
       <FloatingCTAStyle />
-      <Navbar
-        currentPage={currentPage}
-        setCurrentPage={navigate}
-        authUser={authUser}
-        onOpenLogin={() => setShowLogin(true)}
-        onLogout={handleLogout}
-        onUpdateUser={handleUpdateUser}
-      />
+
+      {showPublicChrome && (
+        <Navbar
+          currentPage={currentLayoutPage}
+          setCurrentPage={navigateByPage}
+          authUser={authUser}
+          onOpenLogin={() => setShowLogin(true)}
+          onLogout={handleLogout}
+          onUpdateUser={handleUpdateUser}
+        />
+      )}
 
       <main className="flex-grow">{renderPage()}</main>
 
-      <Footer setCurrentPage={navigate} />
+      {showPublicChrome && <Footer setCurrentPage={navigateByPage} />}
 
       {showLogin && (
         <LoginModal onClose={() => setShowLogin(false)} onLogin={handleLogin} />
       )}
 
-      {chatOpen && (
+      {showPublicChrome && chatOpen && (
         <div
           className="fixed inset-0 z-40 md:hidden"
           onClick={() => setChatOpen(false)}
         />
       )}
 
-      <div
-        className={`fixed bottom-6 right-6 z-50 md:hidden transition-all duration-300 ${
-          isScrolling
-            ? "opacity-30 pointer-events-none"
-            : "opacity-100 pointer-events-auto"
-        }`}
-      >
-        <div className="relative flex flex-col items-end gap-3">
-          {chatOpen && (
-            <div className="mb-2 flex flex-col gap-2 rounded-2xl bg-white/95 backdrop-blur px-3 py-3 shadow-2xl border border-slate-200">
-              <a
-                href="https://m.me/vuonmaigocatquan9"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-2 rounded-xl font-semibold text-slate-800 hover:bg-slate-100 transition flex items-center gap-2"
-                onClick={() => setChatOpen(false)}
-              >
-                💬 Messenger
-              </a>
+      {showPublicChrome && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 md:hidden transition-all duration-300 ${
+            isScrolling
+              ? "opacity-30 pointer-events-none"
+              : "opacity-100 pointer-events-auto"
+          }`}
+        >
+          <div className="relative flex flex-col items-end gap-3">
+            {chatOpen && (
+              <div className="mb-2 flex flex-col gap-2 rounded-2xl bg-white/95 backdrop-blur px-3 py-3 shadow-2xl border border-slate-200">
+                <a
+                  href="https://m.me/vuonmaigocatquan9"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-2 rounded-xl font-semibold text-slate-800 hover:bg-slate-100 transition flex items-center gap-2"
+                  onClick={() => setChatOpen(false)}
+                >
+                  💬 Messenger
+                </a>
 
-              <a
-                href="https://zalo.me/84922727277"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-2 rounded-xl font-semibold text-slate-800 hover:bg-slate-100 transition flex items-center gap-2"
-                onClick={() => setChatOpen(false)}
-              >
-                💙 Zalo
-              </a>
-            </div>
-          )}
+                <a
+                  href="https://zalo.me/84922727277"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-2 rounded-xl font-semibold text-slate-800 hover:bg-slate-100 transition flex items-center gap-2"
+                  onClick={() => setChatOpen(false)}
+                >
+                  💙 Zalo
+                </a>
+              </div>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setChatOpen((v) => !v)}
-            aria-label="Nhắn tin"
-            className="cta-breathe w-14 h-14 bg-green-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-95 transition"
-          >
-            💬
-          </button>
+            <button
+              type="button"
+              onClick={() => setChatOpen((value) => !value)}
+              aria-label="Nhắn tin"
+              className="cta-breathe w-14 h-14 bg-green-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-95 transition"
+            >
+              💬
+            </button>
 
-          <a
-            href="tel:0922727277"
-            aria-label="Gọi điện 0922727277"
-            className="cta-breathe-delay w-14 h-14 bg-red-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-95 transition"
-          >
-            📞
-          </a>
+            <a
+              href="tel:0922727277"
+              aria-label="Gọi điện 0922727277"
+              className="cta-breathe-delay w-14 h-14 bg-red-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-95 transition"
+            >
+              📞
+            </a>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

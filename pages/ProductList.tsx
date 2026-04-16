@@ -1,6 +1,6 @@
 // src/pages/ProductList.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Product, Page } from "../types";
+import { Product } from "../types";
 import {
   fetchProductsBundle,
   fetchProductsBundleRevalidateMapped,
@@ -438,22 +438,21 @@ const saveCache = (
 };
 
 interface ProductListProps {
-  setCurrentPage: (page: Page) => void;
-  setSelectedProduct: (p: Product) => void;
   productsPage: number;
   setProductsPage: (n: number) => void;
+  onOpenProduct: (product: Product, page: number) => void;
   // báo danh sách Product[] (đã map) lên App để App resolve detail khi F5/link trực tiếp
   onProductsUpdated?: (items: Product[]) => void;
 }
 
 const ProductList: React.FC<ProductListProps> = ({
-  setCurrentPage,
-  setSelectedProduct,
   productsPage,
   setProductsPage,
+  onOpenProduct,
   onProductsUpdated,
 }) => {
   const [contactOpen, setContactOpen] = useState(false);
+
   const openContact = () => {
     if (isTouchDevice()) {
       setContactOpen(true);
@@ -1060,8 +1059,7 @@ const ProductList: React.FC<ProductListProps> = ({
                   key={p.id}
                   p={p}
                   onOpenDetail={(product) => {
-                    setSelectedProduct(product);
-                    setCurrentPage("product-detail");
+                    onOpenProduct(product, safePage);
                     window.scrollTo(0, 0);
                   }}
                   onContact={openContact}

@@ -8,6 +8,8 @@ export type Page =
   | "contact"
   | "admin";
 
+export type AdminTab = "products" | "bookings" | "users";
+
 /**
  * Product dùng cho web Vườn Mai Gò Cát
  * - Các field số có thể null để tránh bug khi data thiếu
@@ -20,10 +22,10 @@ export interface Product {
   /** Tên hiển thị (vd: "Mai BS01") */
   name: string;
 
-  /** Giá bán theo đơn vị triệu – null = Liên hệ */
+  /** Giá bán theo đơn vị VND – null = Liên hệ */
   price: number | null;
 
-  /** Giá thuê theo đơn vị triệu – null = Liên hệ */
+  /** Giá thuê theo đơn vị VND – null = Liên hệ */
   rentPrice: number | null;
 
   /** Phân loại hiển thị */
@@ -56,6 +58,10 @@ export interface Product {
   /** Trạng thái */
   isRented: boolean;
   isSold: boolean;
+
+  /** Giá nội bộ hỗ trợ lọc trên ProductList */
+  __filterRentPrice?: number | null;
+  __filterSellPrice?: number | null;
 }
 
 // ================= AUTH =================
@@ -64,14 +70,22 @@ export interface AuthUser {
   name: string;
   email: string;
 
-  phone: string;        // luôn có (có thể rỗng "")
-  birthDate: string;    // luôn có (có thể rỗng "")
-  gender: string;       // luôn có (có thể rỗng "")
-  createdAt: string;    // luôn có (có thể rỗng "")
-  avatarUrl: string;    // luôn có (có thể rỗng "")
+  phone: string;
+  birthDate: string;
+  gender: string;
+  createdAt: string;
+  avatarUrl: string;
 
   role: "user" | "admin";
   permissions: string[];
+  hasPassword: boolean;
+}
+
+export interface AppRouteState {
+  page: Page | "not-found";
+  productsPage: number;
+  productId?: string;
+  adminTab?: AdminTab;
 }
 
 export const DEFAULT_USER: AuthUser = {
@@ -84,6 +98,7 @@ export const DEFAULT_USER: AuthUser = {
   avatarUrl: "",
   role: "user",
   permissions: [],
+  hasPassword: false,
 };
 
 const normalizePermissions = (value: unknown): string[] => {
@@ -130,16 +145,50 @@ export function normalizeAuthUser(
     avatarUrl: String(user?.avatarUrl || ""),
     role: String(user?.role || "").toLowerCase() === "admin" ? "admin" : "user",
     permissions: normalizePermissions(user?.permissions),
+    hasPassword: Boolean(user?.hasPassword),
   };
+}
+
+export const normalizeProductId = (value: unknown) =>
+  String(value ?? "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+export const clampPositiveInt = (value: unknown, fallback = 1) => {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return fallback;
+  return Math.max(1, Math.trunc(num));
+};
+
+export const isAdminTab = (value: unknown): value is AdminTab =>
+  value === "products" || value === "bookings" || value === "users";
+
+export function getDefaultAdminTab(
+  user: AuthUser | null | undefined,
+): AdminTab {
+  if (user?.role === "admin") return "products";
+  if (user?.permissions?.includes("products")) return "products";
+  if (user?.permissions?.includes("bookings")) return "bookings";
+  return "products";
+}
+
+export function canAccessAdminTab(
+  user: AuthUser | null | undefined,
+  tab: AdminTab,
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (tab === "products") return user.permissions.includes("products");
+  if (tab === "bookings") return user.permissions.includes("bookings");
+  return false;
 }
 
 export function canAccessAdmin(user: AuthUser | null | undefined): boolean {
   if (!user) return false;
-
   if (user.role === "admin") return true;
 
   const permissions = Array.isArray(user.permissions) ? user.permissions : [];
-
   return permissions.includes("products") || permissions.includes("bookings");
 }
 

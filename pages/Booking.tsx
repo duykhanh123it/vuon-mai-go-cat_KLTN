@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { AuthUser } from "../types";
 /**
  * Booking.tsx (Option B: Google Sheet via Apps Script Web App)
  *
@@ -86,10 +87,8 @@ const isFutureOrNowDateTime = (dateISO: string, timeHHmm: string) => {
   return selected.getTime() >= Date.now();
 };
 const toVNPhone = (s: string) => s.replace(/\s/g, "");
-import { AuthUser } from "../types";
 const Booking: React.FC<{
   authUser: AuthUser | null;
-  setCurrentPage: any;
 }> = ({ authUser }) => {
   const [timeOpen, setTimeOpen] = useState(false);
   const [timeDraft, setTimeDraft] = useState("07:00");

@@ -1,15 +1,19 @@
 // src/pages/ProductDetail.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Product, Page } from "../types";
+import { Product, normalizeProductId } from "../types";
 
 interface ProductDetailProps {
   product: Product;
-  products: Product[]; // ✅ danh sách đã revalidate từ App
-  setCurrentPage: (page: Page) => void;
-  setSelectedProduct: (p: Product) => void;
+  products: Product[]; // danh sách đã revalidate từ App
+  productsPage: number;
+  onGoHome: () => void;
+  onGoProducts: (page?: number) => void;
+  onGoContact: () => void;
+  onOpenProduct: (productId: string, page?: number) => void;
 }
 
 const FALLBACK_IMG = "/notimg.jpg";
+
 
 // ===== Read products từ localStorage cache (đồng bộ với ProductList.tsx) =====
 type ProductsType = "All" | "BS" | "T";
@@ -74,8 +78,11 @@ const formatVND = (v: number | null) => {
 const ProductDetail: React.FC<ProductDetailProps> = ({
   product,
   products,
-  setCurrentPage,
-  setSelectedProduct,
+  productsPage,
+  onGoHome,
+  onGoProducts,
+  onGoContact,
+  onOpenProduct,
 }) => {
   const [activeTab, setActiveTab] = useState<"specs" | "care">("specs");
   const [mainImage, setMainImage] = useState<string>(
@@ -193,11 +200,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     return Number.isFinite(n) ? n : null;
   };
 
-  const normId = (v: any) =>
-    String(v ?? "")
-      .toUpperCase()
-      .replace(/\s+/g, "")
-      .replace(/[^A-Z0-9]/g, "");
+  const normId = (v: any) => normalizeProductId(v);
 
   // cố lấy mã kiểu BSxxx hoặc Txxx trong chuỗi, để tránh "Mai BS 811" / "BS 811"
   const extractCode = (v: any) => {
@@ -399,7 +402,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     img.src = FALLBACK_IMG;
   };
 
-  // ✅ Điều hướng sang cây khác từ "Bạn cũng có thể thích" (chống lệch id + chống race hash)
   const goToProduct = (raw: any) => {
     const pid = normId(raw?.id);
 
@@ -410,20 +412,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     const found = all.find((x: any) => normId(x?.id) === pid);
     const next = (found ?? raw) as Product;
 
-    const params = new URLSearchParams(
-      (window.location.hash.split("?")[1] || "").trim(),
-    );
-    const p = Math.max(1, Math.trunc(Number(params.get("p") || "1") || 1));
-
-    // ✅ 1) set selected trước
-    setSelectedProduct(next);
-
-    // ✅ 2) set hash ngay (URL là nguồn chân lý của App)
-    window.location.hash = `#/san-pham/${encodeURIComponent(normId(next.id))}?p=${p}`;
-
-    // ✅ 3) đảm bảo đang ở detail
-    setCurrentPage("product-detail");
-
+    onOpenProduct(next.id, productsPage || 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -433,7 +422,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex gap-2 text-sm text-slate-400 select-none">
           <button
-            onClick={() => setCurrentPage("home")}
+            onClick={onGoHome}
             className="cursor-pointer hover:text-amber-500 transition-colors"
           >
             Trang chủ
@@ -442,7 +431,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           <span className="cursor-default">/</span>
 
           <button
-            onClick={() => setCurrentPage("products")}
+            onClick={() => onGoProducts(productsPage)}
             className="cursor-pointer hover:text-amber-500 transition-colors"
           >
             Sản phẩm
@@ -581,7 +570,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
               <button
-                onClick={() => setCurrentPage("contact")}
+                onClick={onGoContact}
                 className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98]
     ${
       locked

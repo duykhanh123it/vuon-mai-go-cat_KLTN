@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-
 import { AuthUser, normalizeAuthUser } from "../types";
+
 const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 
 interface LoginModalProps {
@@ -17,7 +17,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
   const [mode, setMode] = useState<"login" | "register" | "forgot_password">(
     initialMode || "login",
   );
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,6 +27,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
   const [otpSent, setOtpSent] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(60);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
 
@@ -41,7 +41,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
     confirmNewPassword: "",
     otp: "",
   });
-
   const [touched, setTouched] = useState({
     name: false,
     email: false,
@@ -63,6 +62,28 @@ const LoginModal: React.FC<LoginModalProps> = ({
     hasLowercase: /[a-z]/,
     hasNumber: /\d/,
     hasSpecial: /[^A-Za-z0-9]/,
+  };
+
+  // === Helper nhận diện user tự hủy popup Google ===
+  const isGoogleCancelError = (err: unknown) => {
+    const msg = String(
+      (err as any)?.code ||
+        (err as any)?.message ||
+        (err as any)?.error ||
+        err ||
+        "",
+    ).toLowerCase();
+
+    return (
+      msg.includes("popup_closed_by_user") ||
+      msg.includes("popup closed by user") ||
+      msg.includes("popup_closed") ||
+      msg.includes("cancel") ||
+      msg.includes("cancelled") ||
+      msg.includes("canceled") ||
+      msg.includes("dismissed") ||
+      msg.includes("closed")
+    );
   };
 
   // Validate functions
@@ -118,18 +139,13 @@ const LoginModal: React.FC<LoginModalProps> = ({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-
     document.addEventListener("keydown", handleKey);
-
     const scrollBarWidth =
       window.innerWidth - document.documentElement.clientWidth;
-
     document.body.style.overflow = "hidden";
-
     if (scrollBarWidth > 0) {
       document.body.style.paddingRight = scrollBarWidth + "px";
     }
-
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = "";
@@ -137,7 +153,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
     };
   }, [onClose]);
 
-  // SYNC mode khi initialMode thay đổi (mở lại modal với mode khác)
+  // SYNC mode khi initialMode thay đổi
   useEffect(() => {
     if (initialMode) {
       resetFormState();
@@ -147,11 +163,9 @@ const LoginModal: React.FC<LoginModalProps> = ({
 
   useEffect(() => {
     if (!otpSent || otpCountdown <= 0) return;
-
     const timer = window.setTimeout(() => {
       setOtpCountdown((prev) => prev - 1);
     }, 1000);
-
     return () => window.clearTimeout(timer);
   }, [otpSent, otpCountdown]);
 
@@ -173,6 +187,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
     setOtp("");
     setOtpCountdown(60);
     setError("");
+    setInfo("");
     setFieldErrors((prev) => ({ ...prev, otp: "" }));
     setTouched((prev) => ({ ...prev, otp: false }));
   };
@@ -183,7 +198,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
         behavior: "smooth",
         block: "center",
       });
-
       setTimeout(() => {
         otpInputRef.current?.focus();
       }, 250);
@@ -201,6 +215,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
     setOtpSent(false);
     setOtpCountdown(60);
     setError("");
+    setInfo("");
     setLoading(false);
     setLoadingText("");
     setFieldErrors({
@@ -253,7 +268,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
           ? validateOtp(otp)
           : "",
     };
-
     setFieldErrors(nextErrors);
     setTouched({
       name: true,
@@ -264,14 +278,110 @@ const LoginModal: React.FC<LoginModalProps> = ({
       confirmNewPassword: true,
       otp: true,
     });
-
     const hasErrors = Object.values(nextErrors).some(Boolean);
     return !hasErrors;
   };
 
+  // === Hàm đăng nhập Google mới (đã xử lý hủy popup) ===
+  const handleGoogleLogin = async () => {
+    try {
+      setError("");
+      setInfo("");
+      setLoading(true);
+      setLoadingText("Đang đăng nhập với Google...");
+
+      const oauth2 = (window as any).google?.accounts?.oauth2;
+      if (!oauth2) {
+        setError("Google SDK chưa load");
+        setLoading(false);
+        setLoadingText("");
+        return;
+      }
+
+      const tokenClient = oauth2.initTokenClient({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        scope: "openid email profile",
+        error_callback: (err: any) => {
+          setLoading(false);
+          setLoadingText("");
+
+          if (
+            err?.type === "popup_closed" ||
+            err?.type === "popup_failed_to_open" ||
+            isGoogleCancelError(err)
+          ) {
+            setInfo("Bạn đã hủy đăng nhập Google");
+            return;
+          }
+
+          setError("Đăng nhập Google thất bại, vui lòng thử lại");
+        },
+        callback: async (response: any) => {
+          try {
+            if (!response?.access_token) {
+              throw new Error("Không nhận được access token từ Google");
+            }
+
+            const googleUser = await fetchGoogleUserInfo(response.access_token);
+
+            const apiRes = await fetch(API_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8",
+              },
+              body: JSON.stringify({
+                api: "googleLogin",
+                email: googleUser.email,
+                name: googleUser.name || "",
+                avatarUrl: googleUser.picture || "",
+              }),
+            });
+
+            const text = await apiRes.text();
+            const data = JSON.parse(text);
+
+            if (!data.ok) {
+              throw new Error(data.error || "Google login thất bại");
+            }
+
+            onLogin(
+              normalizeAuthUser({
+                ...data.user,
+                avatarUrl: data.user?.avatarUrl || googleUser.picture || "",
+              }),
+            );
+
+            setLoading(false);
+            setLoadingText("");
+            onClose();
+          } catch (err: any) {
+            setLoading(false);
+            setLoadingText("");
+
+            setError(
+              err?.message || "Đăng nhập Google thất bại, vui lòng thử lại",
+            );
+          }
+        },
+      });
+      
+      tokenClient.requestAccessToken();
+    } catch (err: any) {
+      setLoading(false);
+      setLoadingText("");
+
+      if (isGoogleCancelError(err)) {
+        setInfo("Bạn đã hủy đăng nhập Google");
+        return;
+      }
+
+      setError(err?.message || "Đăng nhập Google thất bại, vui lòng thử lại");
+    }
+  };
+
   const handleSubmit = async () => {
     setError("");
-
+    setInfo("");
     if (!validateBeforeSubmit()) {
       return;
     }
@@ -280,10 +390,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
       if (mode === "login") {
         setLoading(true);
         setLoadingText("Đang đăng nhập...");
-
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -296,23 +404,19 @@ const LoginModal: React.FC<LoginModalProps> = ({
           }),
           signal: controller.signal,
         });
-
         clearTimeout(timeout);
-
         let data;
         try {
           data = await res.json();
         } catch {
           throw new Error("Server không trả JSON hợp lệ");
         }
-
         if (!data.ok) {
           setError(data.error || "Có lỗi xảy ra");
           setLoading(false);
           setLoadingText("");
           return;
         }
-
         onLogin(normalizeAuthUser(data.user));
         setLoading(false);
         setLoadingText("");
@@ -323,7 +427,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
         if (!otpSent) {
           setLoading(true);
           setLoadingText("Đang gửi mã OTP...");
-
           const res = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -334,25 +437,21 @@ const LoginModal: React.FC<LoginModalProps> = ({
               email,
             }),
           });
-
           let data;
           try {
             data = await res.json();
           } catch {
             throw new Error("Server không trả JSON hợp lệ");
           }
-
           if (!data.ok) {
             setError(data.error || "Không gửi được OTP");
             setLoading(false);
             setLoadingText("");
             return;
           }
-
           setOtpSent(true);
           setOtpCountdown(60);
           scrollToOtpSection();
-
           setLoading(false);
           setLoadingText("");
           return;
@@ -360,7 +459,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
 
         setLoading(true);
         setLoadingText("Đang xác nhận OTP...");
-
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -374,21 +472,18 @@ const LoginModal: React.FC<LoginModalProps> = ({
             otp,
           }),
         });
-
         let data;
         try {
           data = await res.json();
         } catch {
           throw new Error("Server không trả JSON hợp lệ");
         }
-
         if (!data.ok) {
           setError(data.error || "Đăng ký thất bại");
           setLoading(false);
           setLoadingText("");
           return;
         }
-
         onLogin(normalizeAuthUser(data.user));
         setLoading(false);
         setLoadingText("");
@@ -399,7 +494,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
         if (!otpSent) {
           setLoading(true);
           setLoadingText("Đang gửi mã OTP khôi phục...");
-
           const res = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -410,25 +504,21 @@ const LoginModal: React.FC<LoginModalProps> = ({
               email,
             }),
           });
-
           let data;
           try {
             data = await res.json();
           } catch {
             throw new Error("Server không trả JSON hợp lệ");
           }
-
           if (!data.ok) {
             setError(data.error || "Không gửi được OTP khôi phục");
             setLoading(false);
             setLoadingText("");
             return;
           }
-
           setOtpSent(true);
           setOtpCountdown(60);
           scrollToOtpSection();
-
           setLoading(false);
           setLoadingText("");
           return;
@@ -436,7 +526,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
 
         setLoading(true);
         setLoadingText("Đang đặt lại mật khẩu...");
-
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -449,21 +538,18 @@ const LoginModal: React.FC<LoginModalProps> = ({
             newPassword,
           }),
         });
-
         let data;
         try {
           data = await res.json();
         } catch {
           throw new Error("Server không trả JSON hợp lệ");
         }
-
         if (!data.ok) {
           setError(data.error || "Đặt lại mật khẩu thất bại");
           setLoading(false);
           setLoadingText("");
           return;
         }
-
         setLoading(false);
         setLoadingText("");
         setMode("login");
@@ -512,7 +598,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                 ? "ĐĂNG KÝ"
                 : "QUÊN MẬT KHẨU"}
           </h2>
-
           <p className="text-sm md:text-base text-slate-600 text-center mb-6">
             {mode === "login"
               ? "Quý khách vui lòng đăng nhập để đặt hàng"
@@ -655,7 +740,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                   {fieldErrors.password}
                 </p>
               )}
-
               {mode === "register" && (
                 <div className="mt-3 space-y-1 text-xs">
                   <p
@@ -788,7 +872,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-700">
                   Xác nhận mật khẩu mới (*)
@@ -848,13 +931,11 @@ const LoginModal: React.FC<LoginModalProps> = ({
               <label className="block text-sm font-medium mb-2 text-slate-700">
                 Mã OTP (*)
               </label>
-
               <p className="text-sm text-amber-900 font-medium mb-3">
                 {mode === "register"
                   ? "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và nhập mã để hoàn tất đăng ký."
                   : "Mã OTP khôi phục đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và nhập mã để đặt lại mật khẩu."}
               </p>
-
               <input
                 ref={otpInputRef}
                 type="text"
@@ -883,13 +964,11 @@ const LoginModal: React.FC<LoginModalProps> = ({
                     : "focus:ring-amber-400"
                 }`}
               />
-
               {touched.otp && fieldErrors.otp && (
                 <p className="mt-2 text-sm font-medium text-red-600">
                   {fieldErrors.otp}
                 </p>
               )}
-
               <div className="mt-4 flex gap-3">
                 {otpCountdown > 0 ? (
                   <div className="flex-1 rounded-xl bg-white border border-slate-200 px-4 py-3 text-center text-sm text-slate-500">
@@ -902,7 +981,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                       setError("");
                       setLoading(true);
                       setLoadingText("Đang gửi lại mã OTP...");
-
                       try {
                         const res = await fetch(API_URL, {
                           method: "POST",
@@ -915,20 +993,16 @@ const LoginModal: React.FC<LoginModalProps> = ({
                             email,
                           }),
                         });
-
                         let data = await res.json();
-
                         if (!data.ok) {
                           setError(data.error || "Không gửi lại được OTP");
                           setLoading(false);
                           setLoadingText("");
                           return;
                         }
-
                         setOtp("");
                         setOtpCountdown(60);
                         scrollToOtpSection();
-
                         setLoading(false);
                         setLoadingText("");
                       } catch (err: any) {
@@ -942,7 +1016,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                     Gửi lại mã OTP
                   </button>
                 )}
-
                 <button
                   type="button"
                   onClick={resetOtpFlow}
@@ -959,6 +1032,14 @@ const LoginModal: React.FC<LoginModalProps> = ({
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
               <p className="text-red-700 text-sm md:text-base font-semibold text-center">
                 {error}
+              </p>
+            </div>
+          )}
+
+          {info && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-amber-800 text-sm md:text-base font-medium text-center">
+                {info}
               </p>
             </div>
           )}
@@ -985,73 +1066,11 @@ const LoginModal: React.FC<LoginModalProps> = ({
             <div className="flex-1 h-px bg-slate-300" />
           </div>
 
-          {/* Google Login Button */}
+          {/* Google Login Button - Đã thay onClick bằng handleGoogleLogin */}
           <button
+            type="button"
             disabled={loading}
-            onClick={() => {
-              setError("");
-              setLoading(true);
-              setLoadingText("Đang đăng nhập với Google...");
-
-              const oauth2 = (window as any).google?.accounts?.oauth2;
-              if (!oauth2) {
-                setError("Google SDK chưa load");
-                setLoading(false);
-                setLoadingText("");
-                return;
-              }
-
-              const tokenClient = oauth2.initTokenClient({
-                client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                scope: "openid email profile",
-                callback: async (response: any) => {
-                  try {
-                    if (!response?.access_token) {
-                      throw new Error("Không nhận được access token từ Google");
-                    }
-                    const googleUser = await fetchGoogleUserInfo(
-                      response.access_token,
-                    );
-
-                    const apiRes = await fetch(API_URL, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "text/plain;charset=utf-8",
-                      },
-                      body: JSON.stringify({
-                        api: "googleLogin",
-                        email: googleUser.email,
-                        name: googleUser.name,
-                        avatarUrl: googleUser.picture,
-                      }),
-                    });
-
-                    const text = await apiRes.text();
-                    let data = JSON.parse(text);
-
-                    if (!data.ok) {
-                      throw new Error(data.error || "Google login thất bại");
-                    }
-
-                    onLogin(
-                      normalizeAuthUser({
-                        ...data.user,
-                        avatarUrl:
-                          data.user?.avatarUrl || googleUser.picture || "",
-                      }),
-                    );
-                    setLoading(false);
-                    setLoadingText("");
-                    onClose();
-                  } catch (err: any) {
-                    setError(err?.message || "Google login lỗi");
-                    setLoading(false);
-                    setLoadingText("");
-                  }
-                },
-              });
-              tokenClient.requestAccessToken();
-            }}
+            onClick={handleGoogleLogin}
             className="w-full border rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-gray-50"
           >
             <img

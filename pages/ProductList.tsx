@@ -86,6 +86,13 @@ const formatVnd = (vnd: number | null) => {
   return `${s} triệu`;
 };
 
+const formatVndParts = (vnd: number | null) => {
+  if (vnd == null) return { amount: "", unit: "triệu" };
+  const m = vnd / 1_000_000;
+  const amount = Number.isInteger(m) ? String(m) : String(m).replace(".", ",");
+  return { amount, unit: "triệu" };
+};
+
 type PriceKey =
   | "All"
   | "contact"
@@ -240,11 +247,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const publicRent = parseMoney(p?.rentPrice);
-  const publicSell = parseMoney(p?.price);
-  const hasPriceToShow =
-    (publicRent != null && publicRent > 0) ||
-    (publicSell != null && publicSell > 0);
+    const publicRent = parseMoney(p?.rentPrice);
+    const publicSell = parseMoney(p?.price);
+    const rentParts = formatVndParts(publicRent);
+    const sellParts = formatVndParts(publicSell);
+    const hasPriceToShow =
+      (publicRent != null && publicRent > 0) ||
+      (publicSell != null && publicSell > 0);
 
   const specs = [
     { label: "Cao", value: (p as any)?.height || "—" },
@@ -334,27 +343,49 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="mt-auto rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-3">
           {hasPriceToShow ? (
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-stretch gap-2.5">
-              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
+            <div className="grid grid-cols-2 gap-2.5 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+              <div className="min-w-0 min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Thuê Tết
                 </p>
-                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-slate-800 break-words [text-size-adjust:100%]">
-                  {publicRent != null && publicRent > 0
-                    ? formatVnd(publicRent)
-                    : "Liên hệ"}
-                </p>
+
+                {publicRent != null && publicRent > 0 ? (
+                  <>
+                    <p className="text-[15px] font-extrabold leading-5 text-slate-800 md:hidden">
+                      {rentParts.amount}
+                      <span className="block">triệu</span>
+                    </p>
+                    <p className="hidden text-base font-extrabold leading-5 text-slate-800 md:block">
+                      {formatVnd(publicRent)}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[15px] font-extrabold leading-5 text-slate-800">
+                    Liên hệ
+                  </p>
+                )}
               </div>
 
-              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
+              <div className="min-w-0 min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Bán
                 </p>
-                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-slate-800 break-words [text-size-adjust:100%]">
-                  {publicSell != null && publicSell > 0
-                    ? formatVnd(publicSell)
-                    : "Liên hệ"}
-                </p>
+
+                {publicSell != null && publicSell > 0 ? (
+                  <>
+                    <p className="text-[15px] font-extrabold leading-5 text-slate-800 md:hidden">
+                      {sellParts.amount}
+                      <span className="block">triệu</span>
+                    </p>
+                    <p className="hidden text-base font-extrabold leading-5 text-slate-800 md:block">
+                      {formatVnd(publicSell)}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[15px] font-extrabold leading-5 text-slate-800">
+                    Liên hệ
+                  </p>
+                )}
               </div>
 
               {showDetailButton ? (
@@ -364,7 +395,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     e.stopPropagation();
                     onOpenDetail(p);
                   }}
-                  className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-amber-950 transition-all hover:bg-amber-500"
+                  className="col-span-2 inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-amber-950 transition-all hover:bg-amber-500 2xl:col-span-1 2xl:self-end"
                 >
                   <span>Xem chi tiết</span>
                   <span aria-hidden>→</span>
@@ -376,7 +407,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     e.stopPropagation();
                     onContact();
                   }}
-                  className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+                  className="col-span-2 inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 2xl:col-span-1 2xl:self-end"
                 >
                   <span>Liên hệ</span>
                   <span aria-hidden>→</span>
@@ -384,12 +415,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2.5">
-              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
+            <div className="grid grid-cols-1 gap-2.5 2xl:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="min-w-0 min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Giá tham khảo
                 </p>
-                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-red-600 break-words [text-size-adjust:100%]">
+                <p className="text-[15px] font-extrabold leading-5 text-red-600">
                   Liên hệ báo giá
                 </p>
               </div>
@@ -400,7 +431,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   e.stopPropagation();
                   onContact();
                 }}
-                className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+                className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 2xl:self-end"
               >
                 <span>Liên hệ</span>
                 <span aria-hidden>→</span>

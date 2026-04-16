@@ -225,14 +225,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onOpenDetail,
   onContact,
 }) => {
-  const { specs, desc } = splitSpecsFromDescription(p.description);
   const isSold = !!p?.isSold;
   const isRented = !!p?.isRented;
   const soldOrRentedLabel = isSold ? "ĐÃ BÁN" : isRented ? "ĐÃ CHO THUÊ" : "";
   const dimmed = isSold || isRented;
   const internalStatus = getInternalStatus(p);
 
-  // ✅ Card luôn mở chi tiết (tất cả cây đều xem được chi tiết)
   const handleOpenDetail = () => onOpenDetail(p);
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
@@ -242,28 +240,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  // Giá hiển thị
   const publicRent = parseMoney(p?.rentPrice);
   const publicSell = parseMoney(p?.price);
   const hasPriceToShow =
     (publicRent != null && publicRent > 0) ||
     (publicSell != null && publicSell > 0);
 
-  let priceLine = "Liên hệ báo giá";
-  if (hasPriceToShow) {
-    if (
-      publicRent != null &&
-      publicRent > 0 &&
-      publicSell != null &&
-      publicSell > 0
-    ) {
-      priceLine = `Thuê: ${formatVnd(publicRent)} · Bán: ${formatVnd(publicSell)}`;
-    } else if (publicRent != null && publicRent > 0) {
-      priceLine = `Thuê: ${formatVnd(publicRent)}`;
-    } else if (publicSell != null && publicSell > 0) {
-      priceLine = `Bán: ${formatVnd(publicSell)}`;
-    }
-  }
+  const specs = [
+    { label: "Cao", value: (p as any)?.height || "—" },
+    { label: "Tán", value: (p as any)?.width || "—" },
+    { label: "Hoành", value: (p as any)?.hoanh || "—" },
+    { label: "Chậu", value: (p as any)?.chau || "—" },
+  ];
 
   const showDetailButton = hasPublicPrice(p);
 
@@ -275,92 +263,149 @@ const ProductCard: React.FC<ProductCardProps> = ({
       onKeyDown={onKeyDown}
       aria-label={`Xem chi tiết ${p?.name ?? "sản phẩm"}`}
       className={`
-        bg-white rounded-2xl overflow-hidden shadow-sm
-        hover:shadow-xl transition-all group flex flex-col h-full
-        cursor-pointer select-none active:scale-[0.99]
+        group flex h-full cursor-pointer flex-col overflow-hidden rounded-[24px]
+        border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]
+        transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]
         focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300
         ${dimmed ? "opacity-60" : ""}
       `}
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         <img
           src={getImageSrc(p)}
           onError={onImgError}
           alt={p.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           draggable={false}
         />
-        <div className="absolute top-4 right-4">
-          <span className="bg-[#3B5A2A] text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wide">
-            {p.category || "Khác"}
-          </span>
-        </div>
-        {soldOrRentedLabel && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="absolute bottom-4 left-4">
-              <span className="bg-black/70 text-white px-3 py-1 rounded-full text-xs font-extrabold tracking-wide">
-                {soldOrRentedLabel}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-bold text-sm sm:text-base lg:text-lg text-slate-800 line-clamp-1">
-            {p.name}
-          </h3>
-          {/* Tag status dựa theo giá nội bộ */}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 via-black/5 to-transparent" />
+
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           {internalStatus.label !== "Liên hệ" && (
             <span
-              className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${internalStatus.cls}`}
+              className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${internalStatus.cls}`}
             >
               {internalStatus.label}
             </span>
           )}
         </div>
-        {specs && (
-          <p className="text-xs text-slate-500 mb-2 whitespace-normal break-words leading-5">
-            {specs}
-          </p>
-        )}
-        <p className="text-slate-500 text-sm mb-4 line-clamp-2">
-          {desc || `Mã cây: ${p.id}. Vui lòng liên hệ để xem cây thực tế.`}
-        </p>
-        <div className="mt-auto flex items-end justify-between gap-4">
-          {/* ✅ HIỂN THỊ GIÁ THEO 2 CỘT GiaThue / GiaBan */}
-          <div className="min-w-0">
-            <p className="text-xs text-slate-400">Giá</p>
-            <p
-              className={`text-sm sm:text-base lg:text-lg font-bold ${hasPriceToShow ? "text-slate-800" : "text-red-600"} line-clamp-2`}
-            >
-              {priceLine}
-            </p>
+
+        <div className="absolute right-4 top-4">
+          <span className="rounded-full bg-[#3B5A2A]/95 px-3 py-1 text-[11px] font-bold tracking-wide text-white shadow-sm">
+            {p.category || "Khác"}
+          </span>
+        </div>
+
+        {soldOrRentedLabel && (
+          <div className="absolute inset-x-4 bottom-4">
+            <span className="inline-flex rounded-full bg-black/75 px-3 py-1 text-xs font-extrabold tracking-wide text-white backdrop-blur-sm">
+              {soldOrRentedLabel}
+            </span>
           </div>
-          {/* ✅ Nút theo giá HIỂN THỊ: không có giá => Liên hệ; có giá => Chi tiết */}
-          {showDetailButton ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenDetail(p);
-              }}
-              className="bg-amber-400 hover:bg-amber-500 text-amber-950 px-4 py-2 rounded-lg text-xs font-bold transition-all shrink-0 self-end"
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-4">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Mã cây
+          </p>
+          <h3 className="line-clamp-1 text-[24px] font-extrabold leading-none tracking-tight text-slate-800">
+            {p.name}
+          </h3>
+        </div>
+
+        <div className="mb-4 grid grid-cols-4 gap-2">
+          {specs.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
             >
-              Chi Tiết
-            </button>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {item.label}
+              </p>
+              <p className="text-xs font-semibold text-slate-700 break-words leading-4">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-auto rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-3">
+          {hasPriceToShow ? (
+            <div className="flex items-end gap-2.5">
+              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Thuê Tết
+                </p>
+                <p className="text-base font-extrabold leading-5 text-slate-800 break-words">
+                  {publicRent != null && publicRent > 0
+                    ? formatVnd(publicRent)
+                    : "Liên hệ"}
+                </p>
+              </div>
+
+              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Bán
+                </p>
+                <p className="text-base font-extrabold leading-5 text-slate-800 break-words">
+                  {publicSell != null && publicSell > 0
+                    ? formatVnd(publicSell)
+                    : "Liên hệ"}
+                </p>
+              </div>
+
+              {showDetailButton ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenDetail(p);
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-amber-950 transition-all hover:bg-amber-500"
+                >
+                  <span>Xem chi tiết</span>
+                  <span aria-hidden>→</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onContact();
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+                >
+                  <span>Liên hệ</span>
+                  <span aria-hidden>→</span>
+                </button>
+              )}
+            </div>
           ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onContact();
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shrink-0 self-end"
-            >
-              Liên hệ
-            </button>
+            <div className="flex items-end gap-2.5">
+              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Giá tham khảo
+                </p>
+                <p className="text-base font-extrabold leading-5 text-red-600 break-words">
+                  Liên hệ báo giá
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onContact();
+                }}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+              >
+                <span>Liên hệ</span>
+                <span aria-hidden>→</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1053,7 +1098,7 @@ const ProductList: React.FC<ProductListProps> = ({
             </div>
 
             {/* Grid Sản Phẩm */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
               {pagedProducts.map((p: any) => (
                 <ProductCard
                   key={p.id}

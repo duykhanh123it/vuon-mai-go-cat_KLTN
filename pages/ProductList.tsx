@@ -334,23 +334,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="mt-auto rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-3">
           {hasPriceToShow ? (
-            <div className="flex items-end gap-2.5">
-              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-stretch gap-2.5">
+              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Thuê Tết
                 </p>
-                <p className="text-base font-extrabold leading-5 text-slate-800 break-words">
+                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-slate-800 break-words [text-size-adjust:100%]">
                   {publicRent != null && publicRent > 0
                     ? formatVnd(publicRent)
                     : "Liên hệ"}
                 </p>
               </div>
 
-              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Bán
                 </p>
-                <p className="text-base font-extrabold leading-5 text-slate-800 break-words">
+                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-slate-800 break-words [text-size-adjust:100%]">
                   {publicSell != null && publicSell > 0
                     ? formatVnd(publicSell)
                     : "Liên hệ"}
@@ -364,7 +364,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     e.stopPropagation();
                     onOpenDetail(p);
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-amber-950 transition-all hover:bg-amber-500"
+                  className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-amber-950 transition-all hover:bg-amber-500"
                 >
                   <span>Xem chi tiết</span>
                   <span aria-hidden>→</span>
@@ -376,7 +376,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     e.stopPropagation();
                     onContact();
                   }}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+                  className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
                 >
                   <span>Liên hệ</span>
                   <span aria-hidden>→</span>
@@ -384,12 +384,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
               )}
             </div>
           ) : (
-            <div className="flex items-end gap-2.5">
-              <div className="min-w-0 flex-1 rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2.5">
+              <div className="min-w-0 h-full min-h-[88px] rounded-xl bg-white/90 px-3 py-2.5 ring-1 ring-slate-200 flex flex-col justify-between">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Giá tham khảo
                 </p>
-                <p className="text-base font-extrabold leading-5 text-red-600 break-words">
+                <p className="text-[15px] sm:text-base font-extrabold leading-5 text-red-600 break-words [text-size-adjust:100%]">
                   Liên hệ báo giá
                 </p>
               </div>
@@ -400,7 +400,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   e.stopPropagation();
                   onContact();
                 }}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
+                className="self-end shrink-0 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700"
               >
                 <span>Liên hệ</span>
                 <span aria-hidden>→</span>

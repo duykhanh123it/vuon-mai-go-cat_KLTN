@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ProfileModal from "./ProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { Page } from "../types";
@@ -37,6 +37,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [loginModalMode, setLoginModalMode] = useState<
     "login" | "register" | "forgot_password"
   >("login");
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -96,6 +98,24 @@ export const Navbar: React.FC<NavbarProps> = ({
       document.body.style.overflow = "";
     };
   }, [drawerOpen]);
+
+  // Click outside to close user dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const navBtnBase =
     "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 " +
@@ -168,12 +188,60 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Mobile User Button - Avatar */}
               {authUser ? (
-                <img
-                  src={authUser.avatarUrl || "/no-avatar.png"}
-                  alt="avatar"
-                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                />
+                <div ref={dropdownRef}>
+                  <img
+                    src={authUser.avatarUrl || "/no-avatar.png"}
+                    alt="avatar"
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUserMenuOpen((prev) => !prev);
+                    }}
+                  />
+
+                  {/* Mobile User Dropdown */}
+                  {authUser !== null && userMenuOpen && (
+                    <div
+                      className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {canAccessAdmin(authUser) && (
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            setCurrentPage("admin");
+                          }}
+                        >
+                          ⚙️ Quản trị hệ thống
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setShowProfileModal(true);
+                        }}
+                      >
+                        Thông tin tài khoản
+                      </button>
+
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          onLogout();
+                        }}
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   type="button"
@@ -191,46 +259,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
             </div>
-
-            {/* Mobile User Dropdown */}
-            {authUser !== null && userMenuOpen && (
-              <div className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
-                {canAccessAdmin(authUser) && (
-                  <button
-                    type="button"
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      setCurrentPage("admin");
-                    }}
-                  >
-                    ⚙️ Quản trị hệ thống
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    setShowProfileModal(true);
-                  }}
-                >
-                  Thông tin tài khoản
-                </button>
-
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    onLogout();
-                  }}
-                >
-                  Đăng xuất
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -299,12 +327,71 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Desktop User Button - Avatar + Name */}
             {authUser ? (
-              <img
-                src={authUser.avatarUrl || "/no-avatar.png"}
-                alt="avatar"
-                className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
-                onClick={() => setUserMenuOpen((prev) => !prev)}
-              />
+              <div ref={dropdownRef}>
+                <img
+                  src={authUser.avatarUrl || "/no-avatar.png"}
+                  alt="avatar"
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setUserMenuOpen((prev) => !prev);
+                  }}
+                />
+
+                {/* Desktop User Dropdown */}
+                {authUser !== null && userMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {canAccessAdmin(authUser) && (
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setCurrentPage("admin");
+                        }}
+                      >
+                        ⚙️ Quản trị hệ thống
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setShowProfileModal(true);
+                      }}
+                    >
+                      Hồ sơ của tôi
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition border-t border-slate-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setShowChangePasswordModal(true);
+                      }}
+                    >
+                      Đổi mật khẩu
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        onLogout();
+                      }}
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <button
                 type="button"
@@ -320,57 +407,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <span className="text-base">👤</span>
               </button>
-            )}
-
-            {/* Desktop User Dropdown */}
-            {authUser !== null && userMenuOpen && (
-              <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
-                {canAccessAdmin(authUser) && (
-                  <button
-                    type="button"
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      setCurrentPage("admin");
-                    }}
-                  >
-                    ⚙️ Quản trị hệ thống
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    setShowProfileModal(true);
-                  }}
-                >
-                  Hồ sơ của tôi
-                </button>
-
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition border-t border-slate-100"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    setShowChangePasswordModal(true);
-                  }}
-                >
-                  Đổi mật khẩu
-                </button>
-
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition border-t border-slate-100"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    onLogout();
-                  }}
-                >
-                  Đăng xuất
-                </button>
-              </div>
             )}
           </div>
         </div>
@@ -470,7 +506,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
     </nav>
   );
-};
+};;
 
 export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({
   setCurrentPage,

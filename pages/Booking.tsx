@@ -95,6 +95,26 @@ const Booking: React.FC<{
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const successRef = useRef<HTMLDivElement | null>(null);
+
+  // ==================== THÊM MỚI ====================
+  const images = [
+    "/img_appoinment/img_appoinment1.png",
+    "/img_appoinment/img_appoinment2.png",
+    "/img_appoinment/img_appoinment3.png",
+    "/img_appoinment/img_appoinment4.png",
+    "/img_appoinment/img_appoinment5.png",
+    "/img_appoinment/img_appoinment6.png",
+    "/img_appoinment/img_appoinment7.png",
+    "/img_appoinment/img_appoinment8.png",
+    "/img_appoinment/img_appoinment9.png",
+    "/img_appoinment/img_appoinment10.png",
+    "/img_appoinment/img_appoinment11.png",
+  ];
+
+  const [currentImage, setCurrentImage] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  // ==================================================
+
   useEffect(() => {
     if (!isSubmitted) return;
     requestAnimationFrame(() => {
@@ -113,6 +133,25 @@ const Booking: React.FC<{
       });
     });
   }, [isSubmitted]);
+
+  // ==================== AUTO SLIDE ====================
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+
+      setTimeout(() => {
+        setCurrentImage((prev) => (prev + 1) % images.length);
+      }, 220);
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 900);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+  // ==================================================
+
   const [loading, setLoading] = useState(false);
   const [successCode, setSuccessCode] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -275,14 +314,52 @@ const Booking: React.FC<{
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* Left column */}
           <div className="space-y-8">
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-              <img
-                src="/img_appoinment.png"
-                alt="Đặt lịch tham quan Vườn Mai Gò Cát"
-                className="w-full h-[260px] md:h-[320px] lg:h-[360px] object-cover"
-                loading="lazy"
+            {/* ==================== BLOCK ẢNH ĐÃ SỬA ==================== */}
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden relative h-[260px] md:h-[320px] lg:h-[360px]">
+              {images.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt="Đặt lịch tham quan Vườn Mai Gò Cát"
+                  className={`
+        absolute inset-0 w-full h-full object-cover
+        transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]
+        ${
+          index === currentImage
+            ? "opacity-100 scale-100 translate-x-0 z-20"
+            : "opacity-0 scale-110 translate-x-2 z-10"
+        }
+      `}
+                  loading="lazy"
+                />
+              ))}
+
+              <div
+                className={`
+      absolute inset-0 z-30 pointer-events-none
+      bg-white/20 backdrop-blur-[1px]
+      transition-opacity duration-700 ease-out
+      ${isTransitioning ? "opacity-100" : "opacity-0"}
+    `}
               />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent z-30" />
+
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-40">
+                {images.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === currentImage
+                        ? "w-5 h-2.5 bg-white"
+                        : "w-2.5 h-2.5 bg-white/45"
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
+            {/* ======================================================== */}
+
             <div className="bg-white p-8 rounded-3xl shadow-md">
               <h3 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <span className="w-1.5 h-7 bg-amber-500 rounded-full" />
@@ -329,7 +406,7 @@ const Booking: React.FC<{
           {/* Right column - Form */}
           <div
             ref={successRef}
-            className="bg-white p-10 rounded-3xl shadow-xl lg:self-center max-h-[90vh] overflow-y-auto"
+            className="bg-white p-8 rounded-3xl shadow-xl h-[854px] flex flex-col"
           >
             {!isSubmitted ? (
               <>
@@ -358,218 +435,238 @@ const Booking: React.FC<{
                     const index = focusables.indexOf(target);
                     focusables[index + 1]?.focus();
                   }}
-                  className="space-y-6"
+                  className="flex flex-col h-full"
                 >
-                  {/* Honeypot (ẩn) */}
-                  <input
-                    type="text"
-                    value={formData.website}
-                    onChange={(e) => setField("website")(e.target.value)}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    className="hidden"
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                      Họ và Tên <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Nguyễn Văn A"
-                      list="vmgc-name-suggestions"
-                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      value={formData.name}
-                      onChange={(e) => setField("name")(e.target.value)}
-                      required
-                    />
-                    <datalist id="vmgc-name-suggestions">
-                      {nameSuggestions.map((v) => (
-                        <option key={v} value={v} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                      Số Điện Thoại <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="090 123 4567"
-                      list="vmgc-phone-suggestions"
-                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      value={formData.phone}
-                      onChange={(e) => setField("phone")(e.target.value)}
-                      required
-                    />
-                    <datalist id="vmgc-phone-suggestions">
-                      {phoneSuggestions.map((v) => (
-                        <option key={v} value={v} />
-                      ))}
-                    </datalist>
-                    {formData.phone && !phoneVN(formData.phone) && (
-                      <p className="text-xs text-red-600 mt-2">
-                        SĐT phải có 10 số (0xxxxxxxxx) hoặc +84xxxxxxxxx.
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="email@example.com"
-                      list="vmgc-email-suggestions"
-                      className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      value={formData.email}
-                      onChange={(e) => setField("email")(e.target.value)}
-                    />
-                    <datalist id="vmgc-email-suggestions">
-                      {emailSuggestions.map((v) => (
-                        <option key={v} value={v} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <label className="text-sm font-bold text-slate-700">
-                        Ngày Tham Quan <span className="text-red-500">*</span>
-                      </label>
+                  <div className="flex flex-col justify-between flex-1">
+                    {/* KHỐI FIELD */}
+                    <div className="space-y-4">
+                      {/* Honeypot (ẩn) */}
                       <input
-                        type="date"
-                        className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        value={formData.date}
-                        onChange={(e) => {
-                          setField("date")(e.target.value);
-                          setTimeError("");
-                        }}
-                        required
+                        type="text"
+                        value={formData.website}
+                        onChange={(e) => setField("website")(e.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
+                        className="hidden"
+                        aria-hidden="true"
                       />
-                      {formData.date && !isFutureOrToday(formData.date) && (
-                        <p className="text-xs text-red-600 mt-2">
-                          Ngày tham quan phải từ hôm nay trở đi.
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <label className="text-sm font-bold text-slate-700">
-                        Giờ Hẹn <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setTimeOpen((v) => !v)}
-                          className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        >
-                          {formData.time ? formData.time : "Chọn giờ (HH:mm)"}
-                        </button>
-                        {timeOpen && (
-                          <div className="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-xl p-4">
-                            <div className="flex gap-3">
-                              <select
-                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
-                                value={timeDraft.split(":")[0]}
-                                onChange={(e) => {
-                                  const hh = e.target.value.padStart(2, "0");
-                                  const mm = timeDraft.split(":")[1] || "00";
-                                  setTimeDraft(`${hh}:${mm}`);
-                                }}
-                              >
-                                {Array.from({ length: 24 }, (_, i) =>
-                                  String(i).padStart(2, "0"),
-                                ).map((h) => (
-                                  <option key={h} value={h}>
-                                    {h}
-                                  </option>
-                                ))}
-                              </select>
-                              <select
-                                className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
-                                value={timeDraft.split(":")[1]}
-                                onChange={(e) => {
-                                  const hh = timeDraft.split(":")[0] || "07";
-                                  const mm = e.target.value.padStart(2, "0");
-                                  setTimeDraft(`${hh}:${mm}`);
-                                }}
-                              >
-                                {Array.from({ length: 60 }, (_, i) =>
-                                  String(i).padStart(2, "0"),
-                                ).map((m) => (
-                                  <option key={m} value={m}>
-                                    {m}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="mt-4 flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setTimeOpen(false)}
-                                className="px-4 py-2 rounded-xl border text-sm sm:text-base"
-                              >
-                                Hủy
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setField("time")(timeDraft);
-                                  setTimeOpen(false);
-                                  if (
-                                    formData.date &&
-                                    !isFutureOrNowDateTime(
-                                      formData.date,
-                                      timeDraft,
-                                    )
-                                  ) {
-                                    setTimeError(
-                                      "Giờ hẹn phải từ thời điểm hiện tại trở đi.",
-                                    );
-                                  } else {
-                                    setTimeError("");
-                                  }
-                                }}
-                                className="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm sm:text-base"
-                              >
-                                OK
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        <input type="hidden" value={formData.time} required />
-                        {formData.time && timeError && (
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Họ và Tên <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Nguyễn Văn A"
+                          list="vmgc-name-suggestions"
+                          className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          value={formData.name}
+                          onChange={(e) => setField("name")(e.target.value)}
+                          required
+                        />
+                        <datalist id="vmgc-name-suggestions">
+                          {nameSuggestions.map((v) => (
+                            <option key={v} value={v} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Số Điện Thoại <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="090 123 4567"
+                          list="vmgc-phone-suggestions"
+                          className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          value={formData.phone}
+                          onChange={(e) => setField("phone")(e.target.value)}
+                          required
+                        />
+                        <datalist id="vmgc-phone-suggestions">
+                          {phoneSuggestions.map((v) => (
+                            <option key={v} value={v} />
+                          ))}
+                        </datalist>
+                        {formData.phone && !phoneVN(formData.phone) && (
                           <p className="text-xs text-red-600 mt-2">
-                            {timeError}
+                            SĐT phải có 10 số (0xxxxxxxxx) hoặc +84xxxxxxxxx.
                           </p>
                         )}
                       </div>
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="email@example.com"
+                          list="vmgc-email-suggestions"
+                          className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          value={formData.email}
+                          onChange={(e) => setField("email")(e.target.value)}
+                        />
+                        <datalist id="vmgc-email-suggestions">
+                          {emailSuggestions.map((v) => (
+                            <option key={v} value={v} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-start">
+                        <div className="space-y-1.5 sm:space-y-2 flex flex-col h-full">
+                          <label className="text-sm font-bold text-slate-700">
+                            Ngày Tham Quan{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            value={formData.date}
+                            onChange={(e) => {
+                              setField("date")(e.target.value);
+                              setTimeError("");
+                            }}
+                            required
+                          />
+                          {formData.date && !isFutureOrToday(formData.date) && (
+                            <p className="text-xs text-red-600 mt-2">
+                              Ngày tham quan phải từ hôm nay trở đi.
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1.5 sm:space-y-2 flex flex-col h-full">
+                          <label className="text-sm font-bold text-slate-700">
+                            Giờ Hẹn <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative flex-1 flex flex-col">
+                            <button
+                              type="button"
+                              onClick={() => setTimeOpen((v) => !v)}
+                              className="mt-2 w-full px-4 h-11 sm:h-12 flex items-center text-sm sm:text-base rounded-xl border border-slate-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            >
+                              {formData.time
+                                ? formData.time
+                                : "Chọn giờ (HH:mm)"}
+                            </button>
+                            {timeOpen && (
+                              <div className="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-xl p-4">
+                                <div className="flex gap-3">
+                                  <select
+                                    className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
+                                    value={timeDraft.split(":")[0]}
+                                    onChange={(e) => {
+                                      const hh = e.target.value.padStart(
+                                        2,
+                                        "0",
+                                      );
+                                      const mm =
+                                        timeDraft.split(":")[1] || "00";
+                                      setTimeDraft(`${hh}:${mm}`);
+                                    }}
+                                  >
+                                    {Array.from({ length: 24 }, (_, i) =>
+                                      String(i).padStart(2, "0"),
+                                    ).map((h) => (
+                                      <option key={h} value={h}>
+                                        {h}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    className="w-1/2 px-3 py-2 rounded-xl border border-slate-200 text-sm sm:text-base"
+                                    value={timeDraft.split(":")[1]}
+                                    onChange={(e) => {
+                                      const hh =
+                                        timeDraft.split(":")[0] || "07";
+                                      const mm = e.target.value.padStart(
+                                        2,
+                                        "0",
+                                      );
+                                      setTimeDraft(`${hh}:${mm}`);
+                                    }}
+                                  >
+                                    {Array.from({ length: 60 }, (_, i) =>
+                                      String(i).padStart(2, "0"),
+                                    ).map((m) => (
+                                      <option key={m} value={m}>
+                                        {m}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="mt-4 flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setTimeOpen(false)}
+                                    className="px-4 py-2 rounded-xl border text-sm sm:text-base"
+                                  >
+                                    Hủy
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setField("time")(timeDraft);
+                                      setTimeOpen(false);
+                                      if (
+                                        formData.date &&
+                                        !isFutureOrNowDateTime(
+                                          formData.date,
+                                          timeDraft,
+                                        )
+                                      ) {
+                                        setTimeError(
+                                          "Giờ hẹn phải từ thời điểm hiện tại trở đi.",
+                                        );
+                                      } else {
+                                        setTimeError("");
+                                      }
+                                    }}
+                                    className="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm sm:text-base"
+                                  >
+                                    OK
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            <input
+                              type="hidden"
+                              value={formData.time}
+                              required
+                            />
+                            <p className="text-xs text-red-600 mt-2 min-h-[16px]">
+                              {formData.time && timeError ? timeError : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Ghi Chú
+                        </label>
+                        <textarea
+                          placeholder="Nhu cầu cụ thể của bạn..."
+                          className="mt-2 w-full px-4 h-28 sm:h-36 lg:h-40 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          value={formData.note}
+                          onChange={(e) => setField("note")(e.target.value)}
+                        />
+                      </div>
+                      {error && <p className="text-sm text-red-600">{error}</p>}
                     </div>
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-sm font-bold text-slate-700">
-                      Ghi Chú
-                    </label>
-                    <textarea
-                      placeholder="Nhu cầu cụ thể của bạn..."
-                      className="mt-2 w-full px-4 h-28 sm:h-36 lg:h-40 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      value={formData.note}
-                      onChange={(e) => setField("note")(e.target.value)}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-600">{error}</p>}
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
-                    <button
-                      type="submit"
-                      disabled={loading || !canSubmit}
-                      className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all
-                        ${
-                          loading || !canSubmit
-                            ? "bg-red-300 cursor-not-allowed"
-                            : "bg-red-700 hover:bg-red-800 active:scale-[0.99]"
-                        }`}
-                    >
-                      {loading ? "Đang gửi..." : "Xác Nhận Đặt Lịch Hẹn"}
-                    </button>
+
+                    {/* KHỐI BUTTON */}
+                    <div className="pt-6 flex justify-center">
+                      <button
+                        type="submit"
+                        disabled={loading || !canSubmit}
+                        className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-all
+                          ${
+                            loading || !canSubmit
+                              ? "bg-red-300 cursor-not-allowed"
+                              : "bg-red-700 hover:bg-red-800 active:scale-[0.99]"
+                          }`}
+                      >
+                        {loading ? "Đang gửi..." : "Xác Nhận Đặt Lịch Hẹn"}
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs text-slate-400 text-center mt-4">
                     Bằng việc đặt lịch, bạn đồng ý với các điều khoản dịch vụ

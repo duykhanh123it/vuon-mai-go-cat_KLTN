@@ -24,6 +24,23 @@ const ChangePasswordModal: React.FC<Props> = ({
   const [otpSent, setOtpSent] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(60);
   const isGoogleUser = !user.hasPassword;
+
+  useEffect(() => {
+    const scrollBarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+
+    if (scrollBarWidth > 0) {
+      document.body.style.paddingRight = scrollBarWidth + "px";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, []);
+
   useEffect(() => {
     if (!otpSent || otpCountdown <= 0) return;
     const timer = setTimeout(() => {

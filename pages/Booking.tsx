@@ -110,9 +110,64 @@ const Booking: React.FC<{
     "/img_appoinment/img_appoinment10.png",
     "/img_appoinment/img_appoinment11.png",
   ];
-
   const [currentImage, setCurrentImage] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // ==================== THÊM REF ĐỂ BẮT VUỐT ====================
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
+
+  // ==================== HÀM CHUYỂN ẢNH THỦ CÔNG ====================
+  const goToImage = (nextIndex: number) => {
+    if (nextIndex === currentImage) return;
+
+    setIsTransitioning(true);
+
+    setTimeout(() => {
+      setCurrentImage(nextIndex);
+    }, 220);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 900);
+  };
+
+  const goToPrevImage = () => {
+    const nextIndex = (currentImage - 1 + images.length) % images.length;
+    goToImage(nextIndex);
+  };
+
+  const goToNextImage = () => {
+    const nextIndex = (currentImage + 1) % images.length;
+    goToImage(nextIndex);
+  };
+
+  // ==================== 3 HÀM XỬ LÝ VUỐT ====================
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchEndXRef.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchEndXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartXRef.current == null || touchEndXRef.current == null) return;
+
+    const deltaX = touchStartXRef.current - touchEndXRef.current;
+
+    if (Math.abs(deltaX) < 40) return;
+
+    if (deltaX > 0) {
+      goToNextImage();
+    } else {
+      goToPrevImage();
+    }
+
+    touchStartXRef.current = null;
+    touchEndXRef.current = null;
+  };
   // ==================================================
 
   useEffect(() => {
@@ -137,19 +192,12 @@ const Booking: React.FC<{
   // ==================== AUTO SLIDE ====================
   useEffect(() => {
     const interval = setInterval(() => {
-      setIsTransitioning(true);
-
-      setTimeout(() => {
-        setCurrentImage((prev) => (prev + 1) % images.length);
-      }, 220);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 900);
+      const nextIndex = (currentImage + 1) % images.length;
+      goToImage(nextIndex);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, [currentImage, images.length]);
   // ==================================================
 
   const [loading, setLoading] = useState(false);
@@ -222,7 +270,6 @@ const Booking: React.FC<{
     setError("");
     setSuccessCode("");
     setTimeError("");
-
     if (formData.website.trim()) return;
     if (!formData.name.trim()) return setError("Vui lòng nhập họ và tên.");
     if (!phoneVN(formData.phone)) {
@@ -242,7 +289,6 @@ const Booking: React.FC<{
     if (!APPS_SCRIPT_WEBAPP_URL) {
       return setError("Chưa cấu hình VITE_PRODUCTS_API_BASE.");
     }
-
     const payload = {
       api: "booking",
       name: formData.name,
@@ -254,9 +300,7 @@ const Booking: React.FC<{
       website: "",
       source: "vuonmaigocat_web",
     };
-
     setLoading(true);
-
     try {
       const res = await fetch(APPS_SCRIPT_WEBAPP_URL, {
         method: "POST",
@@ -265,21 +309,17 @@ const Booking: React.FC<{
         },
         body: JSON.stringify(payload),
       });
-
       let data: any;
       try {
         data = await res.json();
       } catch {
         throw new Error("Server không trả JSON hợp lệ");
       }
-
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Đặt lịch thất bại");
       }
-
       setSuccessCode(String(data.bookingCode || ""));
       setIsSubmitted(true);
-
       const saved: BookingHistoryItem = {
         name: payload.name,
         phone: payload.phone,
@@ -289,7 +329,6 @@ const Booking: React.FC<{
       };
       saveBookingHistory(saved);
       setHistory(loadBookingHistory());
-
       resetForm();
     } catch (err: any) {
       setError(err?.message || "Có lỗi xảy ra");
@@ -314,8 +353,13 @@ const Booking: React.FC<{
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* Left column */}
           <div className="space-y-8">
-            {/* ==================== BLOCK ẢNH ĐÃ SỬA ==================== */}
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden relative h-[260px] md:h-[320px] lg:h-[360px]">
+            {/* ==================== BLOCK ẢNH ĐÃ SỬA (hỗ trợ vuốt + nút chỉ hiện desktop) ==================== */}
+            <div
+              className="bg-white rounded-3xl shadow-xl overflow-hidden relative h-[260px] md:h-[320px] lg:h-[360px] group"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {images.map((img, index) => (
                 <img
                   key={index}
@@ -345,14 +389,37 @@ const Booking: React.FC<{
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent z-30" />
 
+              {/* Nút trái - chỉ hiện trên desktop (lg) */}
+              <button
+                type="button"
+                onClick={goToPrevImage}
+                aria-label="Ảnh trước"
+                className="hidden lg:flex absolute left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 items-center justify-center rounded-full bg-white/75 hover:bg-white text-slate-800 shadow-md backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
+              >
+                ‹
+              </button>
+
+              {/* Nút phải - chỉ hiện trên desktop (lg) */}
+              <button
+                type="button"
+                onClick={goToNextImage}
+                aria-label="Ảnh tiếp theo"
+                className="hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 items-center justify-center rounded-full bg-white/75 hover:bg-white text-slate-800 shadow-md backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
+              >
+                ›
+              </button>
+
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-40">
                 {images.map((_, i) => (
-                  <div
+                  <button
                     key={i}
+                    type="button"
+                    aria-label={`Chuyển đến ảnh ${i + 1}`}
+                    onClick={() => goToImage(i)}
                     className={`rounded-full transition-all duration-300 ${
                       i === currentImage
                         ? "w-5 h-2.5 bg-white"
-                        : "w-2.5 h-2.5 bg-white/45"
+                        : "w-2.5 h-2.5 bg-white/45 hover:bg-white/70"
                     }`}
                   />
                 ))}
@@ -431,7 +498,6 @@ const Booking: React.FC<{
                       const node = el as HTMLElement;
                       return node.offsetParent !== null;
                     }) as HTMLElement[];
-
                     const index = focusables.indexOf(target);
                     focusables[index + 1]?.focus();
                   }}
@@ -651,7 +717,6 @@ const Booking: React.FC<{
                       </div>
                       {error && <p className="text-sm text-red-600">{error}</p>}
                     </div>
-
                     {/* KHỐI BUTTON */}
                     <div className="pt-6 flex justify-center">
                       <button

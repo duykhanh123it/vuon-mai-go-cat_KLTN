@@ -256,14 +256,17 @@ const Booking: React.FC<{
     };
   const resetForm = () => {
     setFormData({
-      name: "",
-      phone: "",
-      email: "",
+      name: authUser?.name || "",
+      phone: authUser?.phone || "",
+      email: authUser?.email || "",
       date: "",
       time: "",
       note: "",
       website: "",
     });
+    setTimeDraft("07:00");
+    setTimeOpen(false);
+    setTimeError("");
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -577,27 +580,29 @@ const Booking: React.FC<{
                           ))}
                         </datalist>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-start">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-stretch">
                         <div className="space-y-1.5 sm:space-y-2 flex flex-col h-full">
                           <label className="text-sm font-bold text-slate-700">
                             Ngày Tham Quan{" "}
                             <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="date"
-                            className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                            value={formData.date}
-                            onChange={(e) => {
-                              setField("date")(e.target.value);
-                              setTimeError("");
-                            }}
-                            required
-                          />
-                          {formData.date && !isFutureOrToday(formData.date) && (
-                            <p className="text-xs text-red-600 mt-2">
-                              Ngày tham quan phải từ hôm nay trở đi.
+                          <div className="relative flex-1 flex flex-col">
+                            <input
+                              type="date"
+                              className="mt-2 w-full px-4 h-11 sm:h-12 text-sm sm:text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                              value={formData.date}
+                              onChange={(e) => {
+                                setField("date")(e.target.value);
+                                setTimeError("");
+                              }}
+                              required
+                            />
+                            <p className="text-xs text-red-600 mt-2 min-h-[16px]">
+                              {formData.date && !isFutureOrToday(formData.date)
+                                ? "Ngày tham quan phải từ hôm nay trở đi."
+                                : ""}
                             </p>
-                          )}
+                          </div>
                         </div>
                         <div className="space-y-1.5 sm:space-y-2 flex flex-col h-full">
                           <label className="text-sm font-bold text-slate-700">
@@ -775,6 +780,7 @@ const Booking: React.FC<{
                   <button
                     type="button"
                     onClick={() => {
+                      resetForm();
                       setIsSubmitted(false);
                       setError("");
                       setSuccessCode("");

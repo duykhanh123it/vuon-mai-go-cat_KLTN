@@ -1,14 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
-import ProfileModal from "./ProfileModal";
+import React, { useEffect, useRef, useState } from "react";
 import ChangePasswordModal from "./ChangePasswordModal";
-import { Page } from "../types";
+import ProfileModal from "./ProfileModal";
+import { AuthUser, Page, canAccessAdmin } from "../types";
 
 /**
  * Layout.tsx
  * Navbar: Mobile có hamburger + sidebar drawer
  */
-
-import { AuthUser, canAccessAdmin } from "../types";
 
 interface NavbarProps {
   currentPage: Page;
@@ -17,6 +15,9 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onLogout: () => void;
   onUpdateUser: (user: AuthUser) => void;
+  onOpenCart: () => void;
+  onGoMyOrders: () => void;
+  cartCount: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,17 +27,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onLogout,
   onUpdateUser,
+  onOpenCart,
+  onGoMyOrders,
+  cartCount,
 }) => {
-  const PHONE_NUMBER = "0922727277";
-  const ZALO_LINK = `https://zalo.me/${PHONE_NUMBER}`;
-
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [loginModalMode, setLoginModalMode] = useState<
-    "login" | "register" | "forgot_password"
-  >("login");
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,37 +45,34 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: "contact", label: "Liên Hệ", icon: "📞" },
   ];
 
-  const handleCallClick = () => {
-    const ua =
-      navigator.userAgent || (navigator as any).vendor || (window as any).opera;
-    const isMobile =
-      /android|iphone|ipad|ipod|iemobile|blackberry|bada|tizen|mobile/i.test(
-        ua,
-      );
-
-    if (isMobile) {
-      window.location.href = `tel:${PHONE_NUMBER}`;
-      return;
-    }
-
-    window.open(ZALO_LINK, "_blank", "noopener,noreferrer");
-  };
+  const badgeValue = cartCount > 99 ? "99+" : String(cartCount || 0);
 
   const goPage = (page: Page) => {
     setCurrentPage(page);
     setDrawerOpen(false);
+    setUserMenuOpen(false);
+  };
+
+  const openCart = () => {
+    onOpenCart();
+    setDrawerOpen(false);
+    setUserMenuOpen(false);
+  };
+
+  const goMyOrders = () => {
+    onGoMyOrders();
+    setDrawerOpen(false);
+    setUserMenuOpen(false);
   };
 
   const handleForgotPassword = () => {
     setShowChangePasswordModal(false);
-    setLoginModalMode("forgot_password");
     onOpenLogin();
   };
 
-  // ESC để đóng + khóa scroll nền khi drawer mở
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setDrawerOpen(false);
         setUserMenuOpen(false);
       }
@@ -85,12 +80,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
     if (drawerOpen) {
       document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", onKeyDown);
     } else {
       document.body.style.overflow = "";
-    }
-
-    if (drawerOpen) {
-      document.addEventListener("keydown", onKeyDown);
     }
 
     return () => {
@@ -99,22 +91,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, [drawerOpen]);
 
-  // Click outside to close user dropdown
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setUserMenuOpen(false);
       }
-    }
+    };
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const navBtnBase =
@@ -125,6 +113,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     "border-2 border-slate-800 bg-amber-100 text-orange-600 shadow-sm";
   const navBtnInactive =
     "text-slate-600 hover:bg-slate-100/80 hover:text-amber-700 hover:backdrop-blur-sm";
+
+  const CartButton = ({ mobile = false }: { mobile?: boolean }) => (
+    <button
+      type="button"
+      onClick={openCart}
+      aria-label="Giỏ hàng"
+      className={`relative rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center active:scale-95 transition-all duration-200 ${
+        mobile ? "h-9 w-9 text-base" : "h-10 w-10 text-xl"
+      }`}
+    >
+      🛒
+      {cartCount > 0 && (
+        <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-bold leading-5 text-white shadow-sm h-5">
+          {badgeValue}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">
@@ -172,47 +178,39 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Right: Cart + User */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                type="button"
-                aria-label="Giỏ hàng"
-                className="
-      w-9 h-9 rounded-full
-      bg-slate-100 hover:bg-slate-200
-      flex items-center justify-center
-      text-base
-      active:scale-95
-    "
-              >
-                🛒
-              </button>
+              <CartButton mobile />
 
               {/* Mobile User Button - Avatar */}
               {authUser ? (
-                <div ref={dropdownRef}>
+                <div ref={dropdownRef} className="relative">
                   <img
                     src={authUser.avatarUrl || "/no-avatar.png"}
                     alt="avatar"
                     className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setUserMenuOpen((prev) => !prev);
                     }}
                   />
 
-                  {/* Mobile User Dropdown */}
-                  {authUser !== null && userMenuOpen && (
+                  {userMenuOpen && (
                     <div
-                      className="absolute right-4 top-16 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
-                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 top-11 w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
+                      onClick={(event) => event.stopPropagation()}
                     >
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                        onClick={goMyOrders}
+                      >
+                        📄 Đơn hàng của tôi
+                      </button>
+
                       {canAccessAdmin(authUser) && (
                         <button
                           type="button"
                           className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            setCurrentPage("admin");
-                          }}
+                          onClick={() => goPage("admin")}
                         >
                           ⚙️ Quản trị hệ thống
                         </button>
@@ -310,48 +308,39 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* User + Cart (right) */}
           <div className="flex items-center gap-3 relative">
             {/* Cart */}
-            <button
-              type="button"
-              aria-label="Giỏ hàng"
-              className="
-      w-10 h-10 rounded-full
-      bg-slate-100 hover:bg-slate-200
-      flex items-center justify-center
-      text-xl
-      transition-all duration-200
-      active:scale-95
-    "
-            >
-              🛒
-            </button>
+            <CartButton />
 
             {/* Desktop User Button - Avatar + Name */}
             {authUser ? (
-              <div ref={dropdownRef}>
+              <div ref={dropdownRef} className="relative">
                 <img
                   src={authUser.avatarUrl || "/no-avatar.png"}
                   alt="avatar"
                   className="w-8 h-8 rounded-full object-cover cursor-pointer border border-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(event) => {
+                    event.stopPropagation();
                     setUserMenuOpen((prev) => !prev);
                   }}
                 />
 
-                {/* Desktop User Dropdown */}
-                {authUser !== null && userMenuOpen && (
+                {userMenuOpen && (
                   <div
-                    className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
-                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-3 w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50"
+                    onClick={(event) => event.stopPropagation()}
                   >
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                      onClick={goMyOrders}
+                    >
+                      📄 Đơn hàng của tôi
+                    </button>
+
                     {canAccessAdmin(authUser) && (
                       <button
                         type="button"
                         className="w-full text-left px-4 py-3 text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          setCurrentPage("admin");
-                        }}
+                        onClick={() => goPage("admin")}
                       >
                         ⚙️ Quản trị hệ thống
                       </button>
@@ -482,7 +471,34 @@ export const Navbar: React.FC<NavbarProps> = ({
             );
           })}
 
-          {/* Đã chuyển đăng xuất sang avatar */}
+          <div className="mt-4 space-y-2 border-t border-slate-200 pt-4">
+            <button
+              type="button"
+              onClick={openCart}
+              className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-left font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <span className="flex items-center gap-3">
+                <span className="text-lg">🛒</span>
+                Giỏ hàng
+              </span>
+              {cartCount > 0 && (
+                <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
+                  {badgeValue}
+                </span>
+              )}
+            </button>
+
+            {authUser && (
+              <button
+                type="button"
+                onClick={goMyOrders}
+                className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                <span className="text-lg">📄</span>
+                Đơn hàng của tôi
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -506,7 +522,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
     </nav>
   );
-};;
+};
 
 export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({
   setCurrentPage,

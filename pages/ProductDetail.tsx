@@ -7,13 +7,15 @@ interface ProductDetailProps {
   products: Product[]; // danh sách đã revalidate từ App
   productsPage: number;
   onGoHome: () => void;
-  onGoProducts: (page?: number) => void;
+  onGoProducts: (page: number) => void;
   onGoContact: () => void;
-  onOpenProduct: (productId: string, page?: number) => void;
+  onOpenProduct: (productId: string, page: number) => void;
+
+  onAddToCart: (product: Product, type: "rent" | "buy") => void;
+  onOpenCart: () => void;
 }
 
 const FALLBACK_IMG = "/notimg.jpg";
-
 
 // ===== Read products từ localStorage cache (đồng bộ với ProductList.tsx) =====
 type ProductsType = "All" | "BS" | "T";
@@ -83,6 +85,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   onGoProducts,
   onGoContact,
   onOpenProduct,
+  onAddToCart,
+  onOpenCart,
 }) => {
   const [activeTab, setActiveTab] = useState<"specs" | "care">("specs");
   const [mainImage, setMainImage] = useState<string>(
@@ -265,6 +269,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  // ===== Handler thêm vào giỏ hàng =====
+  const handleAddRent = () => {
+    if (!product.giaThue) return;
+    onAddToCart(product, "rent");
+  };
+
+  const handleAddBuy = () => {
+    if (!product.giaBan) return;
+    onAddToCart(product, "buy");
   };
 
   // ===== Related products (Bạn cũng có thể thích) =====
@@ -637,6 +652,36 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   Gọi Tư Vấn Zalo: 0922 727 277
                 </a>
               )}
+            </div>
+
+            {/* Nút Thuê & Mua */}
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleAddRent}
+                  disabled={!product.giaThue}
+                  className="w-full py-3.5 rounded-xl font-bold text-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 text-white transition-all active:scale-[0.98]"
+                  type="button"
+                >
+                  Thuê
+                </button>
+
+                <button
+                  onClick={handleAddBuy}
+                  disabled={!product.giaBan}
+                  className="w-full py-3.5 rounded-xl font-bold text-lg bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 disabled:text-slate-500 text-white transition-all active:scale-[0.98]"
+                  type="button"
+                >
+                  Mua
+                </button>
+              </div>
+
+              <button
+                onClick={onOpenCart}
+                className="mt-3 w-full rounded-xl border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                🛒 Xem giỏ hàng
+              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

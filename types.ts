@@ -6,9 +6,12 @@ export type Page =
   | "product-detail"
   | "booking"
   | "contact"
-  | "admin";
+  | "admin"
+  | "cart"
+  | "checkout"
+  | "my-orders";
 
-export type AdminTab = "products" | "bookings" | "users";
+export type AdminTab = "products" | "bookings" | "users" | "orders";
 
 /**
  * Product dùng cho web Vườn Mai Gò Cát
@@ -162,34 +165,51 @@ export const clampPositiveInt = (value: unknown, fallback = 1) => {
 };
 
 export const isAdminTab = (value: unknown): value is AdminTab =>
-  value === "products" || value === "bookings" || value === "users";
+  value === "products" ||
+  value === "bookings" ||
+  value === "orders" ||
+  value === "users";
 
-export function getDefaultAdminTab(
-  user: AuthUser | null | undefined,
-): AdminTab {
+export function getDefaultAdminTab(user: AuthUser | null | undefined): AdminTab {
   if (user?.role === "admin") return "products";
   if (user?.permissions?.includes("products")) return "products";
   if (user?.permissions?.includes("bookings")) return "bookings";
+  if (user?.permissions?.includes("orders")) return "orders";
   return "products";
 }
 
-export function canAccessAdminTab(
-  user: AuthUser | null | undefined,
-  tab: AdminTab,
-): boolean {
+export const canAccessAdminTab = (user, tab) => {
   if (!user) return false;
+
+  // admin thì vào hết
   if (user.role === "admin") return true;
-  if (tab === "products") return user.permissions.includes("products");
-  if (tab === "bookings") return user.permissions.includes("bookings");
+
+  const permissions = Array.isArray(user.permissions)
+    ? user.permissions
+    : [];
+
+  if (tab === "products") return permissions.includes("products");
+  if (tab === "bookings") return permissions.includes("bookings");
+  if (tab === "orders") return permissions.includes("orders");
+  if (tab === "users") return permissions.includes("users");
+
   return false;
-}
+};
 
 export function canAccessAdmin(user: AuthUser | null | undefined): boolean {
   if (!user) return false;
   if (user.role === "admin") return true;
 
   const permissions = Array.isArray(user.permissions) ? user.permissions : [];
-  return permissions.includes("products") || permissions.includes("bookings");
+  if (
+    permission === "products" ||
+    permission === "bookings" ||
+    permission === "orders" ||
+    permission === "users"
+  ) {
+    return permissions.includes(permission);
+  }
+  return false;
 }
 
 export interface LoginFormData {
@@ -232,3 +252,49 @@ export interface Booking {
 
   trangThai: "Mới" | "Đã xác nhận" | "Đã hủy";
 }
+
+// ================= CART & ORDER =================
+
+export type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  type: "rent" | "buy";
+};
+
+export type Order = {
+  orderId: string;
+  createdAt: string;
+  customerEmail: string;
+  customerName: string;
+  customerPhone: string;
+  orderType: "buy" | "rent";
+  orderStatus: string;
+  totalAmount: number;
+  depositAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  note: string;
+};
+
+export type OrderItem = {
+  orderItemId: string;
+  orderId: string;
+  productCode: string;
+  productType: string;
+  transactionType: "buy" | "rent";
+  price: number;
+  quantity: number;
+  lineTotal: number;
+  snapshotNote: string;
+};
+
+export type Payment = {
+  paymentId: string;
+  orderId: string;
+  createdAt: string;
+  amount: number;
+  method: string;
+  note: string;
+};

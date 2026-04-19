@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Page,
   Product,
@@ -14,12 +20,17 @@ import {
 } from "./types";
 import { fetchProductsBundleRevalidateMapped } from "./utils/productsApi";
 import { Navbar, Footer } from "./components/Layout";
+import { useToast } from "./components/Toast";
+import { useCart } from "./hooks/useCart";
 
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import Booking from "./pages/Booking";
+import CartPage from "./pages/Cart";
+import CheckoutPage from "./pages/Checkout";
 import Contact from "./pages/Contact";
+import MyOrdersPage from "./pages/MyOrders";
 import AdminPage from "./pages/admin/AdminPage";
 import NotFound from "./pages/NotFound";
 import LoginModal from "./components/LoginModal";
@@ -143,6 +154,23 @@ const parseHashRoute = (hash: string): AppRouteState => {
     return { page: "booking", productsPage: 1 };
   }
 
+  if (parts[0] === "gio-hang") {
+    return { page: "cart", productsPage: 1 };
+  }
+
+  if (parts[0] === "thanh-toan") {
+    return { page: "checkout", productsPage: 1 };
+  }
+
+  if (parts[0] === "don-hang-cua-toi") {
+    const orderId = String(params.get("orderId") || "").trim();
+    return {
+      page: "my-orders",
+      productsPage: 1,
+      orderId: orderId || undefined,
+    };
+  }
+
   if (parts[0] === "lien-he") {
     return { page: "contact", productsPage: 1 };
   }
@@ -183,12 +211,23 @@ const buildHashRoute = (route: AppRouteState) => {
     }
     case "booking":
       return "#/dat-lich";
+    case "cart":
+      return "#/gio-hang";
+    case "checkout":
+      return "#/thanh-toan";
+    case "my-orders": {
+      const orderId = String(route.orderId || "").trim();
+      return orderId
+        ? `#/don-hang-cua-toi?orderId=${encodeURIComponent(orderId)}`
+        : "#/don-hang-cua-toi";
+    }
     case "contact":
       return "#/lien-he";
     case "admin": {
-      const tab = route.adminTab && isAdminTab(route.adminTab)
-        ? route.adminTab
-        : "products";
+      const tab =
+        route.adminTab && isAdminTab(route.adminTab)
+          ? route.adminTab
+          : "products";
       return `#/admin/${tab}`;
     }
     default:
@@ -197,6 +236,7 @@ const buildHashRoute = (route: AppRouteState) => {
 };
 
 const App: React.FC = () => {
+  const { showToast } = useToast();
   const [appProducts, setAppProducts] = useState<Product[]>(() => {
     const cached = safeReadProductsCacheAllMerged();
     return cached?.items ?? [];
@@ -217,6 +257,15 @@ const App: React.FC = () => {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+
+  const {
+    items: cartItems,
+    itemCount: cartCount,
+    addProduct,
+    updateQuantity: updateCartQuantity,
+    removeItem: removeCartItem,
+    clearCart,
+  } = useCart();
 
   useEffect(() => {
     appProductsRef.current = appProducts;
@@ -323,9 +372,15 @@ const App: React.FC = () => {
   }, [navigateHash]);
 
   const goProducts = useCallback(
-    (page = 1, options?: { scroll?: ScrollBehavior | "none"; replace?: boolean }) => {
+    (
+      page = 1,
+      options?: { scroll?: ScrollBehavior | "none"; replace?: boolean },
+    ) => {
       navigateHash(
-        buildHashRoute({ page: "products", productsPage: clampPositiveInt(page, 1) }),
+        buildHashRoute({
+          page: "products",
+          productsPage: clampPositiveInt(page, 1),
+        }),
         options,
       );
     },
@@ -358,13 +413,40 @@ const App: React.FC = () => {
     navigateHash(buildHashRoute({ page: "contact", productsPage: 1 }));
   }, [navigateHash]);
 
+  const goCart = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "cart", productsPage: 1 }));
+  }, [navigateHash]);
+
+  const goCheckout = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "checkout", productsPage: 1 }));
+  }, [navigateHash]);
+
+  const goMyOrders = useCallback(
+    (
+      orderId?: string,
+      options?: { scroll?: ScrollBehavior | "none"; replace?: boolean },
+    ) => {
+      navigateHash(
+        buildHashRoute({
+          page: "my-orders",
+          productsPage: 1,
+          orderId: String(orderId || "").trim() || undefined,
+        }),
+        options,
+      );
+    },
+    [navigateHash],
+  );
+
   const goAdmin = useCallback(
-    (tab?: AppRouteState["adminTab"], options?: { scroll?: ScrollBehavior | "none"; replace?: boolean }) => {
+    (
+      tab?: AppRouteState["adminTab"],
+      options?: { scroll?: ScrollBehavior | "none"; replace?: boolean },
+    ) => {
       navigateHash(
         buildHashRoute({
           page: "admin",
-          adminTab:
-            tab && isAdminTab(tab) ? tab : getDefaultAdminTab(authUser),
+          adminTab: tab && isAdminTab(tab) ? tab : getDefaultAdminTab(authUser),
           productsPage: 1,
         }),
         options,
@@ -385,6 +467,15 @@ const App: React.FC = () => {
         case "booking":
           goBooking();
           return;
+        case "cart":
+          goCart();
+          return;
+        case "checkout":
+          goCheckout();
+          return;
+        case "my-orders":
+          goMyOrders();
+          return;
         case "contact":
           goContact();
           return;
@@ -402,7 +493,18 @@ const App: React.FC = () => {
           goHome();
       }
     },
-    [goAdmin, goBooking, goContact, goHome, goProductDetail, goProducts, route],
+    [
+      goAdmin,
+      goBooking,
+      goCart,
+      goCheckout,
+      goContact,
+      goHome,
+      goMyOrders,
+      goProductDetail,
+      goProducts,
+      route,
+    ],
   );
 
   const handleLogin = (user: AuthUser) => {
@@ -435,6 +537,46 @@ const App: React.FC = () => {
     localStorage.setItem("vmgc_user", JSON.stringify(mergedUser));
   };
 
+  const handleAddToCart = useCallback(
+    (product: Product, transactionType: "rent" | "buy") => {
+      const result = addProduct(product, transactionType);
+      if (result.ok) {
+        showToast(result.message, "success");
+      } else {
+        showToast(result.message, "error");
+      }
+    },
+    [addProduct, showToast],
+  );
+
+  const handleOrderCreated = useCallback(
+    (orderId: string, customerEmail: string) => {
+      clearCart();
+
+      const normalizedCustomerEmail = String(customerEmail || "")
+        .trim()
+        .toLowerCase();
+      const normalizedUserEmail = String(authUser?.email || "")
+        .trim()
+        .toLowerCase();
+
+      if (
+        normalizedCustomerEmail &&
+        normalizedUserEmail !== normalizedCustomerEmail
+      ) {
+        showToast(
+          `Đã tạo đơn ${orderId}. Đăng nhập bằng ${normalizedCustomerEmail} để xem lịch sử đơn.`,
+          "info",
+        );
+      } else {
+        showToast(`Đã tạo đơn ${orderId} thành công`, "success");
+      }
+
+      goMyOrders(orderId);
+    },
+    [authUser?.email, clearCart, goMyOrders, showToast],
+  );
+
   useEffect(() => {
     let scrollTimeout: number | undefined;
 
@@ -460,7 +602,10 @@ const App: React.FC = () => {
 
   const activeAdminTab = useMemo(() => {
     if (route.page !== "admin") return getDefaultAdminTab(authUser);
-    if (route.adminTab && (!authUser || canAccessAdminTab(authUser, route.adminTab))) {
+    if (
+      route.adminTab &&
+      (!authUser || canAccessAdminTab(authUser, route.adminTab))
+    ) {
       return route.adminTab;
     }
     return getDefaultAdminTab(authUser);
@@ -481,7 +626,9 @@ const App: React.FC = () => {
   const resolvedProduct = useMemo(() => {
     if (route.page !== "product-detail" || !route.productId) return null;
     const pid = normalizeProductId(route.productId);
-    return appProducts.find((item) => normalizeProductId(item.id) === pid) || null;
+    return (
+      appProducts.find((item) => normalizeProductId(item.id) === pid) || null
+    );
   }, [appProducts, route.page, route.productId]);
 
   const currentLayoutPage: Page =
@@ -523,6 +670,8 @@ const App: React.FC = () => {
               onOpenProduct={(productId, page) =>
                 goProductDetail(productId, page, { scroll: "smooth" })
               }
+              onAddToCart={handleAddToCart}
+              onOpenCart={goCart}
             />
           );
         }
@@ -559,6 +708,45 @@ const App: React.FC = () => {
       case "booking":
         return <Booking authUser={authUser} />;
 
+      case "cart":
+        return (
+          <CartPage
+            items={cartItems}
+            onUpdateQuantity={updateCartQuantity}
+            onRemoveItem={removeCartItem}
+            onClearCart={clearCart}
+            onContinueShopping={() => goProducts(1)}
+            onCheckout={goCheckout}
+            onOpenProduct={(productId) =>
+              goProductDetail(productId, 1, { scroll: "smooth" })
+            }
+          />
+        );
+
+      case "checkout":
+        return (
+          <CheckoutPage
+            authUser={authUser}
+            items={cartItems}
+            onBackToCart={goCart}
+            onContinueShopping={() => goProducts(1)}
+            onOrderCreated={handleOrderCreated}
+          />
+        );
+
+      case "my-orders":
+        return (
+          <MyOrdersPage
+            authUser={authUser}
+            highlightedOrderId={route.orderId}
+            onRequestLogin={() => setShowLogin(true)}
+            onGoProducts={() => goProducts(1)}
+            onOpenProduct={(productId) =>
+              goProductDetail(productId, 1, { scroll: "smooth" })
+            }
+          />
+        );
+
       case "admin":
         return (
           <RouteGuard
@@ -594,7 +782,9 @@ const App: React.FC = () => {
       {logoutLoading && (
         <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
           <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-sm font-medium text-amber-900">Đang đăng xuất...</p>
+          <p className="text-sm font-medium text-amber-900">
+            Đang đăng xuất...
+          </p>
         </div>
       )}
 
@@ -608,6 +798,9 @@ const App: React.FC = () => {
           onOpenLogin={() => setShowLogin(true)}
           onLogout={handleLogout}
           onUpdateUser={handleUpdateUser}
+          onOpenCart={goCart}
+          onGoMyOrders={() => goMyOrders()}
+          cartCount={cartCount}
         />
       )}
 

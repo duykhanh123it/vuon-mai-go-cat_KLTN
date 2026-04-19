@@ -42,15 +42,12 @@ const codeForDisplay = (code: string): string => code.replace(/^BS/, "BS ");
 export const products: Product[] = (raw as RawRow[])
   .filter((row) => row && row["Mã Cây"])
   .map((row) => {
-    // code chuẩn để khớp filename ảnh: BS01, BS47, BS472...
     const code = normalizeCode(row["Mã Cây"]);
     const displayCode = codeForDisplay(code);
 
-    // Ảnh: chỉ trả path thật, UI sẽ onError -> fallback (no-avatar/notimg)
     const hasImage = Boolean((imageMap as Record<string, boolean>)[code]);
     const image = hasImage ? `/products/${code}.jpg` : "";
 
-    // Specs sinh từ data (nếu thiếu thì null)
     const specsText = formatSpecs({
       Cao_m: row.Cao_m,
       Ngang_m: row.Ngang_m,
@@ -58,28 +55,29 @@ export const products: Product[] = (raw as RawRow[])
     });
 
     return {
-  id: code,
-  name: `Mai ${displayCode}`,
+      id: code,
+      name: `Mai ${displayCode}`,
 
-  category: "Mai Bonsai",
+      category: "Mai Bonsai",
 
-  price: toVND(row["Giá Bán (triệu)"]),
-  rentPrice: toVND(row["Giá Thuê (triệu)"]),
+      price: toVND(row["Giá Bán (triệu)"]),
+      rentPrice: toVND(row["Giá Thuê (triệu)"]),
 
-  height: fmtMeter(row.Cao_m),
-  width: fmtMeter(row.Ngang_m),
-  age: null,
+      // 👉 giữ dạng string để tương thích UI hiện tại
+      height: fmtMeter(row.Cao_m),
+      width: fmtMeter(row.Ngang_m),
+      age: null,
 
-  image,
-  thumbnails: hasImage ? [image] : [],
+      image,
+      thumbnails: hasImage ? [image] : [],
 
-  description: specsText
-    ? `${specsText}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`
-    : `Mã cây ${displayCode}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`,
+      description: specsText
+        ? `${specsText}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`
+        : `Mã cây ${displayCode}. Vui lòng liên hệ để xem cây thực tế và nhận tư vấn chi tiết.`,
 
-  hoanh_cm: row.Hoành_cm ?? null,
-  chau_m: row.Chậu_m ?? null,
-  isRented: false,
-  isSold: false,
-};
+      hoanh_cm: row.Hoành_cm ?? null,
+      chau_m: row.Chậu_m ?? null,
+      isRented: false,
+      isSold: false,
+    };
   });

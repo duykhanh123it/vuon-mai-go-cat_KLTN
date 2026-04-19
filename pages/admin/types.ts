@@ -1,6 +1,6 @@
 import type { AuthUser } from "../../types";
 
-export type AdminTab = "products" | "bookings" | "users";
+export type AdminTab = "products" | "bookings" | "users" | "orders";
 
 export interface AdminProps {
   authUser?: AuthUser | null;

@@ -1,4 +1,3 @@
-
 import React from "react";
 import type { AuthUser, Booking, Product } from "../../types";
 import {
@@ -28,6 +27,7 @@ import { useToast } from "../../components/Toast";
 import BookingsTab from "./tabs/BookingsTab";
 import ProductsTab from "./tabs/ProductsTab";
 import UsersTab from "./tabs/UsersTab";
+import OrdersTab from "./tabs/OrdersTab";
 import {
   RECENT_USER_DAYS,
   buildOptimisticProduct,
@@ -59,11 +59,11 @@ const AdminPage: React.FC<AdminPageProps> = ({
 
   // ==================== SCROLL MANAGEMENT ====================
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-
   const scrollPositionsRef = React.useRef<Record<string, number>>({
     products: 0,
     bookings: 0,
     users: 0,
+    orders: 0,
   });
   // ===========================================================
 
@@ -159,13 +159,11 @@ const AdminPage: React.FC<AdminPageProps> = ({
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const saved = scrollPositionsRef.current[activeTab] || 0;
-
     requestAnimationFrame(() => {
       container.scrollTo({
         top: saved,
-        behavior: "smooth", // Bonus: scroll mượt hơn
+        behavior: "smooth",
       });
     });
   }, [activeTab]);
@@ -783,6 +781,14 @@ const AdminPage: React.FC<AdminPageProps> = ({
         authUser?.permissions?.includes("bookings"),
     },
     {
+      key: "orders",
+      label: "Đơn hàng",
+      icon: "🧾",
+      description: "Quản lý đơn mua / thuê",
+      allow:
+        authUser?.role === "admin" || authUser?.permissions?.includes("orders"),
+    },
+    {
       key: "users",
       label: "Người dùng",
       icon: "👤",
@@ -844,6 +850,11 @@ const AdminPage: React.FC<AdminPageProps> = ({
           title: "Quản lý đặt lịch",
           subtitle:
             "Theo dõi các lịch hẹn tham quan, cập nhật trạng thái xử lý.",
+        };
+      case "orders":
+        return {
+          title: "Quản lý đơn hàng",
+          subtitle: "Theo dõi đơn mua, thuê, thanh toán và công nợ.",
         };
       case "users":
         return {
@@ -931,179 +942,182 @@ const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-const renderTabContent = () => {
-  switch (activeTab) {
-    case "products":
-      return (
-        <ProductsTab
-          loadingProducts={loadingProducts}
-          stats={stats}
-          searchTerm={searchTerm}
-          onSearchTermChange={(value) => {
-            setSearchTerm(value);
-            setCurrentPage(1);
-          }}
-          productsType={productsType}
-          onProductsTypeChange={(value) => {
-            setProductsType(value);
-            setCurrentPage(1);
-          }}
-          onOpenCreate={() => {
-            setModalMode("create");
-            setSelectedProduct(null);
-            setFormData({
-              id: "",
-              category: "Mai Bonsai",
-              rentPrice: "",
-              price: "",
-              height: "",
-              width: "",
-              hoanh: "",
-              chau: "",
-              note: "",
-              daThue: false,
-              daBan: false,
-            });
-            setProductImageFile(null);
-            setPreviewImage(null);
-            setIdError("");
-            setIsIdTouched(false);
-            setErrors({
-              rentPrice: "",
-              price: "",
-              height: "",
-              width: "",
-              hoanh: "",
-              chau: "",
-            });
-            setShowModal(true);
-          }}
-          filteredProducts={filteredProducts}
-          paginatedProducts={paginatedProducts}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          pageInput={pageInput}
-          onPageInputChange={setPageInput}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          onOpenView={(product) => {
-            setModalMode("view");
-            setSelectedProduct(product);
-            setShowModal(true);
-          }}
-          onOpenEdit={(product) => {
-            setModalMode("edit");
-            setSelectedProduct(product);
-            setShowModal(true);
-          }}
-          onDelete={(product) => {
-            showConfirm(`Xóa cây ${product.id}?`, async () => {
-              try {
-                await deleteProduct(
-                  product.id,
-                  product.category === "Mai Bonsai" ? "BS" : "T",
-                );
-                const nextProducts = products.filter(
-                  (item) =>
-                    normalizeId(item.id || "") !== normalizeId(product.id || ""),
-                );
-                commitOptimisticProducts(nextProducts, {
-                  resetPage: false,
-                });
-                showToast("Đã xóa sản phẩm thành công", "success");
-                void refreshProducts({
-                  force: true,
-                  silent: true,
-                  resetPage: false,
-                });
-              } catch (err) {
-                console.error(err);
-                showToast("Lỗi kết nối server", "error");
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "products":
+        return (
+          <ProductsTab
+            loadingProducts={loadingProducts}
+            stats={stats}
+            searchTerm={searchTerm}
+            onSearchTermChange={(value) => {
+              setSearchTerm(value);
+              setCurrentPage(1);
+            }}
+            productsType={productsType}
+            onProductsTypeChange={(value) => {
+              setProductsType(value);
+              setCurrentPage(1);
+            }}
+            onOpenCreate={() => {
+              setModalMode("create");
+              setSelectedProduct(null);
+              setFormData({
+                id: "",
+                category: "Mai Bonsai",
+                rentPrice: "",
+                price: "",
+                height: "",
+                width: "",
+                hoanh: "",
+                chau: "",
+                note: "",
+                daThue: false,
+                daBan: false,
+              });
+              setProductImageFile(null);
+              setPreviewImage(null);
+              setIdError("");
+              setIsIdTouched(false);
+              setErrors({
+                rentPrice: "",
+                price: "",
+                height: "",
+                width: "",
+                hoanh: "",
+                chau: "",
+              });
+              setShowModal(true);
+            }}
+            filteredProducts={filteredProducts}
+            paginatedProducts={paginatedProducts}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageInput={pageInput}
+            onPageInputChange={setPageInput}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            onOpenView={(product) => {
+              setModalMode("view");
+              setSelectedProduct(product);
+              setShowModal(true);
+            }}
+            onOpenEdit={(product) => {
+              setModalMode("edit");
+              setSelectedProduct(product);
+              setShowModal(true);
+            }}
+            onDelete={(product) => {
+              showConfirm(`Xóa cây ${product.id}?`, async () => {
+                try {
+                  await deleteProduct(
+                    product.id,
+                    product.category === "Mai Bonsai" ? "BS" : "T",
+                  );
+                  const nextProducts = products.filter(
+                    (item) =>
+                      normalizeId(item.id || "") !==
+                      normalizeId(product.id || ""),
+                  );
+                  commitOptimisticProducts(nextProducts, {
+                    resetPage: false,
+                  });
+                  showToast("Đã xóa sản phẩm thành công", "success");
+                  void refreshProducts({
+                    force: true,
+                    silent: true,
+                    resetPage: false,
+                  });
+                } catch (err) {
+                  console.error(err);
+                  showToast("Lỗi kết nối server", "error");
+                }
+              });
+            }}
+          />
+        );
+      case "bookings":
+        return (
+          <BookingsTab
+            bookingStats={bookingStats}
+            bookingFilter={bookingFilter}
+            onBookingFilterChange={setBookingFilter}
+            filteredBookings={filteredBookings}
+            paginatedBookings={paginatedBookings}
+            bookingPage={bookingPage}
+            setBookingPage={setBookingPage}
+            bookingPageInput={bookingPageInput}
+            onBookingPageInputChange={setBookingPageInput}
+            totalBookingPages={totalBookingPages}
+            itemsPerPage={itemsPerPage}
+            onViewCancelledNote={(note) => {
+              setSelectedBookingNote(note);
+              setShowBookingNoteModal(true);
+            }}
+            onEditBookingNote={(booking) => {
+              setEditingBooking(booking);
+              setEditingBookingNote(booking.ghiChu || "");
+            }}
+            onConfirmBooking={async (booking) => {
+              const previousBookings = [...bookings];
+              const nextBookings = previousBookings.map((item) =>
+                item.maDatLich === booking.maDatLich
+                  ? {
+                      ...item,
+                      trangThai: "Đã xác nhận" as const,
+                    }
+                  : item,
+              );
+              commitOptimisticBookings(nextBookings);
+              const ok = await updateBookingStatus(
+                booking.maDatLich,
+                "Đã xác nhận",
+              );
+              if (!ok) {
+                commitOptimisticBookings(previousBookings);
+                showToast("Xác nhận thất bại", "error");
+                return;
               }
-            });
-          }}
-        />
-      );
-    case "bookings":
-      return (
-        <BookingsTab
-          bookingStats={bookingStats}
-          bookingFilter={bookingFilter}
-          onBookingFilterChange={setBookingFilter}
-          filteredBookings={filteredBookings}
-          paginatedBookings={paginatedBookings}
-          bookingPage={bookingPage}
-          setBookingPage={setBookingPage}
-          bookingPageInput={bookingPageInput}
-          onBookingPageInputChange={setBookingPageInput}
-          totalBookingPages={totalBookingPages}
-          itemsPerPage={itemsPerPage}
-          onViewCancelledNote={(note) => {
-            setSelectedBookingNote(note);
-            setShowBookingNoteModal(true);
-          }}
-          onEditBookingNote={(booking) => {
-            setEditingBooking(booking);
-            setEditingBookingNote(booking.ghiChu || "");
-          }}
-          onConfirmBooking={async (booking) => {
-            const previousBookings = [...bookings];
-            const nextBookings = previousBookings.map((item) =>
-              item.maDatLich === booking.maDatLich
-                ? {
-                    ...item,
-                    trangThai: "Đã xác nhận" as const,
-                  }
-                : item,
-            );
-            commitOptimisticBookings(nextBookings);
-            const ok = await updateBookingStatus(
-              booking.maDatLich,
-              "Đã xác nhận",
-            );
-            if (!ok) {
-              commitOptimisticBookings(previousBookings);
-              showToast("Xác nhận thất bại", "error");
-              return;
-            }
-            showToast("Đã xác nhận lịch", "success");
-          }}
-          onCancelBooking={(booking) => {
-            setSelectedBooking(booking);
-            setCancelReason("");
-            setOtherReason("");
-            setShowCancelModal(true);
-          }}
-        />
-      );
-    case "users":
-      return (
-        <UsersTab
-          userStats={userStats}
-          userSearch={userSearch}
-          onUserSearchChange={setUserSearch}
-          filteredUsers={filteredUsers}
-          paginatedUsers={paginatedUsers}
-          userPage={userPage}
-          setUserPage={setUserPage}
-          userPageInput={userPageInput}
-          onUserPageInputChange={setUserPageInput}
-          totalUserPages={totalUserPages}
-          itemsPerPage={itemsPerPage}
-          onOpenPermission={(user) => {
-            setUserSearch("");
-            setSelectedUser(user);
-            setSelectedPermissions(user.permissions || []);
-            setSelectedRole(user.role === "admin" ? "admin" : "user");
-            setAdminPassword("");
-            setShowPermissionModal(true);
-          }}
-        />
-      );
-    default:
-      return null;
-  }
-};
+              showToast("Đã xác nhận lịch", "success");
+            }}
+            onCancelBooking={(booking) => {
+              setSelectedBooking(booking);
+              setCancelReason("");
+              setOtherReason("");
+              setShowCancelModal(true);
+            }}
+          />
+        );
+      case "orders":
+        return <OrdersTab />;
+      case "users":
+        return (
+          <UsersTab
+            userStats={userStats}
+            userSearch={userSearch}
+            onUserSearchChange={setUserSearch}
+            filteredUsers={filteredUsers}
+            paginatedUsers={paginatedUsers}
+            userPage={userPage}
+            setUserPage={setUserPage}
+            userPageInput={userPageInput}
+            onUserPageInputChange={setUserPageInput}
+            totalUserPages={totalUserPages}
+            itemsPerPage={itemsPerPage}
+            onOpenPermission={(user) => {
+              setUserSearch("");
+              setSelectedUser(user);
+              setSelectedPermissions(user.permissions || []);
+              setSelectedRole(user.role === "admin" ? "admin" : "user");
+              setAdminPassword("");
+              setShowPermissionModal(true);
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -2063,6 +2077,5 @@ const renderTabContent = () => {
     </div>
   );
 };
-
 
 export default AdminPage;

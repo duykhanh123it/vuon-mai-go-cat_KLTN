@@ -1,13 +1,59 @@
-import React, { useEffect, useState } from "react";
-import { AuthUser, normalizeAuthUser } from "../types";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  AuthUser,
+  UserAddress,
+  normalizeAuthUser,
+  normalizeUserAddress,
+} from "../types";
+import {
+  deleteAddressBookEntry,
+  fetchAddressBook,
+  saveAddressBookEntry,
+  setDefaultAddressBookEntry,
+} from "../utils/productsApi";
 import { useToast } from "./Toast";
+
 const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
+
 interface ProfileModalProps {
   user: AuthUser;
   onClose: () => void;
   onUpdateUser: (user: AuthUser) => void;
   showPasswordSection?: boolean;
 }
+
+type AddressDraft = {
+  id: string;
+  label: string;
+  recipientName: string;
+  recipientPhone: string;
+  province: string;
+  ward: string;
+  line1: string;
+  isDefault: boolean;
+};
+
+const formatAddressText = (address: Partial<UserAddress>) =>
+  [address.line1, address.ward, address.province]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
+const buildEmptyAddressDraft = (options?: {
+  name?: string;
+  phone?: string;
+  isDefault?: boolean;
+}): AddressDraft => ({
+  id: "",
+  label: "",
+  recipientName: String(options?.name || "").trim(),
+  recipientPhone: String(options?.phone || "").trim(),
+  province: "",
+  ward: "",
+  line1: "",
+  isDefault: Boolean(options?.isDefault),
+});
+
 const ProfileModal: React.FC<ProfileModalProps> = ({
   user,
   onClose,
@@ -15,6 +61,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   showPasswordSection = true,
 }) => {
   const { showToast } = useToast();
+
   const [fullName, setFullName] = useState(user.name || "");
   const [phone, setPhone] = useState(user.phone || "");
   const [email, setEmail] = useState(user.email || "");
@@ -27,14 +74,70 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
+
+  const [addressBook, setAddressBook] = useState<UserAddress[]>(
+    Array.isArray(user.addressBook) ? user.addressBook : [],
+  );
+  const [addressLoading, setAddressLoading] = useState(true);
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressDraft, setAddressDraft] = useState<AddressDraft>(() =>
+    buildEmptyAddressDraft({
+      name: user.name,
+      phone: user.phone,
+      isDefault: !user.addressBook?.length,
+    }),
+  );
+
   const isGoogleUser = !user.hasPassword;
   const currentAvatar =
     previewAvatar || user.avatarUrl || "/no_avatar_fallback.png";
   const isUsingDefaultAvatar = !previewAvatar && !user.avatarUrl;
+  const hasAddresses = addressBook.length > 0;
+
+  const draftAddressText = useMemo(
+    () => formatAddressText(addressDraft),
+    [addressDraft],
+  );
+
+  const resetAddressForm = (options?: {
+    nextAddresses?: UserAddress[];
+    keepOpen?: boolean;
+  }) => {
+    const nextAddresses = Array.isArray(options?.nextAddresses)
+      ? options?.nextAddresses
+      : addressBook;
+    setEditingAddressId(null);
+    setIsAddressFormOpen(Boolean(options?.keepOpen));
+    setAddressDraft(
+      buildEmptyAddressDraft({
+        name: fullName || user.name,
+        phone: phone || user.phone,
+        isDefault: !nextAddresses.length,
+      }),
+    );
+  };
+
+  const syncAddressBookToUser = (addresses: UserAddress[]) => {
+    const normalizedAddresses = Array.isArray(addresses)
+      ? addresses.map((item) => normalizeUserAddress(item))
+      : [];
+
+    setAddressBook(normalizedAddresses);
+    onUpdateUser(
+      normalizeAuthUser({
+        ...user,
+        addressBook: normalizedAddresses,
+      }),
+    );
+  };
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+
     document.addEventListener("keydown", handleKey);
     const scrollBarWidth =
       window.innerWidth - document.documentElement.clientWidth;
@@ -42,14 +145,17 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     if (scrollBarWidth > 0) {
       document.body.style.paddingRight = scrollBarWidth + "px";
     }
+
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
   }, [onClose]);
+
   useEffect(() => {
     let cancelled = false;
+
     const loadProfile = async () => {
       try {
         setProfileLoading(true);
@@ -68,23 +174,73 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           setProfileLoading(false);
           return;
         }
+
         setFullName(data.user?.name || "");
         setPhone(data.user?.phone || "");
         setEmail(data.user?.email || user.email || "");
         setBirthDate(data.user?.birthDate || "");
         setGender(data.user?.gender || "nam");
         setProfileLoading(false);
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setProfileLoading(false);
         }
       }
     };
+
     loadProfile();
     return () => {
       cancelled = true;
     };
   }, [user.email]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAddressBook = async () => {
+      try {
+        setAddressLoading(true);
+        const addresses = await fetchAddressBook();
+        if (cancelled) return;
+        syncAddressBookToUser(addresses);
+      } catch (err) {
+        if (!cancelled) {
+          setAddressBook(
+            Array.isArray(user.addressBook) ? user.addressBook : [],
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setAddressLoading(false);
+        }
+      }
+    };
+
+    loadAddressBook();
+    return () => {
+      cancelled = true;
+    };
+  }, [user.email]);
+
+  useEffect(() => {
+    if (isAddressFormOpen) return;
+
+    setAddressDraft(
+      buildEmptyAddressDraft({
+        name: fullName || user.name,
+        phone: phone || user.phone,
+        isDefault: !addressBook.length,
+      }),
+    );
+  }, [
+    addressBook.length,
+    fullName,
+    isAddressFormOpen,
+    phone,
+    user.name,
+    user.phone,
+  ]);
+
   const handleSelectAvatar = async (file: File) => {
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -123,6 +279,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     };
     reader.readAsDataURL(file);
   };
+
   const handleUpdate = async () => {
     try {
       setSaving(true);
@@ -207,7 +364,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           return;
         }
 
-        // ✅ SUCCESS → LOGOUT NGAY
         showToast(
           isGoogleUser
             ? "Thiết lập mật khẩu thành công, vui lòng đăng nhập lại"
@@ -215,19 +371,17 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           "success",
         );
 
-        // ❗ dùng đúng key bạn đang dùng trong app
         localStorage.removeItem("vmgc_user");
+        localStorage.removeItem("vmgc_session_token");
 
-        // ⏳ delay để thấy toast
         setTimeout(() => {
           window.location.reload();
         }, 1200);
 
         setSaving(false);
-
-        // ⛔ QUAN TRỌNG: dừng luôn tại đây
         return;
       }
+
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -252,6 +406,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         normalizeAuthUser({
           ...user,
           ...data.user,
+          addressBook,
           birthDate,
           gender,
         }),
@@ -262,11 +417,120 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       showToast("Cập nhật thành công", "success");
       setSaving(false);
       onClose();
-    } catch (err) {
+    } catch {
       showToast("Không thể kết nối server", "error");
       setSaving(false);
     }
   };
+
+  const handleOpenCreateAddress = () => {
+    setEditingAddressId(null);
+    setIsAddressFormOpen(true);
+    setAddressDraft(
+      buildEmptyAddressDraft({
+        name: fullName || user.name,
+        phone: phone || user.phone,
+        isDefault: !hasAddresses,
+      }),
+    );
+  };
+
+  const handleEditAddress = (address: UserAddress) => {
+    const normalized = normalizeUserAddress(address);
+    setEditingAddressId(normalized.id);
+    setIsAddressFormOpen(true);
+    setAddressDraft({
+      id: normalized.id,
+      label: normalized.label,
+      recipientName: normalized.recipientName,
+      recipientPhone: normalized.recipientPhone,
+      province: normalized.province,
+      ward: normalized.ward,
+      line1: normalized.line1,
+      isDefault: normalized.isDefault,
+    });
+  };
+
+  const handleSaveAddress = async () => {
+    try {
+      setAddressSaving(true);
+      const nextAddresses = await saveAddressBookEntry({
+        id: editingAddressId || undefined,
+        label: addressDraft.label,
+        recipientName: addressDraft.recipientName || fullName || user.name,
+        recipientPhone: addressDraft.recipientPhone || phone || user.phone,
+        province: addressDraft.province,
+        ward: addressDraft.ward,
+        line1: addressDraft.line1,
+        isDefault: Boolean(addressDraft.isDefault),
+      });
+
+      syncAddressBookToUser(nextAddresses);
+      showToast(
+        editingAddressId ? "Đã cập nhật địa chỉ" : "Đã thêm địa chỉ mới",
+        "success",
+      );
+      resetAddressForm({ nextAddresses });
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Không thể lưu địa chỉ",
+        "error",
+      );
+    } finally {
+      setAddressSaving(false);
+    }
+  };
+
+  const handleDeleteAddress = async (address: UserAddress) => {
+    const confirmed = window.confirm(
+      `Xóa địa chỉ "${address.label || formatAddressText(address)}"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setAddressSaving(true);
+      const nextAddresses = await deleteAddressBookEntry(address.id);
+      syncAddressBookToUser(nextAddresses);
+      showToast("Đã xóa địa chỉ", "success");
+
+      if (editingAddressId === address.id) {
+        resetAddressForm({ nextAddresses });
+      }
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Không thể xóa địa chỉ",
+        "error",
+      );
+    } finally {
+      setAddressSaving(false);
+    }
+  };
+
+  const handleSetDefaultAddress = async (address: UserAddress) => {
+    try {
+      setAddressSaving(true);
+      const nextAddresses = await setDefaultAddressBookEntry(address.id);
+      syncAddressBookToUser(nextAddresses);
+      showToast("Đã cập nhật địa chỉ mặc định", "success");
+
+      if (editingAddressId === address.id) {
+        setAddressDraft((prev) => ({
+          ...prev,
+          isDefault: true,
+        }));
+      }
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : "Không thể cập nhật địa chỉ mặc định",
+        "error",
+      );
+    } finally {
+      setAddressSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -284,9 +548,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             Thông tin tài khoản
           </h2>
         </div>
+
         <div className="flex justify-center mb-6">
           <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-            {/* Avatar - BƯỚC 3 */}
             <button
               type="button"
               onClick={() => setIsAvatarViewerOpen(true)}
@@ -304,19 +568,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             <label
               htmlFor="avatarInput"
               onClick={(e) => e.stopPropagation()}
-              className="
-    absolute
-    bottom-2 right-1.5
-    w-9 h-9
-    rounded-full
-    bg-slate-700 text-white
-    border-2 border-white
-    shadow-md
-    flex items-center justify-center
-    cursor-pointer
-    hover:scale-105 active:scale-95
-    transition
-  "
+              className="absolute bottom-2 right-1.5 w-9 h-9 rounded-full bg-slate-700 text-white border-2 border-white shadow-md flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition"
               style={{
                 transform: "translate(12%, 5%)",
               }}
@@ -325,6 +577,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             </label>
           </div>
         </div>
+
         <input
           type="file"
           accept="image/*"
@@ -338,6 +591,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             }
           }}
         />
+
         <div className="space-y-5 overflow-y-auto pr-1 flex-1">
           <div>
             {profileLoading && (
@@ -348,7 +602,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
               Người đăng ký/Người đại diện (*)
             </label>
-            {/* BƯỚC 2: Input name */}
             <input
               type="text"
               value={fullName}
@@ -357,6 +610,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
+
           <div>
             <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
               Số điện thoại (*)
@@ -369,11 +623,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
+
           <div>
             <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
               Email (*)
             </label>
-            {/* BƯỚC 2: Input email */}
             <input
               type="email"
               value={email}
@@ -383,6 +637,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               className="w-full h-12 rounded-xl bg-slate-100 px-4 text-base text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm md:text-base font-medium text-slate-800 mb-2">
@@ -410,6 +665,277 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               </select>
             </div>
           </div>
+
+          <div className="mt-6 pt-5 border-t border-slate-200 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-800">
+                  Sổ địa chỉ giao hàng
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  Lưu nhiều địa chỉ để dùng nhanh cho các đơn tiếp theo.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenCreateAddress}
+                className="shrink-0 rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200 transition"
+              >
+                + Thêm địa chỉ
+              </button>
+            </div>
+
+            {addressLoading ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                Đang tải sổ địa chỉ...
+              </div>
+            ) : hasAddresses ? (
+              <div className="space-y-3">
+                {addressBook.map((address) => (
+                  <div
+                    key={address.id}
+                    className={`rounded-2xl border px-4 py-4 ${
+                      address.isDefault
+                        ? "border-amber-300 bg-amber-50"
+                        : "border-slate-200 bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-base font-semibold text-slate-900 break-words">
+                            {address.label || "Địa chỉ giao hàng"}
+                          </h4>
+                          {address.isDefault && (
+                            <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-950">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-700 mt-2">
+                          {address.recipientName || fullName || "Người nhận"}
+                          {address.recipientPhone
+                            ? ` • ${address.recipientPhone}`
+                            : ""}
+                        </p>
+                        <p className="text-sm leading-6 text-slate-600 mt-1 break-words">
+                          {formatAddressText(address)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 sm:justify-end">
+                        {!address.isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDefaultAddress(address)}
+                            disabled={addressSaving}
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                          >
+                            Mặc định
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleEditAddress(address)}
+                          disabled={addressSaving}
+                          className="rounded-lg border border-amber-300 px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-50 disabled:opacity-60"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAddress(address)}
+                          disabled={addressSaving}
+                          className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                Bạn chưa lưu địa chỉ nào. Hãy thêm địa chỉ đầu tiên để dùng lại
+                nhanh khi đặt đơn.
+              </div>
+            )}
+
+            {isAddressFormOpen && (
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="text-base font-semibold text-slate-900">
+                    {editingAddressId ? "Cập nhật địa chỉ" : "Thêm địa chỉ mới"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => resetAddressForm()}
+                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                  >
+                    Hủy
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Tên gợi nhớ địa chỉ (*)
+                    </label>
+                    <input
+                      type="text"
+                      value={addressDraft.label}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          label: e.target.value,
+                        }))
+                      }
+                      placeholder="Ví dụ: Nhà riêng, Công ty, Điểm sự kiện"
+                      className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Người nhận (*)
+                    </label>
+                    <input
+                      type="text"
+                      value={addressDraft.recipientName}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          recipientName: e.target.value,
+                        }))
+                      }
+                      placeholder="Nhập tên người nhận"
+                      className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Số điện thoại nhận hàng (*)
+                    </label>
+                    <input
+                      type="text"
+                      value={addressDraft.recipientPhone}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          recipientPhone: e.target.value,
+                        }))
+                      }
+                      placeholder="Nhập số điện thoại"
+                      className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Tỉnh / Thành phố trực thuộc Trung ương (*)
+                    </label>
+                    <input
+                      type="text"
+                      value={addressDraft.province}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          province: e.target.value,
+                        }))
+                      }
+                      placeholder="Nhập Tỉnh / Thành phố"
+                      className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Xã / Phường / Đặc khu (*)
+                    </label>
+                    <input
+                      type="text"
+                      value={addressDraft.ward}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          ward: e.target.value,
+                        }))
+                      }
+                      placeholder="Nhập Xã / Phường / Đặc khu"
+                      className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-800 mb-2">
+                      Số nhà + tên đường/thôn/xóm/ấp (*)
+                    </label>
+                    <textarea
+                      value={addressDraft.line1}
+                      onChange={(e) =>
+                        setAddressDraft((prev) => ({
+                          ...prev,
+                          line1: e.target.value,
+                        }))
+                      }
+                      rows={3}
+                      placeholder="Ví dụ: 12A Nguyễn Trãi, Ấp 3"
+                      className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400 resize-y"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-600 leading-6">
+                  <div className="font-medium text-slate-800 mb-1">
+                    Xem nhanh địa chỉ
+                  </div>
+                  {draftAddressText ||
+                    "Địa chỉ đầy đủ sẽ hiện ở đây khi bạn nhập xong."}
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={addressDraft.isDefault}
+                    onChange={(e) =>
+                      setAddressDraft((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                  />
+                  Đặt làm địa chỉ mặc định
+                </label>
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => resetAddressForm()}
+                    disabled={addressSaving}
+                    className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveAddress}
+                    disabled={addressSaving}
+                    className="h-11 rounded-xl bg-amber-400 px-4 text-sm font-bold text-amber-950 hover:bg-amber-500 disabled:opacity-60"
+                  >
+                    {addressSaving
+                      ? "Đang lưu..."
+                      : editingAddressId
+                        ? "Lưu cập nhật"
+                        : "Lưu địa chỉ"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {showPasswordSection && (
             <div className="mt-6 pt-5 border-t border-slate-200">
               <h3 className="text-base font-semibold text-slate-800 mb-4">
@@ -431,7 +957,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={isGoogleUser ? "Mật khẩu mới" : "Mật khẩu mới"}
+                  placeholder="Mật khẩu mới"
                   className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
                 />
 
@@ -447,6 +973,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
             </div>
           )}
+
           <div className="mt-6 shrink-0 flex flex-col gap-3">
             <button
               type="button"
@@ -460,10 +987,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                   ? "Đang cập nhật..."
                   : "Cập nhật"}
             </button>
-            {/* Đã bỏ nút đăng xuất để tránh trùng với dropdown */}
           </div>
         </div>
       </div>
+
       {isAvatarViewerOpen && (
         <div
           className="fixed inset-0 z-[130] bg-black/80 flex items-center justify-center p-4 sm:p-6"
@@ -491,4 +1018,5 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     </div>
   );
 };
+
 export default ProfileModal;

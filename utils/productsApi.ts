@@ -1,6 +1,7 @@
 // src/utils/productsApi.ts
-import type { Product, Booking, AuthUser } from "../types";
-import { normalizeAuthUser } from "../types";
+import type { Product, Booking, AuthUser, UserAddress } from "../types";
+import { normalizeProductAvailabilityStatus, resolveProductAvailability } from "./productAvailability";
+import { normalizeAddressBook, normalizeAuthUser, normalizeUserAddress } from "../types";
 
 export type ProductsType = "All" | "BS" | "T";
 
@@ -20,6 +21,10 @@ export type ProductsApiItem = {
   imageUrl?: string | null;
   daThue?: boolean;
   daBan?: boolean;
+  inventoryStatus?: string | null;
+  reservedByOrderId?: string | null;
+  reservedAt?: string | null;
+  availabilityText?: string | null;
 };
 
 type ProductsApiResponse = {
@@ -112,6 +117,31 @@ function getStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+export function getStoredSessionToken(): string {
+  const storage = getStorage();
+  if (!storage) return "";
+
+  try {
+    return String(storage.getItem("vmgc_session_token") || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function requireSessionToken(): string {
+  const token = getStoredSessionToken();
+  if (!token) {
+    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+  }
+  return token;
+}
+
+function withAuthQuery(url: string, token?: string): string {
+  const authToken = String(token || "").trim();
+  if (!authToken) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}authToken=${encodeURIComponent(authToken)}`;
 }
 
 function safeReadJson<T>(key: string): T | null {
@@ -222,6 +252,17 @@ export function mapApiItemToProduct(
       )}`
     : "/notimg.jpg";
 
+  const inventoryStatus = normalizeProductAvailabilityStatus(
+    it.inventoryStatus,
+  );
+  const availability = resolveProductAvailability({
+    inventoryStatus,
+    isSold: !!it.daBan,
+    isRented: !!it.daThue,
+    price: millionToVnd(it.giaBan),
+    rentPrice: millionToVnd(it.giaThue),
+  });
+
   return {
     id,
     name: id || "Sản phẩm",
@@ -238,8 +279,15 @@ export function mapApiItemToProduct(
     age: null,
     hoanh_cm: parseNum(it.hoanh_cm),
     chau_m: parseNum(it.chau_m),
-    isSold: !!it.daBan,
-    isRented: !!it.daThue,
+    inventoryStatus: availability.status,
+    reservedByOrderId: String(it.reservedByOrderId || "") || null,
+    reservedAt: String(it.reservedAt || "") || null,
+    availabilityText:
+      String(it.availabilityText || "").trim() || availability.label,
+    canBuy: availability.canBuy,
+    canRent: availability.canRent,
+    isSold: availability.status === "sold",
+    isRented: availability.status === "rented_out",
   };
 }
 
@@ -501,7 +549,10 @@ export async function fetchProductsMeta(): Promise<ProductsMeta> {
 }
 
 export async function fetchAdminMeta(): Promise<AdminMeta> {
-  const res = await fetch(buildAdminMetaUrl(), { cache: "no-store" });
+  const token = requireSessionToken();
+  const res = await fetch(withAuthQuery(buildAdminMetaUrl(), token), {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error(`Admin META HTTP ${res.status}`);
 
   const data = (await res.json()) as {
@@ -605,12 +656,16 @@ export async function syncAdminProducts(
 }
 
 async function postAPI<T = any>(body: any): Promise<T> {
+  const token = requireSessionToken();
   const res = await fetch(getApiBase(), {
     method: "POST",
     headers: {
       "Content-Type": "text/plain;charset=utf-8",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      ...body,
+      authToken: token,
+    }),
   });
 
   const data = await res.json();
@@ -650,7 +705,8 @@ export async function deleteProduct(
 // ================= BOOKING API =================
 export async function fetchBookings(): Promise<Booking[]> {
   try {
-    const res = await fetch(`${getApiBase()}?api=bookings`, {
+    const token = requireSessionToken();
+    const res = await fetch(withAuthQuery(`${getApiBase()}?api=bookings`, token), {
       cache: "no-store",
     });
     const data = await res.json();
@@ -701,6 +757,7 @@ export async function updateBookingStatus(
       },
       body: JSON.stringify({
         api: "updateBookingStatus",
+        authToken: requireSessionToken(),
         maDatLich,
         trangThai,
         lyDoHuy: ghiChu,
@@ -726,6 +783,7 @@ export async function updateBookingNote(
       },
       body: JSON.stringify({
         api: "updateBookingNote",
+        authToken: requireSessionToken(),
         maDatLich,
         ghiChu,
       }),
@@ -748,6 +806,7 @@ export async function fetchUsers(): Promise<AuthUser[]> {
       },
       body: JSON.stringify({
         api: "getUsers",
+        authToken: requireSessionToken(),
       }),
     });
 
@@ -786,6 +845,62 @@ export async function syncAdminUsers(options?: {
 
   const data = await fetchUsers();
   return setCachedAdminUsers(data, knownVersion || String(Date.now()));
+}
+
+
+const normalizeAddressPayload = (raw: any): UserAddress =>
+  normalizeUserAddress({
+    id: raw?.id,
+    label: raw?.label,
+    recipientName: raw?.recipientName,
+    recipientPhone: raw?.recipientPhone,
+    province: raw?.province,
+    ward: raw?.ward,
+    line1: raw?.line1,
+    isDefault: raw?.isDefault,
+    createdAt: raw?.createdAt,
+    updatedAt: raw?.updatedAt,
+  });
+
+export async function fetchAddressBook(): Promise<UserAddress[]> {
+  const data = await postAPI<{ ok: boolean; addresses?: any[] }>({
+    api: "getAddressBook",
+  });
+
+  return normalizeAddressBook(data.addresses);
+}
+
+export async function saveAddressBookEntry(
+  input: Partial<UserAddress>,
+): Promise<UserAddress[]> {
+  const data = await postAPI<{ ok: boolean; addresses?: any[] }>({
+    api: "saveAddressBookEntry",
+    address: normalizeAddressPayload(input),
+  });
+
+  return normalizeAddressBook(data.addresses);
+}
+
+export async function deleteAddressBookEntry(
+  addressId: string,
+): Promise<UserAddress[]> {
+  const data = await postAPI<{ ok: boolean; addresses?: any[] }>({
+    api: "deleteAddressBookEntry",
+    addressId: String(addressId || "").trim(),
+  });
+
+  return normalizeAddressBook(data.addresses);
+}
+
+export async function setDefaultAddressBookEntry(
+  addressId: string,
+): Promise<UserAddress[]> {
+  const data = await postAPI<{ ok: boolean; addresses?: any[] }>({
+    api: "setDefaultAddressBookEntry",
+    addressId: String(addressId || "").trim(),
+  });
+
+  return normalizeAddressBook(data.addresses);
 }
 
 export async function verifyAdminPassword(

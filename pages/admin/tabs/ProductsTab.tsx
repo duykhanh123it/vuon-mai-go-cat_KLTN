@@ -3,6 +3,7 @@ import type { Product } from "../../../types";
 import type { ProductsType } from "../../../utils/productsApi";
 import { formatPrice } from "../helpers";
 import { Badge, StatCard, Th, Td } from "../shared";
+import { getProductAvailabilityStatus } from "../../../utils/productAvailability";
 
 interface ProductsTabProps {
   loadingProducts: boolean;
@@ -49,6 +50,19 @@ const ProductsTab: React.FC<ProductsTabProps> = ({
   onOpenEdit,
   onDelete,
 }) => {
+  const priority = {
+    available: 0,
+    reserved: 1,
+    rented_out: 2,
+    sold: 3,
+  };
+
+  const sortedProducts = [...paginatedProducts].sort((a, b) => {
+    const aStatus = getProductAvailabilityStatus(a);
+    const bStatus = getProductAvailabilityStatus(b);
+    return priority[aStatus] - priority[bStatus];
+  });
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -133,45 +147,107 @@ const ProductsTab: React.FC<ProductsTabProps> = ({
                   </Td>
                 </tr>
               ) : (
-                paginatedProducts.map((p, index) => {
+                sortedProducts.map((product) => {
+                  const availability = getProductAvailabilityStatus(product);
+
                   return (
-                    <tr key={p.id}>
-                      <Td>{(currentPage - 1) * itemsPerPage + index + 1}</Td>
-                      <Td>{p.id}</Td>
-                      <Td>{p.category}</Td>
-                      <Td>{formatPrice(p.rentPrice)}</Td>
-                      <Td>{formatPrice(p.price)}</Td>
+                    <tr
+                      key={product.id}
+                      className={`
+                        ${availability === "reserved" ? "bg-yellow-50" : ""}
+                        ${availability === "rented_out" ? "bg-blue-50" : ""}
+                        ${availability === "sold" ? "opacity-60" : ""}
+                      `}
+                    >
+                      <Td>
+                        {(currentPage - 1) * itemsPerPage +
+                          sortedProducts.indexOf(product) +
+                          1}
+                      </Td>
+                      <Td>
+                        <div>
+                          <span className="font-medium text-slate-900">
+                            {product.id}
+                          </span>
+                          <div className="mt-1">
+                            <span
+                              className={`text-xs px-2 py-1 rounded font-medium
+                                ${availability === "available" && "bg-green-100 text-green-700"}
+                                ${availability === "reserved" && "bg-yellow-100 text-yellow-700"}
+                                ${availability === "rented_out" && "bg-blue-100 text-blue-700"}
+                                ${availability === "sold" && "bg-red-100 text-red-700"}
+                              `}
+                            >
+                              {availability === "available" && "🟢 Sẵn sàng"}
+                              {availability === "reserved" && "🟡 Đang giữ"}
+                              {availability === "rented_out" && "🔵 Đang thuê"}
+                              {availability === "sold" && "🔴 Đã bán"}
+                            </span>
+                          </div>
+                        </div>
+                      </Td>
+                      <Td>{product.category}</Td>
+                      <Td>{formatPrice(product.rentPrice)}</Td>
+                      <Td>{formatPrice(product.price)}</Td>
                       <Td>
                         <div className="flex flex-wrap gap-2">
-                          {p.isSold ? (
-                            <Badge text="Đã bán" tone="red" />
-                          ) : p.isRented ? (
-                            <Badge text="Đã thuê" tone="amber" />
-                          ) : (
-                            <Badge text="Đang trống" tone="green" />
+                          {availability === "available" && (
+                            <Badge text="Sẵn sàng" tone="green" />
                           )}
+                          {availability === "reserved" && (
+                            <Badge text="Đang giữ" tone="amber" />
+                          )}
+                          {availability === "rented_out" && (
+                            <Badge text="Đang thuê" tone="blue" />
+                          )}
+                          {availability === "sold" && (
+                            <Badge text="Đã bán" tone="red" />
+                          )}
+                          {availability === "reserved" &&
+                            product.reservedByOrderId && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                Order: {product.reservedByOrderId}
+                              </div>
+                            )}
                         </div>
                       </Td>
                       <Td className="text-right">
                         <div className="inline-flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => onOpenView(p)}
+                            onClick={() => onOpenView(product)}
                             className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
                           >
                             Xem
                           </button>
                           <button
                             type="button"
-                            onClick={() => onOpenEdit(p)}
-                            className="px-3 py-2 rounded-lg border border-amber-300 text-sm font-medium text-amber-800 hover:bg-amber-50 transition"
+                            onClick={() => onOpenEdit(product)}
+                            disabled={
+                              availability === "sold" ||
+                              availability === "reserved"
+                            }
+                            className={`px-3 py-2 rounded-lg border border-amber-300 text-sm font-medium text-amber-800 hover:bg-amber-50 transition
+                              ${availability === "sold" || availability === "reserved" ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             Sửa
                           </button>
                           <button
                             type="button"
-                            onClick={() => onDelete(p)}
-                            className="px-3 py-2 rounded-lg border border-red-300 text-sm font-medium text-red-700 hover:bg-red-50 transition"
+                            onClick={() => onDelete(product)}
+                            disabled={
+                              availability === "sold" ||
+                              availability === "reserved"
+                            }
+                            className={`px-3 py-2 rounded-lg border border-red-300 text-sm font-medium text-red-700 hover:bg-red-50 transition
+                              ${availability === "sold" || availability === "reserved" ? "opacity-50 cursor-not-allowed" : ""}`}
+                            title={
+                              availability === "reserved"
+                                ? "Không thể xóa vì đang có đơn giữ"
+                                : availability === "sold"
+                                  ? "Không thể xóa vì đã bán"
+                                  : ""
+                            }
                           >
                             Xóa
                           </button>

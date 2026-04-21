@@ -3,6 +3,20 @@ import { AuthUser, normalizeAuthUser } from "../types";
 
 const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 
+const persistSessionToken = (token: unknown) => {
+  try {
+    if (typeof window === "undefined") return;
+    const normalized = String(token || "").trim();
+    if (!normalized) {
+      window.localStorage.removeItem("vmgc_session_token");
+      return;
+    }
+    window.localStorage.setItem("vmgc_session_token", normalized);
+  } catch {
+    // ignore storage errors
+  }
+};
+
 interface LoginModalProps {
   onClose: () => void;
   onLogin: (user: AuthUser) => void;
@@ -344,6 +358,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
               throw new Error(data.error || "Google login thất bại");
             }
 
+            persistSessionToken(data.sessionToken);
             onLogin(
               normalizeAuthUser({
                 ...data.user,
@@ -364,7 +379,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
           }
         },
       });
-      
+
       tokenClient.requestAccessToken();
     } catch (err: any) {
       setLoading(false);
@@ -417,6 +432,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
           setLoadingText("");
           return;
         }
+        persistSessionToken(data.sessionToken);
         onLogin(normalizeAuthUser(data.user));
         setLoading(false);
         setLoadingText("");
@@ -484,6 +500,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
           setLoadingText("");
           return;
         }
+        persistSessionToken(data.sessionToken);
         onLogin(normalizeAuthUser(data.user));
         setLoading(false);
         setLoadingText("");

@@ -107,6 +107,7 @@ const ChangePasswordModal: React.FC<Props> = ({
         showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
 
         localStorage.removeItem("vmgc_user");
+        localStorage.removeItem("vmgc_session_token");
         sessionStorage.removeItem("vmgc_user");
 
         setOtp("");
@@ -186,6 +187,7 @@ const ChangePasswordModal: React.FC<Props> = ({
       setLoading(false);
       showToast("Đổi mật khẩu thành công, vui lòng đăng nhập lại", "success");
       localStorage.removeItem("vmgc_user");
+      localStorage.removeItem("vmgc_session_token");
       setTimeout(() => {
         window.location.reload();
       }, 1200);

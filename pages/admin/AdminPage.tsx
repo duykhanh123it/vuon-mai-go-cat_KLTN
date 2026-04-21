@@ -23,6 +23,7 @@ import {
   type ProductsMeta,
   type ProductsType,
 } from "../../utils/productsApi";
+import { getProductAvailabilityStatus } from "../../utils/productAvailability";
 import { useToast } from "../../components/Toast";
 import BookingsTab from "./tabs/BookingsTab";
 import ProductsTab from "./tabs/ProductsTab";
@@ -106,17 +107,20 @@ const AdminPage: React.FC<AdminPageProps> = ({
   const [userPage, setUserPage] = React.useState(1);
   const [userPageInput, setUserPageInput] = React.useState("1");
   const itemsPerPage = 10;
+
   const latestAdminMetaRef = React.useRef<AdminMeta | null>(null);
   const dirtyResourcesRef = React.useRef({
     products: false,
     bookings: false,
     users: false,
   });
+
   const [stats, setStats] = React.useState({
     total: 0,
     bonsai: 0,
     tang: 0,
   });
+
   const [showModal, setShowModal] = React.useState(false);
   const [modalMode, setModalMode] = React.useState<"create" | "view" | "edit">(
     "create",
@@ -256,6 +260,9 @@ const AdminPage: React.FC<AdminPageProps> = ({
 
   React.useEffect(() => {
     if (!selectedProduct) return;
+
+    const availability = getProductAvailabilityStatus(selectedProduct);
+
     setFormData({
       id: selectedProduct.id || "",
       category: selectedProduct.category || "Mai Bonsai",
@@ -278,8 +285,8 @@ const AdminPage: React.FC<AdminPageProps> = ({
           ? String((selectedProduct as any).chau_m).replace(".", ",")
           : "",
       note: extractUserNote(selectedProduct.description || ""),
-      daThue: selectedProduct.isRented || false,
-      daBan: selectedProduct.isSold || false,
+      daThue: availability === "rented_out",
+      daBan: availability === "sold",
     });
     setPreviewImage(selectedProduct.image || null);
     setProductImageFile(null);
@@ -887,6 +894,13 @@ const AdminPage: React.FC<AdminPageProps> = ({
         showToast("Mã cây đã tồn tại", "error");
         return;
       }
+
+      // BƯỚC 5: chặn trạng thái sai
+      if (formData.daBan && formData.daThue) {
+        showToast("Không thể vừa bán vừa cho thuê", "error");
+        return;
+      }
+
       let fileData = "";
       if (productImageFile) {
         fileData = await new Promise<string>((resolve, reject) => {
@@ -896,6 +910,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
           reader.onerror = reject;
         });
       }
+
       await updateProductApi({
         originalId: selectedProduct?.id || id,
         id,
@@ -907,10 +922,11 @@ const AdminPage: React.FC<AdminPageProps> = ({
         hoanh: formData.hoanh,
         chau: formData.chau,
         note: formData.note,
-        daThue: formData.daThue,
+        daThue: formData.daThue && !formData.daBan,
         daBan: formData.daBan,
         fileData,
       });
+
       const optimisticProduct = buildOptimisticProduct(
         { ...formData, id },
         previewImage || selectedProduct?.image || null,
@@ -925,6 +941,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
       )
         ? [optimisticProduct, ...nextBase]
         : nextBase;
+
       commitOptimisticProducts(nextProducts, { resetPage: false });
       showToast("Cập nhật thành công", "success");
       setShowModal(false);
@@ -1252,6 +1269,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                           : "Xem chi tiết sản phẩm"}
                     </h2>
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col">
                       <input
@@ -1302,6 +1320,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                       <option>Mai Bonsai</option>
                       <option>Mai Tàng</option>
                     </select>
+
                     <div className="flex flex-col">
                       <input
                         placeholder="Giá thuê (triệu)"
@@ -1450,6 +1469,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                       disabled={modalMode === "view"}
                     />
                   </div>
+
                   <div className="mt-4 pt-4">
                     <p className="text-sm font-semibold text-slate-700 mb-3">
                       Thông tin nâng cao
@@ -1534,16 +1554,20 @@ const AdminPage: React.FC<AdminPageProps> = ({
                           </p>
                         )}
                       </div>
+
+                      {/* BƯỚC 3: Checkbox đã được thay thế logic chống trùng */}
                       <label className="flex items-center gap-2 h-11">
                         <input
                           type="checkbox"
                           checked={formData.daThue}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const checked = e.target.checked;
                             setFormData({
                               ...formData,
-                              daThue: e.target.checked,
-                            })
-                          }
+                              daThue: checked,
+                              daBan: checked ? false : formData.daBan,
+                            });
+                          }}
                           disabled={modalMode === "view"}
                         />
                         Đã thuê
@@ -1552,18 +1576,21 @@ const AdminPage: React.FC<AdminPageProps> = ({
                         <input
                           type="checkbox"
                           checked={formData.daBan}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const checked = e.target.checked;
                             setFormData({
                               ...formData,
-                              daBan: e.target.checked,
-                            })
-                          }
+                              daBan: checked,
+                              daThue: checked ? false : formData.daThue,
+                            });
+                          }}
                           disabled={modalMode === "view"}
                         />
                         Đã bán
                       </label>
                     </div>
                   </div>
+
                   <div className="flex justify-end gap-3 mt-6">
                     <button
                       onClick={() => {
@@ -1593,6 +1620,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                           !validateTreeId(formData.id, formData.category) &&
                           !isDuplicateId(formData.id) &&
                           !Object.values(errors).some((e) => e !== "");
+
                         return (
                           <button
                             onClick={async () => {
@@ -1600,6 +1628,16 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                 handleUpdateProduct();
                                 return;
                               }
+
+                              // BƯỚC 5: chặn trạng thái sai khi tạo mới
+                              if (formData.daBan && formData.daThue) {
+                                showToast(
+                                  "Không thể vừa bán vừa cho thuê",
+                                  "error",
+                                );
+                                return;
+                              }
+
                               try {
                                 const id = formData.id.trim().toUpperCase();
                                 const idErrorCheck = validateTreeId(
@@ -1614,6 +1652,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                   showToast("Mã cây đã tồn tại", "error");
                                   return;
                                 }
+
                                 let fileData = "";
                                 if (productImageFile) {
                                   fileData = await new Promise<string>(
@@ -1626,11 +1665,15 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                     },
                                   );
                                 }
+
                                 await createProduct({
                                   ...formData,
                                   id,
+                                  daThue: formData.daThue && !formData.daBan,
+                                  daBan: formData.daBan,
                                   fileData,
                                 });
+
                                 const optimisticProduct =
                                   buildOptimisticProduct(
                                     { ...formData, id },
@@ -1651,6 +1694,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                       ),
                                     ]
                                   : products;
+
                                 commitOptimisticProducts(nextProducts);
                                 setShowModal(false);
                                 setProductImageFile(null);

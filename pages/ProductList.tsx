@@ -8,6 +8,7 @@ import {
   fetchProductsBundleRevalidate,
 } from "../utils/productsApi";
 import type { ProductsType } from "../utils/productsApi";
+import { getProductAvailabilityStatus } from "../utils/productAvailability";
 
 /**
  * Cache key tách theo type để không đè nhau:
@@ -232,15 +233,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onOpenDetail,
   onContact,
 }) => {
-  const isSold = !!p?.isSold;
-  const isRented = !!p?.isRented;
+  const availability = getProductAvailabilityStatus(p);
+
+  const isSold = availability === "sold";
+  const isRented = availability === "rented_out";
+  const isReserved = availability === "reserved";
+
   const soldOrRentedLabel = isSold ? "ĐÃ BÁN" : isRented ? "ĐÃ CHO THUÊ" : "";
   const dimmed = isSold || isRented;
   const internalStatus = getInternalStatus(p);
 
-  const handleOpenDetail = () => onOpenDetail(p);
+  const handleOpenDetail = () => {
+    if (availability !== "available") return;
+    onOpenDetail(p);
+  };
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    if (availability !== "available") return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleOpenDetail();
@@ -276,6 +285,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]
         transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]
         focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300
+        ${availability !== "available" ? "opacity-60 pointer-events-none" : ""}
         ${dimmed ? "opacity-60" : ""}
       `}
     >
@@ -287,6 +297,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           draggable={false}
         />
+
+        {/* Badge trạng thái mới */}
+        {availability !== "available" && (
+          <div className="absolute top-2 left-2 z-10">
+            {availability === "sold" && (
+              <span className="bg-red-600 text-white text-xs px-2 py-1 rounded">
+                ĐÃ BÁN
+              </span>
+            )}
+            {availability === "rented_out" && (
+              <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                ĐANG THUÊ
+              </span>
+            )}
+            {availability === "reserved" && (
+              <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+                ĐANG GIỮ
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 via-black/5 to-transparent" />
 

@@ -1,69 +1,122 @@
-import type { OrderStatus, OrderTransactionType } from "../types";
+import type {
+  OrderTransactionType,
+  OrderStatus,
+  PaymentStatus,
+  ProductAvailabilityStatus,
+} from "../types";
 
-export const formatCurrencyVnd = (value: number | null | undefined): string => {
-  const amount = Number(value || 0);
-  return `${amount.toLocaleString("vi-VN")}đ`;
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+export const formatCurrencyVnd = (value: number | null | undefined) => {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num) || num <= 0) return "0đ";
+  return `${num.toLocaleString("vi-VN")}đ`;
 };
 
-export const formatDateTimeValue = (value: string | null | undefined): string => {
-  const raw = String(value || "").trim();
-  if (!raw) return "--";
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    return raw;
+export const formatCompactCurrencyVnd = (value: number | null | undefined) => {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num) || num <= 0) return "0đ";
+  if (num >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(1).replace(/\.0$/, "")} tỷ`;
   }
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(parsed);
+  if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1).replace(/\.0$/, "")} triệu`;
+  }
+  return `${num.toLocaleString("vi-VN")}đ`;
 };
 
-export const getTransactionTypeLabel = (
-  value: OrderTransactionType | string | null | undefined,
-): string => {
-  return String(value || "").trim().toLowerCase() === "buy" ? "Mua" : "Thuê";
+const parseDateInput = (value: unknown): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const nativeDate = new Date(raw);
+  if (!Number.isNaN(nativeDate.getTime())) return nativeDate;
+
+  const match = raw.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+  );
+  if (match) {
+    const [, dd, mm, yyyy, hh = "0", min = "0", ss = "0"] = match;
+    const parsed = new Date(
+      Number(yyyy),
+      Number(mm) - 1,
+      Number(dd),
+      Number(hh),
+      Number(min),
+      Number(ss),
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
 };
 
-export const getOrderStatusMeta = (
-  value: OrderStatus | string | null | undefined,
-): { label: string; className: string } => {
-  const status = String(value || "new").trim().toLowerCase();
-
-  if (status === "paid") {
-    return {
-      label: "Đã thanh toán",
-      className: "bg-emerald-100 text-emerald-800 border border-emerald-200",
-    };
-  }
-
-  if (status === "confirmed") {
-    return {
-      label: "Đã xác nhận",
-      className: "bg-sky-100 text-sky-800 border border-sky-200",
-    };
-  }
-
-  if (status === "completed") {
-    return {
-      label: "Hoàn tất",
-      className: "bg-indigo-100 text-indigo-800 border border-indigo-200",
-    };
-  }
-
-  if (status === "cancelled") {
-    return {
-      label: "Đã hủy",
-      className: "bg-rose-100 text-rose-800 border border-rose-200",
-    };
-  }
-
-  return {
-    label: "Mới tạo",
-    className: "bg-amber-100 text-amber-900 border border-amber-200",
-  };
+export const formatDateTimeVN = (value: unknown) => {
+  const date = parseDateInput(value);
+  if (!date) return String(value || "--");
+  return DATE_TIME_FORMATTER.format(date);
 };
+
+export const formatDateVN = (value: unknown) => {
+  const date = parseDateInput(value);
+  if (!date) return String(value || "--");
+  return DATE_FORMATTER.format(date);
+};
+
+export const formatPhoneVN = (value: string) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length < 9) return String(value || "");
+  return digits.replace(/(\d{4})(\d{3})(\d{3,4})/, "$1 $2 $3");
+};
+
+export const formatTransactionTypeLabel = (value: OrderTransactionType) =>
+  value === "rent" ? "Cho thuê" : "Bán";
+
+const ORDER_LABELS: Record<OrderStatus, string> = {
+  new: "Mới tạo",
+  confirmed: "Đã xác nhận",
+  delivering: "Đang giao hàng",
+  active: "Đang thuê",
+  cancelled: "Đã hủy",
+  completed: "Hoàn tất",
+};
+
+const PAYMENT_LABELS: Record<PaymentStatus, string> = {
+  unpaid: "Chưa thanh toán",
+  deposit_paid: "Đã cọc",
+  partial_paid: "Thanh toán một phần",
+  paid: "Đã thanh toán đủ",
+};
+
+const PRODUCT_LABELS: Record<ProductAvailabilityStatus, string> = {
+  available: "Sẵn sàng",
+  reserved: "Đang giữ cho đơn khác",
+  sold: "Đã bán",
+  rented_out: "Đang cho thuê",
+};
+
+export const formatOrderStatusLabel = (value: OrderStatus) => ORDER_LABELS[value];
+export const formatPaymentStatusLabel = (value: PaymentStatus) =>
+  PAYMENT_LABELS[value];
+export const formatAvailabilityLabel = (value: ProductAvailabilityStatus) =>
+  PRODUCT_LABELS[value];
+
+export const joinClassNames = (...parts: Array<string | false | null | undefined>) =>
+  parts.filter(Boolean).join(" ");

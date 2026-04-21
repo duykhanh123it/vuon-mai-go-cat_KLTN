@@ -274,11 +274,21 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("vmgc_user");
-      if (!raw) return;
+      const sessionToken = String(
+        localStorage.getItem("vmgc_session_token") || "",
+      ).trim();
+
+      if (!raw || !sessionToken) {
+        localStorage.removeItem("vmgc_user");
+        localStorage.removeItem("vmgc_session_token");
+        return;
+      }
+
       const parsed = JSON.parse(raw);
       setAuthUser(normalizeAuthUser(parsed));
     } catch {
-      // ignore
+      localStorage.removeItem("vmgc_user");
+      localStorage.removeItem("vmgc_session_token");
     }
   }, []);
 
@@ -306,6 +316,41 @@ const App: React.FC = () => {
 
     return () => {
       alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    let syncing = false;
+
+    const syncProducts = async () => {
+      if (!alive || syncing) return;
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        return;
+      }
+
+      try {
+        syncing = true;
+        const res = await fetchProductsBundleRevalidateMapped({ type: "All" });
+        if (!alive) return;
+        setAppProducts(res.products || []);
+      } catch {
+        // bỏ qua lỗi revalidate nền để không chặn trải nghiệm hiện tại
+      } finally {
+        syncing = false;
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      void syncProducts();
+    }, 60 * 1000);
+
+    return () => {
+      alive = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -520,6 +565,7 @@ const App: React.FC = () => {
     window.setTimeout(() => {
       setAuthUser(null);
       localStorage.removeItem("vmgc_user");
+      localStorage.removeItem("vmgc_session_token");
       setLogoutLoading(false);
       if (route.page === "admin") {
         goHome();
@@ -731,6 +777,7 @@ const App: React.FC = () => {
             onBackToCart={goCart}
             onContinueShopping={() => goProducts(1)}
             onOrderCreated={handleOrderCreated}
+            onRequestLogin={() => setShowLogin(true)}
           />
         );
 

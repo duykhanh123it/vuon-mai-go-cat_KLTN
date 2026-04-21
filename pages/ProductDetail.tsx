@@ -1,6 +1,7 @@
 // src/pages/ProductDetail.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Product, normalizeProductId } from "../types";
+import { resolveProductAvailability } from "../utils/productAvailability";
 
 interface ProductDetailProps {
   product: Product;
@@ -104,13 +105,25 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     typeof window !== "undefined" &&
     window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
-  // ✅ trạng thái (đã có trong Product type)
-  const isSold = !!product.isSold;
-  const isRented = !!product.isRented;
+  // ===== Tính trạng thái cây theo engine availability =====
+  const availability = resolveProductAvailability(product);
+  const availabilityStatus = availability.status;
 
-  // ưu tiên SOLD nếu data bẩn (có cả 2)
-  const locked = isSold || isRented;
-  const statusText = isSold ? "ĐÃ BÁN" : isRented ? "ĐÃ CHO THUÊ" : "";
+  const isSold = availabilityStatus === "sold";
+  const isRented = availabilityStatus === "rented_out";
+  const isReserved = availabilityStatus === "reserved";
+  const isAvailable = availabilityStatus === "available";
+  const canBuy = availability.canBuy;
+  const canRent = availability.canRent;
+
+  const locked = !isAvailable;
+  const statusText = isSold
+    ? "ĐÃ BÁN"
+    : isRented
+      ? "ĐÃ CHO THUÊ"
+      : isReserved
+        ? "ĐANG ĐƯỢC GIỮ"
+        : "";
 
   // ===== Lightbox (xem ảnh full) =====
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -273,12 +286,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
   // ===== Handler thêm vào giỏ hàng =====
   const handleAddRent = () => {
-    if (!product.giaThue) return;
+    if (!isAvailable) {
+      alert("Cây này hiện không khả dụng");
+      return;
+    }
+    if (!canRent || !product.rentPrice) {
+      alert("Cây này hiện chưa có giá thuê hợp lệ");
+      return;
+    }
     onAddToCart(product, "rent");
   };
 
   const handleAddBuy = () => {
-    if (!product.giaBan) return;
+    if (!isAvailable) {
+      alert("Cây này hiện không khả dụng");
+      return;
+    }
+    if (!canBuy || !product.price) {
+      alert("Cây này hiện chưa có giá bán hợp lệ");
+      return;
+    }
     onAddToCart(product, "buy");
   };
 
@@ -463,7 +490,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 bg-white rounded-3xl p-6 md:p-12 shadow-sm">
           {/* LEFT: Image Gallery */}
-          <div className="space-y-4">
+          <div className={`space-y-4 ${!isAvailable ? "opacity-60" : ""}`}>
             {/* Main Image */}
             <div className="relative h-[250px] sm:h-[350px] lg:h-[500px] rounded-2xl overflow-hidden shadow-md bg-slate-100">
               <img
@@ -533,6 +560,29 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-serif text-slate-900 mb-4">
                 {product.name}
               </h1>
+
+              {/* Hiển thị trạng thái lớn */}
+              {!isAvailable && (
+                <div className="mb-4">
+                  {isSold && (
+                    <div className="bg-red-100 text-red-700 px-4 py-2 rounded">
+                      🌳 Cây này đã được bán
+                    </div>
+                  )}
+
+                  {isRented && (
+                    <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded">
+                      🌳 Cây này đang được cho thuê
+                    </div>
+                  )}
+
+                  {isReserved && (
+                    <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded">
+                      ⚠️ Cây này đang được giữ cho đơn khác
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase mb-6">
                 {product.category}
@@ -659,7 +709,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleAddRent}
-                  disabled={!product.giaThue}
+                  disabled={!canRent}
                   className="w-full py-3.5 rounded-xl font-bold text-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 text-white transition-all active:scale-[0.98]"
                   type="button"
                 >
@@ -668,7 +718,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
                 <button
                   onClick={handleAddBuy}
-                  disabled={!product.giaBan}
+                  disabled={!canBuy}
                   className="w-full py-3.5 rounded-xl font-bold text-lg bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 disabled:text-slate-500 text-white transition-all active:scale-[0.98]"
                   type="button"
                 >

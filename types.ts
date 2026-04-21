@@ -80,6 +80,22 @@ export interface OrderDeliveryInfo {
   updatedAt: string;
 }
 
+export type OrderAddressSnapshotSource = "saved_address" | "manual_input" | "";
+
+export interface OrderAddressSnapshot {
+  id: string;
+  label: string;
+  recipientName: string;
+  recipientPhone: string;
+  province: string;
+  ward: string;
+  line1: string;
+  note: string;
+  isDefault: boolean;
+  source: OrderAddressSnapshotSource;
+  fullAddress: string;
+}
+
 export interface OrderSummary {
   orderId: string;
   createdAt: string;
@@ -95,6 +111,7 @@ export interface OrderSummary {
   remainingAmount: number;
   note: string;
   deliveryInfo: OrderDeliveryInfo;
+  addressSnapshot: OrderAddressSnapshot;
   auditTrail?: string[];
   createdBy: string;
   updatedAt: string;
@@ -268,6 +285,73 @@ export function normalizeAddressBook(value: unknown): UserAddress[] {
     ...item,
     isDefault: defaultIndex >= 0 ? index === defaultIndex : false,
   }));
+}
+
+const normalizeOrderAddressSnapshotSource = (
+  value: unknown,
+): OrderAddressSnapshotSource => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "saved_address") return "saved_address";
+  if (raw === "manual_input") return "manual_input";
+  return "";
+};
+
+export function normalizeOrderAddressSnapshot(
+  value: Partial<OrderAddressSnapshot> | null | undefined,
+): OrderAddressSnapshot {
+  const line1 = String(value?.line1 || "").trim();
+  const ward = String(value?.ward || "").trim();
+  const province = String(value?.province || "").trim();
+  const fullAddress =
+    String((value as any)?.fullAddress || (value as any)?.address || "").trim() ||
+    [line1, ward, province].filter(Boolean).join(", ");
+
+  return {
+    id: String(value?.id || "").trim(),
+    label: String(value?.label || "").trim(),
+    recipientName: String((value as any)?.recipientName || (value as any)?.fullName || "").trim(),
+    recipientPhone: String((value as any)?.recipientPhone || (value as any)?.phone || "").trim(),
+    province,
+    ward,
+    line1,
+    note: String(value?.note || "").trim(),
+    isDefault: Boolean(value?.isDefault),
+    source: normalizeOrderAddressSnapshotSource((value as any)?.source),
+    fullAddress,
+  };
+}
+
+export function hasOrderAddressSnapshot(
+  value: Partial<OrderAddressSnapshot> | null | undefined,
+): boolean {
+  const address = normalizeOrderAddressSnapshot(value);
+  return Boolean(
+    [
+      address.recipientName,
+      address.recipientPhone,
+      address.province,
+      address.ward,
+      address.line1,
+      address.fullAddress,
+    ]
+      .join("")
+      .trim(),
+  );
+}
+
+export function formatOrderAddressSnapshot(
+  value: Partial<OrderAddressSnapshot> | null | undefined,
+): string {
+  return normalizeOrderAddressSnapshot(value).fullAddress;
+}
+
+export function getOrderAddressSnapshotSourceLabel(
+  value: Partial<OrderAddressSnapshot> | null | undefined,
+): string {
+  const source = normalizeOrderAddressSnapshot(value).source;
+  if (source === "saved_address") return "Địa chỉ đã lưu";
+  if (source === "manual_input") return "Nhập thủ công";
+  return "Chưa rõ nguồn";
 }
 
 export function normalizeAuthUser(

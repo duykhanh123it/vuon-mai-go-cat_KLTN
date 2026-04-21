@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  formatOrderAddressSnapshot,
+  getOrderAddressSnapshotSourceLabel,
+  hasOrderAddressSnapshot,
+} from "../types";
 import type { AuthUser, OrderDetailResponse, OrderSummary } from "../types";
 import { fetchOrderDetail, fetchOrders } from "../utils/ordersApi";
 import {
@@ -328,6 +333,86 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                       <p className="mt-2 text-xl font-bold text-amber-600">
                         {formatCurrencyVnd(detail.order.remainingAmount)}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 p-5">
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Thông tin giao / bàn giao
+                    </h3>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-sm text-slate-500">Người nhận</p>
+                        <p className="mt-1 font-semibold text-slate-900">
+                          {hasOrderAddressSnapshot(detail.order.addressSnapshot)
+                            ? detail.order.addressSnapshot.recipientName ||
+                              detail.order.customerName ||
+                              "--"
+                            : detail.order.customerName || "--"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500">Điện thoại nhận</p>
+                        <p className="mt-1 font-semibold text-slate-900">
+                          {hasOrderAddressSnapshot(detail.order.addressSnapshot)
+                            ? detail.order.addressSnapshot.recipientPhone ||
+                              detail.order.customerPhone ||
+                              "--"
+                            : detail.order.customerPhone || "--"}
+                        </p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm text-slate-500">Địa chỉ snapshot</p>
+                          {hasOrderAddressSnapshot(detail.order.addressSnapshot) && (
+                            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                              {getOrderAddressSnapshotSourceLabel(
+                                detail.order.addressSnapshot,
+                              )}
+                            </span>
+                          )}
+                          {detail.order.addressSnapshot.label && (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                              {detail.order.addressSnapshot.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
+                          {formatOrderAddressSnapshot(detail.order.addressSnapshot) ||
+                            detail.order.deliveryInfo.address ||
+                            "--"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500">
+                          Thời gian giao dự kiến
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-900">
+                          {detail.order.deliveryInfo.scheduledAt
+                            ? formatDateTimeVN(detail.order.deliveryInfo.scheduledAt)
+                            : "--"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500">Cập nhật giao hàng</p>
+                        <p className="mt-1 font-semibold text-slate-900">
+                          {detail.order.deliveryInfo.updatedAt
+                            ? formatDateTimeVN(detail.order.deliveryInfo.updatedAt)
+                            : "--"}
+                        </p>
+                      </div>
+                      {(detail.order.deliveryInfo.note ||
+                        detail.order.addressSnapshot.note) && (
+                        <div className="sm:col-span-2">
+                          <p className="text-sm text-slate-500">
+                            Ghi chú giao hàng
+                          </p>
+                          <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
+                            {detail.order.deliveryInfo.note ||
+                              detail.order.addressSnapshot.note}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 

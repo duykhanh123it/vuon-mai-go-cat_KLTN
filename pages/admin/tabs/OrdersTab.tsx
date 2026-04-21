@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  formatOrderAddressSnapshot,
+  getOrderAddressSnapshotSourceLabel,
+  hasOrderAddressSnapshot,
+} from "../../../types";
 import type {
   AuthUser,
   OrderDeliveryInfo,
@@ -445,7 +450,11 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         order.orderId.toLowerCase().includes(keyword) ||
         order.customerName.toLowerCase().includes(keyword) ||
         order.customerEmail.toLowerCase().includes(keyword) ||
-        order.customerPhone.toLowerCase().includes(keyword)
+        order.customerPhone.toLowerCase().includes(keyword) ||
+        formatOrderAddressSnapshot(order.addressSnapshot).toLowerCase().includes(keyword) ||
+        String(order.addressSnapshot.recipientName || "").toLowerCase().includes(keyword) ||
+        String(order.addressSnapshot.recipientPhone || "").toLowerCase().includes(keyword) ||
+        String(order.deliveryInfo.address || "").toLowerCase().includes(keyword)
       );
     });
   }, [orders, searchTerm, statusFilter]);
@@ -1047,6 +1056,73 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           Lưu thông tin giao hàng
                         </button>
                       </div>
+
+                      {hasOrderAddressSnapshot(detail.order.addressSnapshot) && (
+                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-amber-900">
+                              Địa chỉ snapshot lúc khách đặt đơn
+                            </p>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                              {getOrderAddressSnapshotSourceLabel(
+                                detail.order.addressSnapshot,
+                              )}
+                            </span>
+                            {detail.order.addressSnapshot.label && (
+                              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                {detail.order.addressSnapshot.label}
+                              </span>
+                            )}
+                            {detail.order.addressSnapshot.isDefault && (
+                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                Từng là mặc định
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <p className="text-sm text-slate-500">
+                                Người nhận
+                              </p>
+                              <p className="mt-1 font-semibold text-slate-900">
+                                {detail.order.addressSnapshot.recipientName ||
+                                  detail.order.customerName ||
+                                  "--"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-500">
+                                Điện thoại nhận
+                              </p>
+                              <p className="mt-1 font-semibold text-slate-900">
+                                {detail.order.addressSnapshot.recipientPhone ||
+                                  detail.order.customerPhone ||
+                                  "--"}
+                              </p>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <p className="text-sm text-slate-500">
+                                Địa chỉ đã chốt lúc checkout
+                              </p>
+                              <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
+                                {formatOrderAddressSnapshot(
+                                  detail.order.addressSnapshot,
+                                ) || "--"}
+                              </p>
+                            </div>
+                            {detail.order.addressSnapshot.note && (
+                              <div className="sm:col-span-2">
+                                <p className="text-sm text-slate-500">
+                                  Ghi chú snapshot
+                                </p>
+                                <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
+                                  {detail.order.addressSnapshot.note}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <label className="block sm:col-span-2">

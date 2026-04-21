@@ -1,5 +1,9 @@
+import {
+  normalizeOrderAddressSnapshot,
+} from "../types";
 import type {
   CartItem,
+  OrderAddressSnapshot,
   OrderCustomer,
   OrderDeliveryInfo,
   OrderDetailResponse,
@@ -117,6 +121,17 @@ const normalizeOrderSummary = (raw: any): OrderSummary => {
     remainingAmount,
     note: String(raw?.note || ""),
     deliveryInfo: raw?.deliveryInfo ? normalizeDeliveryInfo(raw.deliveryInfo) : { ...EMPTY_DELIVERY_INFO },
+    addressSnapshot: normalizeOrderAddressSnapshot(
+      raw?.addressSnapshot ||
+        (raw?.deliveryInfo?.address
+          ? {
+              recipientName: raw?.customerName,
+              recipientPhone: raw?.customerPhone,
+              fullAddress: raw?.deliveryInfo?.address,
+              note: raw?.deliveryInfo?.note,
+            }
+          : null),
+    ),
     auditTrail: Array.isArray(raw?.auditTrail)
       ? raw.auditTrail.map((item: any) => String(item || "")).filter(Boolean)
       : undefined,
@@ -240,6 +255,7 @@ export const createOrder = async (params: {
   items: CartItem[];
   note?: string;
   deliveryInfo?: Partial<OrderDeliveryInfo>;
+  addressSnapshot?: Partial<OrderAddressSnapshot>;
 }): Promise<{ ok: boolean; orderId: string; message?: string }> => {
   const items = Array.isArray(params.items) ? params.items : [];
   if (!items.length) {
@@ -262,6 +278,7 @@ export const createOrder = async (params: {
       scheduledAt: String(params.deliveryInfo?.scheduledAt || ""),
       note: String(params.deliveryInfo?.note || ""),
     },
+    addressSnapshot: normalizeOrderAddressSnapshot(params.addressSnapshot),
     items: items.map((item) => ({
       productCode: item.productId,
       productType: item.productCategory,

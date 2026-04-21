@@ -1,9 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  formatOrderAddressSnapshot,
+  getOrderAddressSnapshotSourceLabel,
+  hasOrderAddressSnapshot,
+  normalizeOrderAddressSnapshot,
+} from "../types";
 import type {
   AuthUser,
   CartItem,
+  OrderAddressSnapshot,
   OrderCustomer,
   OrderDeliveryInfo,
+  UserAddress,
 } from "../types";
 import { createOrder } from "../utils/ordersApi";
 import { getCartMode, getCartTotal } from "../utils/cart";
@@ -22,6 +30,17 @@ interface CheckoutPageProps {
   onRequestLogin: () => void;
 }
 
+type AddressMode = "saved" | "manual";
+
+type ManualAddressForm = {
+  label: string;
+  recipientName: string;
+  recipientPhone: string;
+  province: string;
+  ward: string;
+  line1: string;
+};
+
 const DEFAULT_CUSTOMER: OrderCustomer = {
   name: "",
   email: "",
@@ -35,6 +54,17 @@ const DEFAULT_DELIVERY_INFO: OrderDeliveryInfo = {
   updatedAt: "",
 };
 
+const buildManualAddressDraft = (
+  customer?: Partial<OrderCustomer> | null,
+): ManualAddressForm => ({
+  label: "",
+  recipientName: String(customer?.name || "").trim(),
+  recipientPhone: String(customer?.phone || "").trim(),
+  province: "",
+  ward: "",
+  line1: "",
+});
+
 const validateCustomer = (customer: OrderCustomer) => {
   if (!customer.name.trim()) return "Vui lòng nhập họ và tên.";
   if (!customer.email.trim()) return "Vui lòng nhập email.";
@@ -42,6 +72,58 @@ const validateCustomer = (customer: OrderCustomer) => {
     return "Email chưa đúng định dạng.";
   }
   if (!customer.phone.trim()) return "Vui lòng nhập số điện thoại.";
+  return "";
+};
+
+const buildSnapshotFromSavedAddress = (
+  address: UserAddress,
+  customer: OrderCustomer,
+  note: string,
+): OrderAddressSnapshot =>
+  normalizeOrderAddressSnapshot({
+    id: address.id,
+    label: address.label,
+    recipientName: address.recipientName || customer.name,
+    recipientPhone: address.recipientPhone || customer.phone,
+    province: address.province,
+    ward: address.ward,
+    line1: address.line1,
+    note,
+    isDefault: address.isDefault,
+    source: "saved_address",
+  });
+
+const buildSnapshotFromManualAddress = (
+  manualAddress: ManualAddressForm,
+  customer: OrderCustomer,
+  note: string,
+): OrderAddressSnapshot =>
+  normalizeOrderAddressSnapshot({
+    label: manualAddress.label,
+    recipientName: manualAddress.recipientName || customer.name,
+    recipientPhone: manualAddress.recipientPhone || customer.phone,
+    province: manualAddress.province,
+    ward: manualAddress.ward,
+    line1: manualAddress.line1,
+    note,
+    isDefault: false,
+    source: "manual_input",
+  });
+
+const validateAddressSnapshot = (address: OrderAddressSnapshot) => {
+  if (!address.recipientName.trim()) return "Vui lòng nhập tên người nhận.";
+  if (!address.recipientPhone.trim()) {
+    return "Vui lòng nhập số điện thoại người nhận.";
+  }
+  if (!address.province.trim()) {
+    return "Vui lòng nhập Tỉnh / Thành phố trực thuộc Trung ương.";
+  }
+  if (!address.ward.trim()) {
+    return "Vui lòng nhập Xã / Phường / Đặc khu.";
+  }
+  if (!address.line1.trim()) {
+    return "Vui lòng nhập số nhà + tên đường/thôn/xóm/ấp.";
+  }
   return "";
 };
 
@@ -54,10 +136,22 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onRequestLogin,
 }) => {
   const { showToast } = useToast();
+  const savedAddresses = useMemo(
+    () => (Array.isArray(authUser?.addressBook) ? authUser.addressBook : []),
+    [authUser?.addressBook],
+  );
+
   const [customer, setCustomer] = useState<OrderCustomer>(DEFAULT_CUSTOMER);
   const [deliveryInfo, setDeliveryInfo] = useState<OrderDeliveryInfo>(
     DEFAULT_DELIVERY_INFO,
   );
+  const [manualAddress, setManualAddress] = useState<ManualAddressForm>(() =>
+    buildManualAddressDraft(authUser),
+  );
+  const [addressMode, setAddressMode] = useState<AddressMode>(
+    savedAddresses.length ? "saved" : "manual",
+  );
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -72,6 +166,93 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
       phone: authUser?.phone || prev.phone,
     }));
   }, [authUser?.email, authUser?.name, authUser?.phone]);
+
+  useEffect(() => {
+    if (!savedAddresses.length) {
+      setAddressMode("manual");
+      setSelectedSavedAddressId("");
+      return;
+    }
+
+    setAddressMode((prev) => {
+      if (prev === "saved") return prev;
+
+      const hasManualDraft = Boolean(
+        [
+          manualAddress.label,
+          manualAddress.line1,
+          manualAddress.ward,
+          manualAddress.province,
+        ]
+          .join("")
+          .trim(),
+      );
+
+      return hasManualDraft ? prev : "saved";
+    });
+
+    setSelectedSavedAddressId((prev) => {
+      if (prev && savedAddresses.some((item) => item.id === prev)) {
+        return prev;
+      }
+      return (
+        savedAddresses.find((item) => item.isDefault)?.id ||
+        savedAddresses[0]?.id ||
+        ""
+      );
+    });
+  }, [
+    manualAddress.label,
+    manualAddress.line1,
+    manualAddress.province,
+    manualAddress.ward,
+    savedAddresses,
+  ]);
+
+  useEffect(() => {
+    setManualAddress((prev) => ({
+      ...prev,
+      recipientName: prev.recipientName || customer.name || authUser?.name || "",
+      recipientPhone:
+        prev.recipientPhone || customer.phone || authUser?.phone || "",
+    }));
+  }, [authUser?.name, authUser?.phone, customer.name, customer.phone]);
+
+  const selectedSavedAddress = useMemo(
+    () =>
+      savedAddresses.find((item) => item.id === selectedSavedAddressId) ||
+      savedAddresses.find((item) => item.isDefault) ||
+      savedAddresses[0] ||
+      null,
+    [savedAddresses, selectedSavedAddressId],
+  );
+
+  const resolvedAddressSnapshot = useMemo(() => {
+    if (addressMode === "saved" && selectedSavedAddress) {
+      return buildSnapshotFromSavedAddress(
+        selectedSavedAddress,
+        customer,
+        deliveryInfo.note.trim(),
+      );
+    }
+
+    return buildSnapshotFromManualAddress(
+      manualAddress,
+      customer,
+      deliveryInfo.note.trim(),
+    );
+  }, [
+    addressMode,
+    customer,
+    deliveryInfo.note,
+    manualAddress,
+    selectedSavedAddress,
+  ]);
+
+  const resolvedAddressText = useMemo(
+    () => formatOrderAddressSnapshot(resolvedAddressSnapshot),
+    [resolvedAddressSnapshot],
+  );
 
   if (!authUser?.email) {
     return (
@@ -126,9 +307,20 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const error = validateCustomer(customer);
-    if (error) {
-      showToast(error, "error");
+    const customerError = validateCustomer(customer);
+    if (customerError) {
+      showToast(customerError, "error");
+      return;
+    }
+
+    if (addressMode === "saved" && !selectedSavedAddress) {
+      showToast("Vui lòng chọn một địa chỉ đã lưu hoặc chuyển sang nhập mới.", "error");
+      return;
+    }
+
+    const addressError = validateAddressSnapshot(resolvedAddressSnapshot);
+    if (addressError) {
+      showToast(addressError, "error");
       return;
     }
 
@@ -138,8 +330,9 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
         customer,
         items,
         note,
+        addressSnapshot: resolvedAddressSnapshot,
         deliveryInfo: {
-          address: deliveryInfo.address,
+          address: resolvedAddressText,
           scheduledAt: deliveryInfo.scheduledAt,
           note: deliveryInfo.note,
         },
@@ -247,33 +440,236 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   Thông tin giao / bàn giao cây
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Phần này chưa bắt buộc, nhưng nên điền sớm để admin chuẩn bị
-                  giao cây và chuyển đơn sang bước <strong>delivering</strong>{" "}
-                  đúng nghiệp vụ.
+                  Địa chỉ được snapshot vào đơn tại thời điểm checkout để đơn cũ
+                  không bị đổi theo Address Book sau này.
                 </p>
               </div>
 
+              <div className="mt-4 space-y-4">
+                {savedAddresses.length > 0 ? (
+                  <>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={() => setAddressMode("saved")}
+                        className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                          addressMode === "saved"
+                            ? "border-amber-300 bg-amber-50 text-amber-900"
+                            : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        Dùng địa chỉ đã lưu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAddressMode("manual")}
+                        className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                          addressMode === "manual"
+                            ? "border-amber-300 bg-amber-50 text-amber-900"
+                            : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        Nhập địa chỉ mới
+                      </button>
+                    </div>
+
+                    {addressMode === "saved" ? (
+                      <div className="grid gap-3">
+                        {savedAddresses.map((address) => {
+                          const isActive = address.id === selectedSavedAddress?.id;
+                          const addressText = formatOrderAddressSnapshot(address);
+                          return (
+                            <button
+                              key={address.id}
+                              type="button"
+                              onClick={() => setSelectedSavedAddressId(address.id)}
+                              className={`rounded-2xl border px-4 py-4 text-left transition ${
+                                isActive
+                                  ? "border-amber-300 bg-amber-50 shadow-sm"
+                                  : "border-slate-200 bg-white hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-semibold text-slate-900">
+                                  {address.label || "Địa chỉ giao hàng"}
+                                </p>
+                                {address.isDefault && (
+                                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                    Mặc định
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-2 text-sm font-medium text-slate-700">
+                                {address.recipientName || customer.name || "Người nhận"}
+                                {address.recipientPhone
+                                  ? ` • ${address.recipientPhone}`
+                                  : ""}
+                              </p>
+                              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                                {addressText || "Chưa đủ địa chỉ"}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                    Tài khoản này chưa có địa chỉ đã lưu. Bạn có thể nhập trực tiếp
+                    bên dưới, hoặc thêm vào hồ sơ ở phần tài khoản sau.
+                  </div>
+                )}
+
+                {(addressMode === "manual" || !savedAddresses.length) && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Tên gợi nhớ địa chỉ
+                      </span>
+                      <input
+                        value={manualAddress.label}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            label: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="Ví dụ: Nhà riêng, Shop, Nhà ba mẹ"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Người nhận
+                      </span>
+                      <input
+                        value={manualAddress.recipientName}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            recipientName: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="Nguyễn Văn A"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Số điện thoại người nhận
+                      </span>
+                      <input
+                        value={manualAddress.recipientPhone}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            recipientPhone: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="09xx xxx xxx"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Tỉnh / Thành phố trực thuộc Trung ương
+                      </span>
+                      <input
+                        value={manualAddress.province}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            province: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="TP.HCM"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Xã / Phường / Đặc khu
+                      </span>
+                      <input
+                        value={manualAddress.ward}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            ward: e.target.value,
+                          }))
+                        }
+                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder="Phường Bến Thành"
+                      />
+                    </label>
+                    <label className="block sm:col-span-2">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">
+                        Số nhà + đường / thôn / xóm / ấp
+                      </span>
+                      <textarea
+                        value={manualAddress.line1}
+                        onChange={(e) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            line1: e.target.value,
+                          }))
+                        }
+                        className="min-h-[96px] w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        placeholder={
+                          mode === "rent"
+                            ? "Ví dụ: số 12, đường số 3, tổ 4, khu dân cư..., có cổng rộng cho xe tải nhỏ"
+                            : "Ví dụ: 123 Nguyễn Trãi, hẻm 45, tầng trệt"
+                        }
+                      />
+                    </label>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-4">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    <span>Snapshot địa chỉ</span>
+                    {hasOrderAddressSnapshot(resolvedAddressSnapshot) && (
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                        {getOrderAddressSnapshotSourceLabel(
+                          resolvedAddressSnapshot,
+                        )}
+                      </span>
+                    )}
+                    {resolvedAddressSnapshot.label && (
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-600">
+                        {resolvedAddressSnapshot.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {hasOrderAddressSnapshot(resolvedAddressSnapshot) ? (
+                    <div className="mt-3 space-y-2">
+                      <p className="font-semibold text-slate-900">
+                        {resolvedAddressSnapshot.recipientName || customer.name}
+                        {resolvedAddressSnapshot.recipientPhone
+                          ? ` • ${resolvedAddressSnapshot.recipientPhone}`
+                          : ""}
+                      </p>
+                      <p className="whitespace-pre-line leading-relaxed text-slate-700">
+                        {resolvedAddressText}
+                      </p>
+                      {resolvedAddressSnapshot.note && (
+                        <p className="text-sm text-slate-500">
+                          Ghi chú địa chỉ: {resolvedAddressSnapshot.note}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500">
+                      Chọn một địa chỉ đã lưu hoặc nhập địa chỉ mới để hệ thống
+                      snapshot vào đơn hàng.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="block sm:col-span-2">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700">
-                    {deliveryAddressLabel}
-                  </span>
-                  <textarea
-                    value={deliveryInfo.address}
-                    onChange={(e) =>
-                      setDeliveryInfo((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                      }))
-                    }
-                    className="min-h-[96px] w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                    placeholder={
-                      mode === "rent"
-                        ? "Ví dụ: giao tại sân nhà khách ở Gò Vấp, cần gọi trước 30 phút..."
-                        : "Ví dụ: 123 Nguyễn Trãi, P. Bến Thành, Q.1, TP.HCM"
-                    }
-                  />
-                </label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">
                     Thời gian giao dự kiến
@@ -290,9 +686,17 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                   />
                 </label>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  <p className="font-semibold text-slate-700">
+                    {deliveryAddressLabel}
+                  </p>
+                  <p className="mt-2 leading-relaxed text-slate-600">
+                    {resolvedAddressText || "Địa chỉ đầy đủ sẽ hiện ở đây sau khi bạn chọn hoặc nhập xong."}
+                  </p>
+                </div>
                 <label className="block sm:col-span-2">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">
-                    Ghi chú giao hàng
+                    Ghi chú giao hàng / bàn giao
                   </span>
                   <textarea
                     value={deliveryInfo.note}

@@ -4,12 +4,22 @@ export const StatCard: React.FC<{
   title: string;
   value: string;
   note: string;
-}> = ({ title, value, note }) => {
+  valueClassName?: string;
+}> = ({ title, value, note, valueClassName = "" }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-      <p className="text-sm text-slate-500">{title}</p>
-      <p className="text-3xl font-bold text-slate-900 mt-3">{value}</p>
-      <p className="text-sm text-slate-400 mt-2">{note}</p>
+    <div className="h-full min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p title={title} className="truncate whitespace-nowrap text-sm text-slate-500">
+        {title}
+      </p>
+      <p
+        title={value}
+        className={`mt-3 whitespace-nowrap text-[clamp(1.75rem,2vw,2.25rem)] font-bold leading-none tracking-tight tabular-nums text-slate-900 ${valueClassName}`}
+      >
+        {value}
+      </p>
+      <p title={note} className="mt-3 truncate whitespace-nowrap text-sm text-slate-400">
+        {note}
+      </p>
     </div>
   );
 };

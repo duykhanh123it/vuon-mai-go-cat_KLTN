@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  buildOrderAddressMapUrl,
   formatOrderAddressSnapshot,
+  getLocationDisplayInfo,
   getOrderAddressSnapshotSourceLabel,
   hasOrderAddressSnapshot,
 } from "../types";
 import type { AuthUser, OrderDetailResponse, OrderSummary } from "../types";
-import { fetchOrderDetail, fetchOrders } from "../utils/ordersApi";
+import { fetchOrderDetail, fetchOrders, fetchOrdersMeta } from "../utils/ordersApi";
 import {
   formatCurrencyVnd,
   formatDateTimeVN,
@@ -16,6 +18,79 @@ import {
 import { getOrderStatusClassName } from "../utils/orderLifecycle";
 import { getPaymentStatusClassName } from "../utils/paymentStatus";
 import { useToast } from "../components/Toast";
+import {
+  getUserOrdersCacheScope,
+  putOrdersInteractionDetail,
+  readOrdersInteractionCache,
+  replaceOrdersInteractionList,
+  setOrdersInteractionSelectedOrder,
+} from "../utils/ordersInteractionCache";
+
+const MY_ORDERS_META_POLL_MS = 6_000;
+const MY_ORDERS_DETAIL_STALE_MS = 20_000;
+
+const sortOrdersByNewest = (list: OrderSummary[]) =>
+  [...list].sort((a, b) =>
+    String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
+  );
+
+const upsertOrderInList = (list: OrderSummary[], nextOrder: OrderSummary) => {
+  const safeOrderId = String(nextOrder?.orderId || "").trim();
+  if (!safeOrderId) return list;
+
+  const index = list.findIndex((item) => item.orderId === safeOrderId);
+  if (index >= 0) {
+    const next = [...list];
+    next[index] = nextOrder;
+    return next;
+  }
+
+  return sortOrdersByNewest([nextOrder, ...list]);
+};
+
+const buildCachedOrdersView = (
+  scope: string,
+  highlightedOrderId?: string,
+) => {
+  if (!scope) {
+    return {
+      cache: {
+        list: [] as OrderSummary[],
+        listSavedAt: 0,
+        detailById: {} as Record<string, OrderDetailResponse>,
+        detailSavedAtById: {} as Record<string, number>,
+        selectedOrderId: "",
+        dataVersion: "",
+      },
+      orders: [] as OrderSummary[],
+      selectedOrderId: "",
+      detail: null as OrderDetailResponse | null,
+    };
+  }
+
+  const cache = readOrdersInteractionCache(scope);
+  const orders = sortOrdersByNewest(cache.list || []);
+  const preferredOrderId = String(highlightedOrderId || "").trim();
+  const selectedOrderId =
+    orders.find((item) => item.orderId === preferredOrderId)?.orderId ||
+    preferredOrderId ||
+    cache.selectedOrderId ||
+    orders[0]?.orderId ||
+    "";
+
+  return {
+    cache,
+    orders,
+    selectedOrderId,
+    detail: selectedOrderId ? cache.detailById[selectedOrderId] || null : null,
+  };
+};
+
+const getLocationBadgeClassName = (confidence: "high" | "medium" | "low") => {
+  if (confidence === "high") return "bg-emerald-100 text-emerald-800";
+  if (confidence === "medium") return "bg-sky-100 text-sky-800";
+  return "bg-slate-200 text-slate-700";
+};
 
 interface MyOrdersPageProps {
   authUser?: AuthUser | null;
@@ -56,80 +131,425 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
   onOpenProduct,
 }) => {
   const { showToast } = useToast();
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState("");
-  const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const customerEmail = String(authUser?.email || "").trim().toLowerCase();
+  const ordersScope = customerEmail
+    ? getUserOrdersCacheScope(customerEmail)
+    : "";
+  const initialCachedView = useMemo(
+    () => buildCachedOrdersView(ordersScope, highlightedOrderId),
+    [highlightedOrderId, ordersScope],
+  );
+
+  const [orders, setOrders] = useState<OrderSummary[]>(initialCachedView.orders);
+  const [loading, setLoading] = useState(!initialCachedView.orders.length);
+  const [selectedOrderId, setSelectedOrderId] = useState(
+    initialCachedView.selectedOrderId,
+  );
+  const [detail, setDetail] = useState<OrderDetailResponse | null>(
+    initialCachedView.detail,
+  );
+  const [detailLoading, setDetailLoading] = useState(
+    !initialCachedView.detail && !!initialCachedView.selectedOrderId,
+  );
+  const [listRefreshing, setListRefreshing] = useState(false);
+  const [detailRefreshing, setDetailRefreshing] = useState(false);
+  const [ordersReady, setOrdersReady] = useState(
+    initialCachedView.orders.length > 0,
+  );
+
+  const latestOrdersVersionRef = useRef(initialCachedView.cache.dataVersion || "");
+  const selectedOrderIdRef = useRef(initialCachedView.selectedOrderId);
+  const ordersRef = useRef<OrderSummary[]>(initialCachedView.orders);
+  const detailCacheRef = useRef<Record<string, OrderDetailResponse>>(
+    initialCachedView.cache.detailById || {},
+  );
+  const detailSavedAtRef = useRef<Record<string, number>>(
+    initialCachedView.cache.detailSavedAtById || {},
+  );
+  const backgroundSyncingRef = useRef(false);
+
+  const applyOrdersSnapshot = React.useCallback(
+    (
+      nextOrders: OrderSummary[],
+      options?: {
+        focusOrderId?: string;
+        dataVersion?: string;
+      },
+    ) => {
+      if (!ordersScope) return "";
+
+      const sorted = sortOrdersByNewest(nextOrders);
+      const focusOrderId = String(options?.focusOrderId || "").trim();
+      const nextSelected =
+        sorted.find((item) => item.orderId === focusOrderId)?.orderId ||
+        focusOrderId ||
+        selectedOrderIdRef.current ||
+        sorted[0]?.orderId ||
+        "";
+
+      ordersRef.current = sorted;
+      setOrders(sorted);
+      replaceOrdersInteractionList(ordersScope, sorted, {
+        selectedOrderId: nextSelected,
+        dataVersion: options?.dataVersion,
+      });
+
+      if (options?.dataVersion !== undefined) {
+        latestOrdersVersionRef.current = String(
+          options.dataVersion || "",
+        ).trim();
+      }
+
+      selectedOrderIdRef.current = nextSelected;
+      setSelectedOrderId(nextSelected);
+
+      if (!nextSelected) {
+        setDetail(null);
+      } else if (detailCacheRef.current[nextSelected]) {
+        setDetail(detailCacheRef.current[nextSelected]);
+      }
+
+      return nextSelected;
+    },
+    [ordersScope],
+  );
+
+  const applyDetailSnapshot = React.useCallback(
+    (
+      nextDetail: OrderDetailResponse,
+      options?: {
+        dataVersion?: string;
+      },
+    ) => {
+      if (!ordersScope) return;
+
+      const safeOrderId = String(nextDetail?.order?.orderId || "").trim();
+      if (!safeOrderId) return;
+
+      detailCacheRef.current = {
+        ...detailCacheRef.current,
+        [safeOrderId]: nextDetail,
+      };
+      detailSavedAtRef.current = {
+        ...detailSavedAtRef.current,
+        [safeOrderId]: Date.now(),
+      };
+
+      putOrdersInteractionDetail(ordersScope, nextDetail, {
+        selectedOrderId: safeOrderId,
+        dataVersion: options?.dataVersion,
+      });
+
+      if (options?.dataVersion !== undefined) {
+        latestOrdersVersionRef.current = String(
+          options.dataVersion || "",
+        ).trim();
+      }
+
+      setOrders((prev) => {
+        const next = upsertOrderInList(prev, nextDetail.order);
+        ordersRef.current = next;
+        return next;
+      });
+
+      if (selectedOrderIdRef.current === safeOrderId) {
+        setDetail(nextDetail);
+      }
+    },
+    [ordersScope],
+  );
+
+  const loadOrders = React.useCallback(
+    async (options?: {
+      focusOrderId?: string;
+      silent?: boolean;
+      knownVersion?: string;
+    }) => {
+      if (!customerEmail || !ordersScope) return "";
+
+      const silent = !!options?.silent;
+      const hasRenderedOrders = ordersRef.current.length > 0;
+
+      try {
+        if (!silent) {
+          if (hasRenderedOrders) {
+            setListRefreshing(true);
+          } else {
+            setLoading(true);
+          }
+        }
+
+        const data = await fetchOrders({ customerEmail });
+        const nextSelected = applyOrdersSnapshot(data, {
+          focusOrderId: options?.focusOrderId,
+          dataVersion: options?.knownVersion,
+        });
+        return nextSelected;
+      } catch (error) {
+        if (!silent) {
+          showToast(
+            String(
+              (error as any)?.message || error || "Không tải được đơn hàng",
+            ),
+            "error",
+          );
+        } else {
+          console.error("MyOrders list sync error:", error);
+        }
+        return "";
+      } finally {
+        if (!silent) {
+          setLoading(false);
+          setListRefreshing(false);
+        }
+      }
+    },
+    [applyOrdersSnapshot, customerEmail, ordersScope, showToast],
+  );
+
+  const loadDetail = React.useCallback(
+    async (
+      orderId: string,
+      options?: {
+        silent?: boolean;
+        force?: boolean;
+      },
+    ) => {
+      const safeOrderId = String(orderId || "").trim();
+      const silent = !!options?.silent;
+      if (!customerEmail || !ordersScope) return null;
+
+      if (!safeOrderId) {
+        setDetail(null);
+        return null;
+      }
+
+      const cachedDetail = detailCacheRef.current[safeOrderId] || null;
+      const savedAt = Number(detailSavedAtRef.current[safeOrderId] || 0);
+      const isFresh =
+        !!cachedDetail &&
+        !options?.force &&
+        Date.now() - savedAt < MY_ORDERS_DETAIL_STALE_MS;
+
+      if (cachedDetail && selectedOrderIdRef.current === safeOrderId) {
+        setDetail(cachedDetail);
+        setDetailLoading(false);
+      }
+
+      if (isFresh) {
+        return cachedDetail;
+      }
+
+      try {
+        if (!cachedDetail && !silent) {
+          setDetailLoading(true);
+        } else {
+          setDetailRefreshing(true);
+        }
+
+        const data = await fetchOrderDetail(safeOrderId, {
+          customerEmail,
+        });
+        applyDetailSnapshot(data);
+        return data;
+      } catch (error) {
+        if (!silent) {
+          showToast(
+            String(
+              (error as any)?.message || error || "Không tải được chi tiết đơn",
+            ),
+            "error",
+          );
+        } else {
+          console.error("MyOrders detail sync error:", error);
+        }
+        return cachedDetail;
+      } finally {
+        setDetailLoading(false);
+        setDetailRefreshing(false);
+      }
+    },
+    [applyDetailSnapshot, customerEmail, ordersScope, showToast],
+  );
+
+  const syncOrdersByVersion = React.useCallback(async () => {
+    if (
+      backgroundSyncingRef.current ||
+      !customerEmail ||
+      !ordersScope ||
+      loading ||
+      detailLoading
+    ) {
+      return;
+    }
+
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+
+    backgroundSyncingRef.current = true;
+    try {
+      const meta = await fetchOrdersMeta({ customerEmail });
+      const nextVersion = String(meta.dataVersion || "").trim();
+      if (!nextVersion || nextVersion === latestOrdersVersionRef.current) {
+        return;
+      }
+
+      const activeOrderId = String(
+        selectedOrderIdRef.current || highlightedOrderId || "",
+      ).trim();
+      await loadOrders({
+        focusOrderId: activeOrderId,
+        silent: true,
+        knownVersion: nextVersion,
+      });
+      if (activeOrderId) {
+        await loadDetail(activeOrderId, { silent: true, force: true });
+      }
+    } catch (error) {
+      console.error("MyOrders meta sync error:", error);
+    } finally {
+      backgroundSyncingRef.current = false;
+    }
+  }, [
+    customerEmail,
+    detailLoading,
+    highlightedOrderId,
+    loadDetail,
+    loadOrders,
+    loading,
+    ordersScope,
+  ]);
 
   useEffect(() => {
-    if (!authUser?.email) return;
-    let alive = true;
+    const hydrated = buildCachedOrdersView(ordersScope, highlightedOrderId);
 
-    const loadOrders = async () => {
+    ordersRef.current = hydrated.orders;
+    detailCacheRef.current = hydrated.cache.detailById || {};
+    detailSavedAtRef.current = hydrated.cache.detailSavedAtById || {};
+    latestOrdersVersionRef.current = hydrated.cache.dataVersion || "";
+    selectedOrderIdRef.current = hydrated.selectedOrderId;
+
+    setOrders(hydrated.orders);
+    setLoading(!!ordersScope && hydrated.orders.length === 0);
+    setSelectedOrderId(hydrated.selectedOrderId);
+    setDetail(hydrated.detail);
+    setDetailLoading(!hydrated.detail && !!hydrated.selectedOrderId);
+    setListRefreshing(false);
+    setDetailRefreshing(false);
+    setOrdersReady(hydrated.orders.length > 0);
+  }, [highlightedOrderId, ordersScope]);
+
+  useEffect(() => {
+    if (!customerEmail || !ordersScope) return;
+    let disposed = false;
+
+    const bootstrap = async () => {
+      const shouldStaySilent = ordersRef.current.length > 0;
       try {
-        setLoading(true);
-        const data = await fetchOrders({ customerEmail: authUser.email });
-        if (!alive) return;
-        const sorted = [...data].sort((a, b) =>
-          String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
-        );
-        setOrders(sorted);
-        const nextSelected =
-          sorted.find((item) => item.orderId === highlightedOrderId)?.orderId ||
-          sorted[0]?.orderId ||
-          "";
-        setSelectedOrderId(nextSelected);
+        const meta = await fetchOrdersMeta({ customerEmail });
+        if (disposed) return;
+        latestOrdersVersionRef.current = String(meta.dataVersion || "").trim();
+        await loadOrders({
+          focusOrderId: highlightedOrderId,
+          silent: shouldStaySilent,
+          knownVersion: meta.dataVersion,
+        });
       } catch (error) {
-        if (!alive) return;
-        showToast(
-          String((error as any)?.message || error || "Không tải được đơn hàng"),
-          "error",
-        );
+        if (disposed) return;
+        await loadOrders({
+          focusOrderId: highlightedOrderId,
+          silent: shouldStaySilent,
+        });
       } finally {
-        if (alive) setLoading(false);
+        if (!disposed) {
+          setOrdersReady(true);
+        }
       }
     };
 
-    void loadOrders();
+    void bootstrap();
+
     return () => {
-      alive = false;
+      disposed = true;
     };
-  }, [authUser?.email, highlightedOrderId, showToast]);
+  }, [customerEmail, highlightedOrderId, loadOrders, ordersScope]);
 
   useEffect(() => {
-    if (!authUser?.email || !selectedOrderId) {
+    if (!customerEmail || !selectedOrderId) {
       setDetail(null);
       return;
     }
 
-    let alive = true;
-    const loadDetail = async () => {
-      try {
-        setDetailLoading(true);
-        const data = await fetchOrderDetail(selectedOrderId, {
-          customerEmail: authUser.email,
-        });
-        if (!alive) return;
-        setDetail(data);
-      } catch (error) {
-        if (!alive) return;
-        showToast(
-          String(
-            (error as any)?.message || error || "Không tải được chi tiết đơn",
-          ),
-          "error",
-        );
-      } finally {
-        if (alive) setDetailLoading(false);
+    setOrdersInteractionSelectedOrder(ordersScope, selectedOrderId);
+    selectedOrderIdRef.current = selectedOrderId;
+    void loadDetail(selectedOrderId);
+  }, [customerEmail, loadDetail, ordersScope, selectedOrderId]);
+
+  useEffect(() => {
+    if (!ordersReady || !customerEmail || !ordersScope) return;
+
+    let disposed = false;
+    let timer: number | null = null;
+
+    const runSync = async () => {
+      if (disposed) return;
+      await syncOrdersByVersion();
+    };
+
+    const handleVisibility = () => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+      ) {
+        void runSync();
       }
     };
 
-    void loadDetail();
+    if (typeof window !== "undefined") {
+      timer = window.setInterval(() => {
+        void runSync();
+      }, MY_ORDERS_META_POLL_MS);
+    }
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+
     return () => {
-      alive = false;
+      disposed = true;
+      if (timer != null && typeof window !== "undefined") {
+        window.clearInterval(timer);
+      }
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
     };
-  }, [authUser?.email, selectedOrderId, showToast]);
+  }, [customerEmail, ordersReady, ordersScope, syncOrdersByVersion]);
+
+  const handleSelectOrder = React.useCallback(
+    (orderId: string) => {
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) return;
+
+      selectedOrderIdRef.current = safeOrderId;
+      setSelectedOrderId(safeOrderId);
+
+      if (ordersScope) {
+        setOrdersInteractionSelectedOrder(ordersScope, safeOrderId);
+      }
+
+      const cachedDetail = detailCacheRef.current[safeOrderId];
+      if (cachedDetail) {
+        setDetail(cachedDetail);
+        setDetailLoading(false);
+      }
+    },
+    [ordersScope],
+  );
 
   const totals = useMemo(() => {
     return orders.reduce(
@@ -142,6 +562,28 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
       { total: 0, paid: 0, debt: 0 },
     );
   }, [orders]);
+
+  const detailAddressText = useMemo(
+    () =>
+      formatOrderAddressSnapshot(detail?.order?.addressSnapshot) ||
+      detail?.order?.deliveryInfo?.address ||
+      "",
+    [detail?.order?.addressSnapshot, detail?.order?.deliveryInfo?.address],
+  );
+
+  const detailMapUrl = useMemo(
+    () =>
+      buildOrderAddressMapUrl(
+        detail?.order?.addressSnapshot,
+        detail?.order?.deliveryInfo?.address,
+      ),
+    [detail?.order?.addressSnapshot, detail?.order?.deliveryInfo?.address],
+  );
+
+  const detailLocationInfo = useMemo(
+    () => getLocationDisplayInfo(detail?.order?.addressSnapshot),
+    [detail?.order?.addressSnapshot],
+  );
 
   if (!authUser) {
     return (
@@ -185,6 +627,11 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
               {authUser.email}
             </span>
           </p>
+          <p className="mt-2 text-sm text-emerald-600">
+            {listRefreshing
+              ? "Đang đồng bộ danh sách đơn ở nền..."
+              : "Danh sách và chi tiết sẽ ưu tiên hiện từ cache trước, rồi tự làm mới nền khi cần."}
+          </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="text-sm text-slate-500">Tổng đơn</p>
@@ -222,7 +669,7 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                   <button
                     key={order.orderId}
                     type="button"
-                    onClick={() => setSelectedOrderId(order.orderId)}
+                    onClick={() => handleSelectOrder(order.orderId)}
                     className={`w-full rounded-3xl border p-5 text-left shadow-sm transition ${
                       isActive
                         ? "border-amber-300 bg-amber-50"
@@ -300,6 +747,11 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                           detail.order.updatedAt || detail.order.createdAt,
                         )}
                       </p>
+                      {detailRefreshing && (
+                        <p className="mt-2 text-sm font-medium text-emerald-600">
+                          Đang đồng bộ chi tiết mới nhất ở nền...
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <span
@@ -377,11 +829,52 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
-                          {formatOrderAddressSnapshot(detail.order.addressSnapshot) ||
-                            detail.order.deliveryInfo.address ||
-                            "--"}
-                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLocationBadgeClassName(
+                              detailLocationInfo.confidence,
+                            )}`}
+                          >
+                            {detailLocationInfo.icon} {detailLocationInfo.sourceLabel}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                            {detailLocationInfo.confidenceLabel}
+                          </span>
+                        </div>
+                        {detailMapUrl ? (
+                          <div className="mt-1 space-y-2">
+                            <a
+                              href={detailMapUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline whitespace-pre-line leading-relaxed text-amber-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-800"
+                            >
+                              {detailAddressText || "--"}
+                            </a>
+                            <p className="text-sm text-slate-500">
+                              {detailLocationInfo.helperText}
+                            </p>
+                            <div>
+                              <a
+                                href={detailMapUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                              >
+                                Mở Google Maps ↗
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-1 space-y-2">
+                            <p className="whitespace-pre-line leading-relaxed text-slate-700">
+                              {detailAddressText || "--"}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {detailLocationInfo.helperText}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm text-slate-500">

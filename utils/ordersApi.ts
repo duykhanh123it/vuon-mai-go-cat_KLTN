@@ -16,6 +16,43 @@ import type {
 import { normalizeOrderStatus } from "./orderLifecycle";
 import { derivePaymentStatus } from "./paymentStatus";
 
+export interface CreateOrderResponse {
+  ok: boolean;
+  orderId: string;
+  message?: string;
+  dataVersion?: string;
+  order?: OrderSummary;
+  detail?: OrderDetailResponse;
+}
+
+export interface UpdateOrderDeliveryResponse {
+  ok: boolean;
+  message?: string;
+  deliveryInfo?: OrderDeliveryInfo;
+  updatedOrder?: OrderSummary;
+  dataVersion?: string;
+}
+
+export interface AddPaymentResponse {
+  ok: boolean;
+  message?: string;
+  paidAmount?: number;
+  remainingAmount?: number;
+  paymentStatus?: PaymentStatus;
+  createdPayment?: PaymentRecord;
+  updatedOrder?: OrderSummary;
+  dataVersion?: string;
+}
+
+export interface UpdateOrderStatusResponse {
+  ok: boolean;
+  message?: string;
+  orderStatus?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  updatedOrder?: OrderSummary;
+  dataVersion?: string;
+}
+
 const getApiBase = () => {
   const base = import.meta.env.VITE_PRODUCTS_API_BASE;
   if (!base) {
@@ -147,6 +184,16 @@ const normalizeOrderSummary = (raw: any): OrderSummary => {
   };
 };
 
+const normalizeOrderDetailResponse = (raw: any): OrderDetailResponse => ({
+  order: normalizeOrderSummary(raw?.order),
+  items: Array.isArray(raw?.items)
+    ? raw.items.map(normalizeOrderItem)
+    : [],
+  payments: Array.isArray(raw?.payments)
+    ? raw.payments.map(normalizePaymentRecord)
+    : [],
+});
+
 const ensureOk = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
   if (!response.ok) {
@@ -178,11 +225,16 @@ export type OrdersMeta = {
   now: number;
 };
 
-export const fetchOrdersMeta = async (): Promise<OrdersMeta> => {
+export const fetchOrdersMeta = async (options?: {
+  customerEmail?: string;
+}): Promise<OrdersMeta> => {
   const query = new URLSearchParams({
     api: "getOrdersMeta",
     authToken: requireSessionToken(),
   });
+  if (options?.customerEmail) {
+    query.set("customerEmail", options.customerEmail.trim().toLowerCase());
+  }
 
   const res = await fetch(`${getApiBase()}?${query.toString()}`, {
     cache: "no-store",
@@ -241,13 +293,7 @@ export const fetchOrderDetail = async (
     payments?: any[];
   }>(res);
 
-  return {
-    order: normalizeOrderSummary(data.order),
-    items: Array.isArray(data.items) ? data.items.map(normalizeOrderItem) : [],
-    payments: Array.isArray(data.payments)
-      ? data.payments.map(normalizePaymentRecord)
-      : [],
-  };
+  return normalizeOrderDetailResponse(data);
 };
 
 export const createOrder = async (params: {
@@ -256,7 +302,7 @@ export const createOrder = async (params: {
   note?: string;
   deliveryInfo?: Partial<OrderDeliveryInfo>;
   addressSnapshot?: Partial<OrderAddressSnapshot>;
-}): Promise<{ ok: boolean; orderId: string; message?: string }> => {
+}): Promise<CreateOrderResponse> => {
   const items = Array.isArray(params.items) ? params.items : [];
   if (!items.length) {
     throw new Error("Giỏ hàng đang trống.");
@@ -264,7 +310,15 @@ export const createOrder = async (params: {
 
   const orderType = items[0]?.transactionType === "buy" ? "buy" : "rent";
 
-  return postJson<{ ok: boolean; orderId: string; message?: string }>({
+  const data = await postJson<{
+    ok: boolean;
+    orderId: string;
+    message?: string;
+    dataVersion?: string;
+    order?: any;
+    items?: any[];
+    payments?: any[];
+  }>({
     api: "createOrder",
     customer: {
       name: String(params.customer?.name || "").trim(),
@@ -288,16 +342,35 @@ export const createOrder = async (params: {
       note: item.snapshotNote,
     })),
   });
+
+  const detail = data.order
+    ? normalizeOrderDetailResponse({
+        order: data.order,
+        items: data.items,
+        payments: data.payments,
+      })
+    : undefined;
+
+  return {
+    ok: !!data.ok,
+    orderId: String(data.orderId || "").trim(),
+    message: data.message,
+    dataVersion: String(data.dataVersion || "").trim() || undefined,
+    order: detail?.order,
+    detail,
+  };
 };
 
 export const updateOrderDelivery = async (params: {
   orderId: string;
   deliveryInfo: Partial<OrderDeliveryInfo>;
-}) => {
-  return postJson<{
+}): Promise<UpdateOrderDeliveryResponse> => {
+  const data = await postJson<{
     ok: boolean;
     message?: string;
     deliveryInfo?: OrderDeliveryInfo;
+    updatedOrder?: any;
+    dataVersion?: string;
   }>({
     api: "updateOrderDelivery",
     orderId: String(params.orderId || "").trim(),
@@ -307,6 +380,18 @@ export const updateOrderDelivery = async (params: {
       note: String(params.deliveryInfo?.note || ""),
     },
   });
+
+  return {
+    ok: !!data.ok,
+    message: data.message,
+    deliveryInfo: data.deliveryInfo
+      ? normalizeDeliveryInfo(data.deliveryInfo)
+      : undefined,
+    updatedOrder: data.updatedOrder
+      ? normalizeOrderSummary(data.updatedOrder)
+      : undefined,
+    dataVersion: String(data.dataVersion || "").trim() || undefined,
+  };
 };
 
 export const addPayment = async (params: {
@@ -315,13 +400,16 @@ export const addPayment = async (params: {
   method: string;
   note?: string;
   paymentKind?: "deposit" | "partial" | "final";
-}) => {
-  return postJson<{
+}): Promise<AddPaymentResponse> => {
+  const data = await postJson<{
     ok: boolean;
     message?: string;
     paidAmount?: number;
     remainingAmount?: number;
     paymentStatus?: PaymentStatus;
+    createdPayment?: any;
+    updatedOrder?: any;
+    dataVersion?: string;
   }>({
     api: "addPayment",
     orderId: String(params.orderId || "").trim(),
@@ -330,22 +418,50 @@ export const addPayment = async (params: {
     note: String(params.note || "").trim(),
     paymentKind: params.paymentKind || undefined,
   });
+
+  return {
+    ok: !!data.ok,
+    message: data.message,
+    paidAmount: data.paidAmount,
+    remainingAmount: data.remainingAmount,
+    paymentStatus: data.paymentStatus,
+    createdPayment: data.createdPayment
+      ? normalizePaymentRecord(data.createdPayment)
+      : undefined,
+    updatedOrder: data.updatedOrder
+      ? normalizeOrderSummary(data.updatedOrder)
+      : undefined,
+    dataVersion: String(data.dataVersion || "").trim() || undefined,
+  };
 };
 
 export const updateOrderStatus = async (params: {
   orderId: string;
   status: OrderStatus;
   reason?: string;
-}) => {
-  return postJson<{
+}): Promise<UpdateOrderStatusResponse> => {
+  const data = await postJson<{
     ok: boolean;
     message?: string;
     orderStatus?: OrderStatus;
     paymentStatus?: PaymentStatus;
+    updatedOrder?: any;
+    dataVersion?: string;
   }>({
     api: "updateOrderStatus",
     orderId: String(params.orderId || "").trim(),
     status: params.status,
     reason: String(params.reason || "").trim(),
   });
+
+  return {
+    ok: !!data.ok,
+    message: data.message,
+    orderStatus: data.orderStatus,
+    paymentStatus: data.paymentStatus,
+    updatedOrder: data.updatedOrder
+      ? normalizeOrderSummary(data.updatedOrder)
+      : undefined,
+    dataVersion: String(data.dataVersion || "").trim() || undefined,
+  };
 };

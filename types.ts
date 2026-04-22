@@ -81,6 +81,13 @@ export interface OrderDeliveryInfo {
 }
 
 export type OrderAddressSnapshotSource = "saved_address" | "manual_input" | "";
+export type LocationSource =
+  | "manual_pin"
+  | "device_geolocation"
+  | "text_only"
+  | "legacy_pinned"
+  | "";
+export type LocationConfidence = "high" | "medium" | "low" | "";
 
 export interface OrderAddressSnapshot {
   id: string;
@@ -94,6 +101,10 @@ export interface OrderAddressSnapshot {
   isDefault: boolean;
   source: OrderAddressSnapshotSource;
   fullAddress: string;
+  lat?: number | null;
+  lng?: number | null;
+  locationSource?: LocationSource;
+  locationConfidence?: LocationConfidence;
 }
 
 export interface OrderSummary {
@@ -156,6 +167,10 @@ export interface UserAddress {
   province: string;
   ward: string;
   line1: string;
+  lat?: number | null;
+  lng?: number | null;
+  locationSource?: LocationSource;
+  locationConfidence?: LocationConfidence;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -234,7 +249,192 @@ const normalizePermissions = (value: unknown): string[] => {
   return [];
 };
 
+type LocationAwareValue = {
+  lat?: number | null;
+  lng?: number | null;
+  locationSource?: LocationSource | string | null;
+  locationConfidence?: LocationConfidence | string | null;
+};
+
+export function hasValidLocationCoordinates(
+  value: LocationAwareValue | null | undefined,
+): boolean {
+  return (
+    typeof value?.lat === "number" &&
+    Number.isFinite(value.lat) &&
+    typeof value?.lng === "number" &&
+    Number.isFinite(value.lng)
+  );
+}
+
+const normalizeLocationSource = (
+  value: unknown,
+  hasCoordinates: boolean,
+): LocationSource => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "manual_pin" || raw === "manual_pin_after_geolocation") {
+    return "manual_pin";
+  }
+  if (raw === "device_geolocation") return "device_geolocation";
+  if (raw === "text_only") return "text_only";
+  if (raw === "legacy_pinned") return hasCoordinates ? "legacy_pinned" : "text_only";
+  return hasCoordinates ? "legacy_pinned" : "text_only";
+};
+
+const normalizeLocationConfidence = (
+  value: unknown,
+  options: { source: LocationSource; hasCoordinates: boolean },
+): LocationConfidence => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "high" || raw === "medium" || raw === "low") {
+    return raw;
+  }
+
+  if (options.source === "manual_pin") return "high";
+  if (
+    options.source === "device_geolocation" ||
+    options.source === "legacy_pinned"
+  ) {
+    return "medium";
+  }
+  if (options.hasCoordinates) return "medium";
+  return "low";
+};
+
+export type LocationDisplayInfo = {
+  hasCoordinates: boolean;
+  source: Exclude<LocationSource, "">;
+  confidence: "high" | "medium" | "low";
+  sourceLabel: string;
+  confidenceLabel: string;
+  statusLabel: string;
+  helperText: string;
+  adminHelperText: string;
+  icon: string;
+};
+
+export function getLocationDisplayInfo(
+  value: LocationAwareValue | null | undefined,
+): LocationDisplayInfo {
+  const lat = normalizeCoordinate(
+    (value as any)?.lat ?? (value as any)?.latitude,
+    -90,
+    90,
+  );
+  const lng = normalizeCoordinate(
+    (value as any)?.lng ?? (value as any)?.longitude ?? (value as any)?.lon,
+    -180,
+    180,
+  );
+  const hasCoordinates =
+    typeof lat === "number" &&
+    Number.isFinite(lat) &&
+    typeof lng === "number" &&
+    Number.isFinite(lng);
+  const source = normalizeLocationSource(
+    (value as any)?.locationSource ?? (value as any)?.geoSource,
+    hasCoordinates,
+  ) as Exclude<LocationSource, "">;
+  const confidence = normalizeLocationConfidence(
+    (value as any)?.locationConfidence ?? (value as any)?.confidence,
+    { source, hasCoordinates },
+  ) as "high" | "medium" | "low";
+
+  if (!hasCoordinates) {
+    return {
+      hasCoordinates: false,
+      source: "text_only",
+      confidence: "low",
+      sourceLabel: "Chỉ có địa chỉ text",
+      confidenceLabel: "Ước lượng",
+      statusLabel: "Chưa có vị trí ghim",
+      helperText:
+        "Bạn vẫn có thể lưu bằng địa chỉ text. Nếu ghim map, đội giao hàng sẽ mở đúng vị trí hơn.",
+      adminHelperText:
+        "Đơn này đang mở map theo text địa chỉ, nên kiểm tra lại với khách khi điểm giao khó tìm.",
+      icon: "📝",
+    };
+  }
+
+  if (source === "manual_pin") {
+    return {
+      hasCoordinates: true,
+      source,
+      confidence: confidence === "low" ? "high" : confidence,
+      sourceLabel: "Ghim tay",
+      confidenceLabel: "Độ chính xác cao",
+      statusLabel: "Đã ghim chính xác",
+      helperText:
+        "Bạn đã tự chọn điểm trên map. Admin và đội giao hàng sẽ ưu tiên mở đúng tọa độ này.",
+      adminHelperText:
+        "Khách đã tự ghim trên map nên độ tin cậy cao hơn. Thường có thể dùng ngay cho giao hàng.",
+      icon: "📍",
+    };
+  }
+
+  if (source === "device_geolocation") {
+    return {
+      hasCoordinates: true,
+      source,
+      confidence: confidence === "high" ? "high" : "medium",
+      sourceLabel: "Vị trí hiện tại",
+      confidenceLabel: confidence === "high" ? "Đã xác nhận lại" : "Độ chính xác vừa",
+      statusLabel: "Đã lấy từ vị trí hiện tại của thiết bị",
+      helperText:
+        "Nếu địa điểm giao không phải nơi bạn đang đứng, hãy chỉnh lại ghim để chính xác hơn.",
+      adminHelperText:
+        "Tọa độ lấy từ vị trí hiện tại của thiết bị. Nên kiểm tra thêm khi nơi giao không trùng vị trí khách đang đứng.",
+      icon: "📱",
+    };
+  }
+
+  return {
+    hasCoordinates: true,
+    source: "legacy_pinned",
+    confidence: confidence === "high" ? "high" : "medium",
+    sourceLabel: "Có tọa độ",
+    confidenceLabel: confidence === "high" ? "Độ chính xác cao" : "Độ chính xác vừa",
+    statusLabel: "Đã có tọa độ ghim",
+    helperText:
+      "Địa chỉ này đã có tọa độ ghim, nhưng bản cũ chưa ghi rõ nguồn lấy vị trí.",
+    adminHelperText:
+      "Đơn có tọa độ nhưng dữ liệu cũ chưa ghi rõ nguồn. Có thể mở map theo tọa độ, nhưng vẫn nên kiểm tra khi cần.",
+    icon: "📌",
+  };
+}
+
+export function getLocationSourceLabel(
+  value: LocationAwareValue | null | undefined,
+): string {
+  return getLocationDisplayInfo(value).sourceLabel;
+}
+
+export function getLocationConfidenceLabel(
+  value: LocationAwareValue | null | undefined,
+): string {
+  return getLocationDisplayInfo(value).confidenceLabel;
+}
+
 export function normalizeUserAddress(value: Partial<UserAddress> | null | undefined): UserAddress {
+  const lat = normalizeCoordinate((value as any)?.lat ?? (value as any)?.latitude, -90, 90);
+  const lng = normalizeCoordinate(
+    (value as any)?.lng ?? (value as any)?.longitude ?? (value as any)?.lon,
+    -180,
+    180,
+  );
+  const locationSource = normalizeLocationSource(
+    (value as any)?.locationSource ?? (value as any)?.geoSource,
+    typeof lat === "number" && Number.isFinite(lat) && typeof lng === "number" && Number.isFinite(lng),
+  );
+  const locationConfidence = normalizeLocationConfidence(
+    (value as any)?.locationConfidence ?? (value as any)?.confidence,
+    {
+      source: locationSource,
+      hasCoordinates:
+        typeof lat === "number" && Number.isFinite(lat) && typeof lng === "number" && Number.isFinite(lng),
+    },
+  );
+
   return {
     id: String(value?.id || "").trim(),
     label: String(value?.label || "").trim(),
@@ -243,6 +443,10 @@ export function normalizeUserAddress(value: Partial<UserAddress> | null | undefi
     province: String(value?.province || "").trim(),
     ward: String(value?.ward || "").trim(),
     line1: String(value?.line1 || "").trim(),
+    lat,
+    lng,
+    locationSource,
+    locationConfidence,
     isDefault: Boolean(value?.isDefault),
     createdAt: String(value?.createdAt || "").trim(),
     updatedAt: String(value?.updatedAt || "").trim(),
@@ -296,6 +500,18 @@ const normalizeOrderAddressSnapshotSource = (
   return "";
 };
 
+const normalizeCoordinate = (
+  value: unknown,
+  min: number,
+  max: number,
+): number | null => {
+  if (value == null || value === "") return null;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  if (num < min || num > max) return null;
+  return num;
+};
+
 export function normalizeOrderAddressSnapshot(
   value: Partial<OrderAddressSnapshot> | null | undefined,
 ): OrderAddressSnapshot {
@@ -305,6 +521,30 @@ export function normalizeOrderAddressSnapshot(
   const fullAddress =
     String((value as any)?.fullAddress || (value as any)?.address || "").trim() ||
     [line1, ward, province].filter(Boolean).join(", ");
+  const lat = normalizeCoordinate(
+    (value as any)?.lat ?? (value as any)?.latitude,
+    -90,
+    90,
+  );
+  const lng = normalizeCoordinate(
+    (value as any)?.lng ?? (value as any)?.longitude ?? (value as any)?.lon,
+    -180,
+    180,
+  );
+
+  const hasCoordinates =
+    typeof lat === "number" &&
+    Number.isFinite(lat) &&
+    typeof lng === "number" &&
+    Number.isFinite(lng);
+  const locationSource = normalizeLocationSource(
+    (value as any)?.locationSource ?? (value as any)?.geoSource,
+    hasCoordinates,
+  );
+  const locationConfidence = normalizeLocationConfidence(
+    (value as any)?.locationConfidence ?? (value as any)?.confidence,
+    { source: locationSource, hasCoordinates },
+  );
 
   return {
     id: String(value?.id || "").trim(),
@@ -318,6 +558,10 @@ export function normalizeOrderAddressSnapshot(
     isDefault: Boolean(value?.isDefault),
     source: normalizeOrderAddressSnapshotSource((value as any)?.source),
     fullAddress,
+    lat,
+    lng,
+    locationSource,
+    locationConfidence,
   };
 }
 
@@ -352,6 +596,29 @@ export function getOrderAddressSnapshotSourceLabel(
   if (source === "saved_address") return "Địa chỉ đã lưu";
   if (source === "manual_input") return "Nhập thủ công";
   return "Chưa rõ nguồn";
+}
+
+export function buildOrderAddressMapUrl(
+  value: Partial<OrderAddressSnapshot> | null | undefined,
+  fallbackAddress?: string | null,
+): string {
+  const address = normalizeOrderAddressSnapshot(value);
+
+  if (
+    typeof address.lat === "number" &&
+    Number.isFinite(address.lat) &&
+    typeof address.lng === "number" &&
+    Number.isFinite(address.lng)
+  ) {
+    return `https://www.google.com/maps?q=${address.lat},${address.lng}`;
+  }
+
+  const query = [address.fullAddress, String(fallbackAddress || "").trim()]
+    .find((item) => Boolean(String(item || "").trim()))
+    ?.trim();
+
+  if (!query) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 export function normalizeAuthUser(

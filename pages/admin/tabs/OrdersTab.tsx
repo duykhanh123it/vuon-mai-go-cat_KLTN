@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  buildOrderAddressMapUrl,
   formatOrderAddressSnapshot,
+  getLocationDisplayInfo,
   getOrderAddressSnapshotSourceLabel,
   hasOrderAddressSnapshot,
+  normalizeOrderAddressSnapshot,
 } from "../../../types";
 import type {
   AuthUser,
+  OrderAddressSnapshot,
   OrderDeliveryInfo,
   OrderDetailResponse,
   OrderStatus,
@@ -23,7 +27,10 @@ import {
   getAllowedOrderTransitions,
   getOrderStatusClassName,
 } from "../../../utils/orderLifecycle";
-import { getPaymentStatusClassName } from "../../../utils/paymentStatus";
+import {
+  derivePaymentStatus,
+  getPaymentStatusClassName,
+} from "../../../utils/paymentStatus";
 import {
   formatCurrencyVnd,
   formatDateTimeVN,
@@ -32,6 +39,15 @@ import {
   formatTransactionTypeLabel,
 } from "../../../utils/shopFormat";
 import { useToast } from "../../../components/Toast";
+import {
+  getAdminOrdersCacheScope,
+  putOrdersInteractionDetail,
+  readOrdersInteractionCache,
+  replaceOrdersInteractionList,
+  setOrdersInteractionDataVersion,
+  setOrdersInteractionSelectedOrder,
+  upsertOrdersInteractionOrder,
+} from "../../../utils/ordersInteractionCache";
 import { StatCard, Th, Td } from "../shared";
 
 interface OrdersTabProps {
@@ -39,6 +55,15 @@ interface OrdersTabProps {
 }
 
 const ORDERS_META_POLL_MS = 2_500;
+const ADMIN_ORDERS_DETAIL_STALE_MS = 20_000;
+const ADMIN_ORDERS_CACHE_SCOPE = getAdminOrdersCacheScope();
+
+type PendingOrderAction = {
+  actionKey: string;
+  label: string;
+  kind: "status" | "payment" | "delivery";
+  startedAt: number;
+};
 
 const EMPTY_DELIVERY_INFO: OrderDeliveryInfo = {
   address: "",
@@ -156,13 +181,160 @@ const getLifecycleHelpText = (order: OrderSummary | null | undefined) => {
   return "Đơn bán đi theo luồng new → confirmed → delivering → completed. confirmed giữ cây, delivering là bước giao hàng thực tế.";
 };
 
+const hasPinnedOrderAddress = (
+  value?: Partial<OrderAddressSnapshot> | null,
+): boolean => {
+  const address = normalizeOrderAddressSnapshot(value);
+  return (
+    typeof address.lat === "number" &&
+    Number.isFinite(address.lat) &&
+    typeof address.lng === "number" &&
+    Number.isFinite(address.lng)
+  );
+};
+
+const getOrderAddressTone = (value?: Partial<OrderAddressSnapshot> | null) => {
+  const locationInfo = getLocationDisplayInfo(value);
+
+  if (locationInfo.confidence === "high") {
+    return {
+      icon: locationInfo.icon,
+      accuracyLabel: locationInfo.confidenceLabel,
+      mapLabel: locationInfo.sourceLabel,
+      containerClass: "border-emerald-200 bg-emerald-50/80",
+      badgeClass: "border-emerald-200 bg-white text-emerald-700",
+      linkClass:
+        "font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4 transition hover:text-emerald-800",
+      actionClass:
+        "border-emerald-200 bg-white text-emerald-800 transition hover:bg-emerald-100",
+      hintClass: "text-xs text-emerald-700",
+      hintText: locationInfo.adminHelperText,
+    };
+  }
+
+  if (locationInfo.confidence === "medium") {
+    return {
+      icon: locationInfo.icon,
+      accuracyLabel: locationInfo.confidenceLabel,
+      mapLabel: locationInfo.sourceLabel,
+      containerClass: "border-sky-200 bg-sky-50/80",
+      badgeClass: "border-sky-200 bg-white text-sky-700",
+      linkClass:
+        "font-medium text-sky-700 underline decoration-sky-300 underline-offset-4 transition hover:text-sky-800",
+      actionClass:
+        "border-sky-200 bg-white text-sky-800 transition hover:bg-sky-100",
+      hintClass: "text-xs text-sky-700",
+      hintText: locationInfo.adminHelperText,
+    };
+  }
+
+  return {
+    icon: locationInfo.icon,
+    accuracyLabel: locationInfo.confidenceLabel,
+    mapLabel: locationInfo.sourceLabel,
+    containerClass: "border-slate-200 bg-slate-50",
+    badgeClass: "border-slate-200 bg-white text-slate-600",
+    linkClass:
+      "text-slate-700 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-900",
+    actionClass:
+      "border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100",
+    hintClass: "text-xs text-slate-500",
+    hintText: locationInfo.adminHelperText,
+  };
+};
+
+const getCopyableOrderAddressText = (
+  value?: Partial<OrderAddressSnapshot> | null,
+  fallbackAddress?: string | null,
+) =>
+  (
+    formatOrderAddressSnapshot(value) || String(fallbackAddress || "").trim()
+  ).trim();
+
+const sortOrdersByNewest = (list: OrderSummary[]) =>
+  [...list].sort((a, b) =>
+    String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
+  );
+
+const upsertOrderInList = (list: OrderSummary[], nextOrder: OrderSummary) => {
+  const safeOrderId = String(nextOrder?.orderId || "").trim();
+  if (!safeOrderId) return list;
+
+  const index = list.findIndex((item) => item.orderId === safeOrderId);
+  if (index >= 0) {
+    const next = [...list];
+    next[index] = nextOrder;
+    return next;
+  }
+
+  return sortOrdersByNewest([nextOrder, ...list]);
+};
+
+const cloneOrderState = <T,>(value: T): T => {
+  if (value == null) return value;
+  return JSON.parse(JSON.stringify(value)) as T;
+};
+
+const formatOptimisticDateTime = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const hour = `${date.getHours()}`.padStart(2, "0");
+  const minute = `${date.getMinutes()}`.padStart(2, "0");
+  const second = `${date.getSeconds()}`.padStart(2, "0");
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
+
+const getStatusPendingLabel = (
+  order: Pick<OrderSummary, "orderType" | "orderStatus"> | null | undefined,
+  nextStatus: OrderStatus,
+) => {
+  if (nextStatus === "confirmed") {
+    return order?.orderType === "rent" && order?.orderStatus !== "delivering"
+      ? "Đang xác nhận cọc..."
+      : "Đang xác nhận đơn...";
+  }
+  if (nextStatus === "delivering") return "Đang bắt đầu giao hàng...";
+  if (nextStatus === "active") return "Đang bàn giao cây...";
+  if (nextStatus === "completed") {
+    return order?.orderType === "rent"
+      ? "Đang xác nhận trả cây..."
+      : "Đang hoàn tất giao hàng...";
+  }
+  if (nextStatus === "cancelled") return "Đang hủy đơn...";
+  return `Đang cập nhật ${formatOrderStatusLabel(nextStatus).toLowerCase()}...`;
+};
+
+const attachDerivedOrderState = (order: OrderSummary): OrderSummary => ({
+  ...order,
+  allowedTransitions: getAllowedOrderTransitions(
+    order.orderStatus,
+    order.paymentStatus,
+    order.orderType,
+  ),
+});
+
 const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
   const { showToast } = useToast();
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState("");
-  const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const initialCachedAdminView = readOrdersInteractionCache(
+    ADMIN_ORDERS_CACHE_SCOPE,
+  );
+  const initialOrders = sortOrdersByNewest(initialCachedAdminView.list || []);
+  const initialSelectedOrderId =
+    initialCachedAdminView.selectedOrderId || initialOrders[0]?.orderId || "";
+  const initialDetail = initialSelectedOrderId
+    ? initialCachedAdminView.detailById[initialSelectedOrderId] || null
+    : null;
+
+  const [orders, setOrders] = useState<OrderSummary[]>(initialOrders);
+  const [loading, setLoading] = useState(!initialOrders.length);
+  const [selectedOrderId, setSelectedOrderId] = useState(initialSelectedOrderId);
+  const [detail, setDetail] = useState<OrderDetailResponse | null>(initialDetail);
+  const [detailLoading, setDetailLoading] = useState(
+    !initialDetail && !!initialSelectedOrderId,
+  );
+  const [detailRefreshing, setDetailRefreshing] = useState(false);
+  const [listRefreshing, setListRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
@@ -173,23 +345,299 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
   >("deposit");
   const [paymentNote, setPaymentNote] = useState("");
   const [cancelReason, setCancelReason] = useState("");
+  const [copiedAddressKey, setCopiedAddressKey] = useState("");
   const [deliveryForm, setDeliveryForm] =
     useState<OrderDeliveryInfo>(EMPTY_DELIVERY_INFO);
-  const [acting, setActing] = useState(false);
-  const [ordersReady, setOrdersReady] = useState(false);
+  const [pendingActionsByOrderId, setPendingActionsByOrderId] = useState<
+    Record<string, PendingOrderAction>
+  >({});
+  const [ordersReady, setOrdersReady] = useState(initialOrders.length > 0);
 
-  const latestOrdersVersionRef = React.useRef("");
-  const selectedOrderIdRef = React.useRef("");
+  const latestOrdersVersionRef = React.useRef(
+    initialCachedAdminView.dataVersion || "",
+  );
+  const selectedOrderIdRef = React.useRef(initialSelectedOrderId);
+  const ordersRef = React.useRef<OrderSummary[]>(initialOrders);
+  const detailCacheRef = React.useRef<Record<string, OrderDetailResponse>>(
+    initialCachedAdminView.detailById || {},
+  );
+  const detailSavedAtRef = React.useRef<Record<string, number>>(
+    initialCachedAdminView.detailSavedAtById || {},
+  );
   const modalOpenRef = React.useRef(false);
   const backgroundSyncingRef = React.useRef(false);
+  const copiedAddressTimerRef = React.useRef<number | null>(null);
+  const hasPendingActions = useMemo(
+    () => Object.keys(pendingActionsByOrderId).length > 0,
+    [pendingActionsByOrderId],
+  );
+  const acting = !!pendingActionsByOrderId[selectedOrderId];
 
   useEffect(() => {
     selectedOrderIdRef.current = selectedOrderId;
+    setOrdersInteractionSelectedOrder(
+      ADMIN_ORDERS_CACHE_SCOPE,
+      selectedOrderId,
+    );
   }, [selectedOrderId]);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   useEffect(() => {
     modalOpenRef.current = modalOpen;
   }, [modalOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (
+        copiedAddressTimerRef.current != null &&
+        typeof window !== "undefined"
+      ) {
+        window.clearTimeout(copiedAddressTimerRef.current);
+      }
+    };
+  }, []);
+
+  const hydrateDetailView = React.useCallback(
+    (
+      data: OrderDetailResponse,
+      options?: {
+        resetForms?: boolean;
+      },
+    ) => {
+      setDetail(data);
+
+      if (options?.resetForms ?? true) {
+        setPaymentAmount("");
+        setPaymentMethod("cash");
+        setPaymentKind(data.order.paidAmount > 0 ? "partial" : "deposit");
+        setPaymentNote("");
+        setCancelReason("");
+        setDeliveryForm(normalizeDeliveryForm(data.order.deliveryInfo));
+      }
+    },
+    [],
+  );
+
+  const applyOrdersSnapshot = React.useCallback(
+    (
+      nextOrders: OrderSummary[],
+      options?: {
+        focusOrderId?: string;
+        dataVersion?: string;
+      },
+    ) => {
+      const sorted = sortOrdersByNewest(
+        nextOrders.map((item) => attachDerivedOrderState(item)),
+      );
+      const focusOrderId = String(options?.focusOrderId || "").trim();
+      const nextOrderId =
+        sorted.find((item) => item.orderId === focusOrderId)?.orderId ||
+        focusOrderId ||
+        selectedOrderIdRef.current ||
+        sorted[0]?.orderId ||
+        "";
+
+      ordersRef.current = sorted;
+      setOrders(sorted);
+      replaceOrdersInteractionList(ADMIN_ORDERS_CACHE_SCOPE, sorted, {
+        selectedOrderId: nextOrderId,
+        dataVersion: options?.dataVersion,
+      });
+
+      if (options?.dataVersion !== undefined) {
+        latestOrdersVersionRef.current = String(
+          options.dataVersion || "",
+        ).trim();
+      }
+
+      selectedOrderIdRef.current = nextOrderId;
+      setSelectedOrderId(nextOrderId);
+
+      if (!nextOrderId) {
+        setDetail(null);
+      } else if (detailCacheRef.current[nextOrderId]) {
+        setDetail(detailCacheRef.current[nextOrderId]);
+      }
+
+      return nextOrderId;
+    },
+    [],
+  );
+
+  const applyDetailSnapshot = React.useCallback(
+    (
+      nextDetail: OrderDetailResponse,
+      options?: {
+        dataVersion?: string;
+        resetForms?: boolean;
+      },
+    ) => {
+      const safeOrderId = String(nextDetail?.order?.orderId || "").trim();
+      if (!safeOrderId) return;
+
+      const clonedDetail = {
+        ...cloneOrderState(nextDetail),
+        order: attachDerivedOrderState(cloneOrderState(nextDetail.order)),
+      };
+      detailCacheRef.current = {
+        ...detailCacheRef.current,
+        [safeOrderId]: clonedDetail,
+      };
+      detailSavedAtRef.current = {
+        ...detailSavedAtRef.current,
+        [safeOrderId]: Date.now(),
+      };
+
+      putOrdersInteractionDetail(ADMIN_ORDERS_CACHE_SCOPE, clonedDetail, {
+        selectedOrderId: safeOrderId,
+        dataVersion: options?.dataVersion,
+      });
+
+      if (options?.dataVersion !== undefined) {
+        latestOrdersVersionRef.current = String(
+          options.dataVersion || "",
+        ).trim();
+      }
+
+      setOrders((prev) => {
+        const next = upsertOrderInList(prev, clonedDetail.order);
+        ordersRef.current = next;
+        return next;
+      });
+
+      if (selectedOrderIdRef.current === safeOrderId) {
+        hydrateDetailView(clonedDetail, {
+          resetForms: options?.resetForms,
+        });
+      }
+    },
+    [hydrateDetailView],
+  );
+
+  const applyOrderSummaryLocally = React.useCallback(
+    (
+      nextOrder: OrderSummary,
+      options?: {
+        dataVersion?: string;
+      },
+    ) => {
+      const normalizedOrder = attachDerivedOrderState(cloneOrderState(nextOrder));
+      const safeOrderId = String(normalizedOrder?.orderId || "").trim();
+      if (!safeOrderId) return;
+
+      upsertOrdersInteractionOrder(ADMIN_ORDERS_CACHE_SCOPE, normalizedOrder, {
+        selectedOrderId: selectedOrderIdRef.current,
+        dataVersion: options?.dataVersion,
+      });
+
+      if (options?.dataVersion !== undefined) {
+        latestOrdersVersionRef.current = String(
+          options.dataVersion || "",
+        ).trim();
+      }
+
+      setOrders((prev) => {
+        const next = upsertOrderInList(prev, normalizedOrder);
+        ordersRef.current = next;
+        return next;
+      });
+
+      const cachedDetail = detailCacheRef.current[safeOrderId];
+      if (cachedDetail) {
+        const nextDetail = {
+          ...cachedDetail,
+          order: cloneOrderState(normalizedOrder),
+        };
+        detailCacheRef.current = {
+          ...detailCacheRef.current,
+          [safeOrderId]: nextDetail,
+        };
+        detailSavedAtRef.current = {
+          ...detailSavedAtRef.current,
+          [safeOrderId]: Date.now(),
+        };
+        putOrdersInteractionDetail(ADMIN_ORDERS_CACHE_SCOPE, nextDetail, {
+          selectedOrderId: safeOrderId,
+          dataVersion: options?.dataVersion,
+        });
+
+        if (selectedOrderIdRef.current === safeOrderId) {
+          setDetail(nextDetail);
+        }
+      }
+    },
+    [],
+  );
+
+  const setPendingAction = React.useCallback(
+    (orderId: string, pending: PendingOrderAction) => {
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) return;
+      setPendingActionsByOrderId((prev) => ({
+        ...prev,
+        [safeOrderId]: pending,
+      }));
+    },
+    [],
+  );
+
+  const clearPendingAction = React.useCallback((orderId: string) => {
+    const safeOrderId = String(orderId || "").trim();
+    if (!safeOrderId) return;
+    setPendingActionsByOrderId((prev) => {
+      if (!prev[safeOrderId]) return prev;
+      const next = { ...prev };
+      delete next[safeOrderId];
+      return next;
+    });
+  }, []);
+
+  const getCurrentOrderSnapshot = React.useCallback(
+    (orderId: string) => {
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) {
+        return {
+          order: null as OrderSummary | null,
+          detail: null as OrderDetailResponse | null,
+        };
+      }
+
+      const cachedDetail =
+        detailCacheRef.current[safeOrderId] ||
+        (detail?.order?.orderId === safeOrderId ? detail : null) ||
+        null;
+      const orderFromList =
+        ordersRef.current.find((item) => item.orderId === safeOrderId) || null;
+
+      return {
+        order: cloneOrderState(cachedDetail?.order || orderFromList || null),
+        detail: cloneOrderState(cachedDetail),
+      };
+    },
+    [detail],
+  );
+
+  const restoreOrderSnapshot = React.useCallback(
+    (snapshot: {
+      order?: OrderSummary | null;
+      detail?: OrderDetailResponse | null;
+      deliveryForm?: OrderDeliveryInfo | null;
+    }) => {
+      if (snapshot.detail?.order?.orderId) {
+        applyDetailSnapshot(snapshot.detail, { resetForms: false });
+      } else if (snapshot.order?.orderId) {
+        applyOrderSummaryLocally(snapshot.order);
+      }
+
+      if (snapshot.deliveryForm) {
+        setDeliveryForm(normalizeDeliveryForm(snapshot.deliveryForm));
+      }
+    },
+    [applyDetailSnapshot, applyOrderSummaryLocally],
+  );
 
   const loadOrders = React.useCallback(
     async (options?: {
@@ -199,40 +647,22 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
     }) => {
       const focusOrderId = String(options?.focusOrderId || "").trim();
       const silent = !!options?.silent;
+      const hasRenderedOrders = ordersRef.current.length > 0;
 
       try {
         if (!silent) {
-          setLoading(true);
+          if (hasRenderedOrders) {
+            setListRefreshing(true);
+          } else {
+            setLoading(true);
+          }
         }
 
         const data = await fetchOrders();
-        const sorted = [...data].sort((a, b) =>
-          String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
-        );
-        setOrders(sorted);
-
-        if (options?.knownVersion) {
-          latestOrdersVersionRef.current = String(
-            options.knownVersion || "",
-          ).trim();
-        }
-
-        const nextOrderId =
-          sorted.find((item) => item.orderId === focusOrderId)?.orderId ||
-          focusOrderId ||
-          sorted[0]?.orderId ||
-          "";
-
-        if (nextOrderId) {
-          if (nextOrderId !== selectedOrderIdRef.current) {
-            setSelectedOrderId(nextOrderId);
-          }
-        } else {
-          setSelectedOrderId("");
-          setDetail(null);
-        }
-
-        return nextOrderId;
+        return applyOrdersSnapshot(data, {
+          focusOrderId,
+          dataVersion: options?.knownVersion,
+        });
       } catch (error) {
         if (!silent) {
           showToast(
@@ -248,14 +678,22 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
       } finally {
         if (!silent) {
           setLoading(false);
+          setListRefreshing(false);
         }
       }
     },
-    [showToast],
+    [applyOrdersSnapshot, showToast],
   );
 
   const loadDetail = React.useCallback(
-    async (orderId: string, options?: { silent?: boolean }) => {
+    async (
+      orderId: string,
+      options?: {
+        silent?: boolean;
+        force?: boolean;
+        resetForms?: boolean;
+      },
+    ) => {
       const safeOrderId = String(orderId || "").trim();
       const silent = !!options?.silent;
 
@@ -264,22 +702,34 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         return null;
       }
 
+      const cachedDetail = detailCacheRef.current[safeOrderId] || null;
+      const savedAt = Number(detailSavedAtRef.current[safeOrderId] || 0);
+      const isFresh =
+        !!cachedDetail &&
+        !options?.force &&
+        Date.now() - savedAt < ADMIN_ORDERS_DETAIL_STALE_MS;
+
+      if (cachedDetail && selectedOrderIdRef.current === safeOrderId) {
+        hydrateDetailView(cachedDetail, {
+          resetForms: options?.resetForms ?? !silent,
+        });
+        setDetailLoading(false);
+      }
+
+      if (isFresh) {
+        return cachedDetail;
+      }
+
       try {
-        if (!silent) {
+        if (!cachedDetail && !silent) {
           setDetailLoading(true);
+        } else {
+          setDetailRefreshing(true);
         }
         const data = await fetchOrderDetail(safeOrderId);
-        setDetail(data);
-
-        if (!silent) {
-          setPaymentAmount("");
-          setPaymentMethod("cash");
-          setPaymentKind(data.order.paidAmount > 0 ? "partial" : "deposit");
-          setPaymentNote("");
-          setCancelReason("");
-          setDeliveryForm(normalizeDeliveryForm(data.order.deliveryInfo));
-        }
-
+        applyDetailSnapshot(data, {
+          resetForms: options?.resetForms ?? !silent,
+        });
         return data;
       } catch (error) {
         if (!silent) {
@@ -292,14 +742,33 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         } else {
           console.error("Orders detail sync error:", error);
         }
-        return null;
+        return cachedDetail;
       } finally {
-        if (!silent) {
-          setDetailLoading(false);
-        }
+        setDetailLoading(false);
+        setDetailRefreshing(false);
       }
     },
-    [showToast],
+    [applyDetailSnapshot, hydrateDetailView, showToast],
+  );
+
+  const revalidateOrderInBackground = React.useCallback(
+    (orderId: string) => {
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) return;
+      if (
+        !(modalOpenRef.current && selectedOrderIdRef.current === safeOrderId) &&
+        !detailCacheRef.current[safeOrderId]
+      ) {
+        return;
+      }
+
+      void loadDetail(safeOrderId, {
+        silent: true,
+        force: true,
+        resetForms: false,
+      });
+    },
+    [loadDetail],
   );
 
   const refreshSelected = React.useCallback(
@@ -336,7 +805,12 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
   );
 
   const syncOrdersByVersion = React.useCallback(async () => {
-    if (backgroundSyncingRef.current || acting || loading || detailLoading)
+    if (
+      backgroundSyncingRef.current ||
+      hasPendingActions ||
+      loading ||
+      detailLoading
+    )
       return;
     if (
       typeof document !== "undefined" &&
@@ -363,19 +837,24 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
     } finally {
       backgroundSyncingRef.current = false;
     }
-  }, [acting, detailLoading, loading, refreshSelected]);
+  }, [detailLoading, hasPendingActions, loading, refreshSelected]);
 
   useEffect(() => {
     let disposed = false;
 
     const bootstrap = async () => {
+      const shouldStaySilent = ordersRef.current.length > 0;
       try {
         const meta = await fetchOrdersMeta();
         if (disposed) return;
-        await loadOrders({ knownVersion: meta.dataVersion });
+        latestOrdersVersionRef.current = String(meta.dataVersion || "").trim();
+        await loadOrders({
+          knownVersion: meta.dataVersion,
+          silent: shouldStaySilent,
+        });
       } catch (error) {
         if (disposed) return;
-        await loadOrders();
+        await loadOrders({ silent: shouldStaySilent });
       } finally {
         if (!disposed) {
           setOrdersReady(true);
@@ -396,8 +875,17 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
       setDetail(null);
       return;
     }
-    void loadDetail(selectedOrderId);
-  }, [loadDetail, modalOpen, selectedOrderId]);
+    const cachedDetail = detailCacheRef.current[selectedOrderId] || null;
+    if (cachedDetail) {
+      hydrateDetailView(cachedDetail, { resetForms: true });
+      setDetailLoading(false);
+    }
+    void loadDetail(selectedOrderId, {
+      silent: !!cachedDetail,
+      force: !cachedDetail,
+      resetForms: !cachedDetail,
+    });
+  }, [hydrateDetailView, loadDetail, modalOpen, selectedOrderId]);
 
   useEffect(() => {
     if (!ordersReady) return;
@@ -488,6 +976,84 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
 
   const detailOrder = detail?.order || null;
   const selectedOrderForActions = detailOrder || selectedSummary;
+  const selectedPendingAction = selectedOrderForActions
+    ? pendingActionsByOrderId[selectedOrderForActions.orderId] || null
+    : null;
+
+  const detailAddressText = useMemo(
+    () =>
+      formatOrderAddressSnapshot(detailOrder?.addressSnapshot) ||
+      detailOrder?.deliveryInfo?.address ||
+      "",
+    [detailOrder?.addressSnapshot, detailOrder?.deliveryInfo?.address],
+  );
+
+  const detailMapUrl = useMemo(
+    () =>
+      buildOrderAddressMapUrl(
+        detailOrder?.addressSnapshot,
+        detailOrder?.deliveryInfo?.address,
+      ),
+    [detailOrder?.addressSnapshot, detailOrder?.deliveryInfo?.address],
+  );
+
+  const detailAddressTone = useMemo(
+    () => getOrderAddressTone(detailOrder?.addressSnapshot),
+    [detailOrder?.addressSnapshot],
+  );
+
+  const copyOrderAddress = React.useCallback(
+    async (
+      addressText: string,
+      key: string,
+    ) => {
+      const safeText = String(addressText || "").trim();
+      if (!safeText) {
+        showToast("Không có địa chỉ để copy", "error");
+        return;
+      }
+
+      try {
+        if (
+          typeof navigator !== "undefined" &&
+          navigator.clipboard &&
+          typeof navigator.clipboard.writeText === "function"
+        ) {
+          await navigator.clipboard.writeText(safeText);
+        } else if (typeof document !== "undefined") {
+          const textarea = document.createElement("textarea");
+          textarea.value = safeText;
+          textarea.setAttribute("readonly", "readonly");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        } else {
+          throw new Error("Clipboard unavailable");
+        }
+
+        setCopiedAddressKey(key);
+        if (
+          copiedAddressTimerRef.current != null &&
+          typeof window !== "undefined"
+        ) {
+          window.clearTimeout(copiedAddressTimerRef.current);
+        }
+        if (typeof window !== "undefined") {
+          copiedAddressTimerRef.current = window.setTimeout(() => {
+            setCopiedAddressKey("");
+          }, 1600);
+        }
+        showToast("Đã copy địa chỉ", "success");
+      } catch (error) {
+        console.error("Copy address failed:", error);
+        showToast("Không copy được địa chỉ", "error");
+      }
+    },
+    [showToast],
+  );
 
   const allowedTransitions = useMemo(() => {
     if (!detail?.order) return [];
@@ -516,52 +1082,115 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
 
   const applyDeliveryInfoLocally = React.useCallback(
     (orderId: string, info: OrderDeliveryInfo) => {
-      setOrders((prev) =>
-        prev.map((item) =>
-          item.orderId === orderId ? { ...item, deliveryInfo: info } : item,
-        ),
-      );
-      setDetail((prev) =>
-        prev && prev.order.orderId === orderId
-          ? {
-              ...prev,
-              order: {
-                ...prev.order,
-                deliveryInfo: info,
-              },
-            }
-          : prev,
-      );
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) return;
+
+      const snapshot = getCurrentOrderSnapshot(safeOrderId);
+      const baseOrder = snapshot.order;
+      if (!baseOrder) {
+        setDeliveryForm(info);
+        return;
+      }
+
+      const nextOrder = attachDerivedOrderState({
+        ...baseOrder,
+        deliveryInfo: info,
+        updatedAt:
+          info.updatedAt || baseOrder.updatedAt || formatOptimisticDateTime(),
+      });
+
+      applyOrderSummaryLocally(nextOrder);
       setDeliveryForm(info);
     },
-    [],
+    [applyOrderSummaryLocally, getCurrentOrderSnapshot],
   );
 
   const persistDeliveryInfoIfNeeded = React.useCallback(
     async (orderId: string) => {
-      if (!orderId) return false;
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) {
+        return {
+          didSave: false,
+          updatedOrder: null as OrderSummary | null,
+        };
+      }
+
+      const snapshot = {
+        ...getCurrentOrderSnapshot(safeOrderId),
+        deliveryForm:
+          selectedOrderIdRef.current === safeOrderId
+            ? normalizeDeliveryForm(deliveryForm)
+            : undefined,
+      };
+      const baseOrder = snapshot.order;
+      if (!baseOrder) {
+        throw new Error("Không tìm thấy dữ liệu đơn để lưu giao hàng");
+      }
 
       const normalizedForm = normalizeDeliveryForm(deliveryForm);
-      const currentSignature = getDeliveryFormSignature(
-        detail?.order?.deliveryInfo,
-      );
+      const currentSignature = getDeliveryFormSignature(baseOrder.deliveryInfo);
       const nextSignature = getDeliveryFormSignature(normalizedForm);
 
       if (currentSignature === nextSignature) {
-        return false;
+        return {
+          didSave: false,
+          updatedOrder: baseOrder,
+        };
       }
 
-      const response = await updateOrderDelivery({
-        orderId,
-        deliveryInfo: normalizedForm,
+      const optimisticInfo = normalizeDeliveryForm({
+        ...normalizedForm,
+        updatedAt: formatOptimisticDateTime(),
       });
-      const savedInfo = normalizeDeliveryForm(
-        response.deliveryInfo || normalizedForm,
-      );
-      applyDeliveryInfoLocally(orderId, savedInfo);
-      return true;
+      applyDeliveryInfoLocally(safeOrderId, optimisticInfo);
+
+      try {
+        const response = await updateOrderDelivery({
+          orderId: safeOrderId,
+          deliveryInfo: normalizedForm,
+        });
+        const savedInfo = normalizeDeliveryForm(
+          response.deliveryInfo ||
+            response.updatedOrder?.deliveryInfo ||
+            normalizedForm,
+        );
+        const resolvedOrder = attachDerivedOrderState(
+          response.updatedOrder
+            ? {
+                ...response.updatedOrder,
+                deliveryInfo: savedInfo,
+              }
+            : {
+                ...baseOrder,
+                deliveryInfo: savedInfo,
+                updatedAt:
+                  savedInfo.updatedAt ||
+                  optimisticInfo.updatedAt ||
+                  baseOrder.updatedAt,
+              },
+        );
+
+        applyOrderSummaryLocally(resolvedOrder, {
+          dataVersion: response.dataVersion,
+        });
+        setDeliveryForm(savedInfo);
+
+        return {
+          didSave: true,
+          updatedOrder: resolvedOrder,
+        };
+      } catch (error) {
+        restoreOrderSnapshot(snapshot);
+        throw error;
+      }
     },
-    [applyDeliveryInfoLocally, deliveryForm, detail?.order?.deliveryInfo],
+    [
+      applyDeliveryInfoLocally,
+      applyOrderSummaryLocally,
+      deliveryForm,
+      getCurrentOrderSnapshot,
+      restoreOrderSnapshot,
+    ],
   );
 
   const handleOpenDetail = async (orderId: string) => {
@@ -571,24 +1200,131 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
 
   const handleAddPayment = async () => {
     if (!detail?.order) return;
+    const orderId = String(detail.order.orderId || "").trim();
     const amount = Number(paymentAmount || 0);
     if (!Number.isFinite(amount) || amount <= 0) {
       showToast("Nhập số tiền hợp lệ", "error");
       return;
     }
 
+    const snapshot = {
+      ...getCurrentOrderSnapshot(orderId),
+      deliveryForm: normalizeDeliveryForm(deliveryForm),
+    };
+    const baseOrder = snapshot.order;
+    if (!baseOrder) {
+      showToast("Không tìm thấy dữ liệu đơn để ghi nhận thanh toán", "error");
+      return;
+    }
+
+    const optimisticTime = formatOptimisticDateTime();
+    const optimisticPaidAmount = baseOrder.paidAmount + amount;
+    const optimisticDepositAmount =
+      paymentKind === "deposit"
+        ? Math.min(baseOrder.totalAmount, baseOrder.depositAmount + amount)
+        : baseOrder.depositAmount;
+    const optimisticRemainingAmount = Math.max(
+      0,
+      baseOrder.totalAmount - optimisticPaidAmount,
+    );
+    const optimisticPaymentStatus = derivePaymentStatus({
+      totalAmount: baseOrder.totalAmount,
+      paidAmount: optimisticPaidAmount,
+      depositAmount: optimisticDepositAmount,
+    });
+    const optimisticOrder = attachDerivedOrderState({
+      ...baseOrder,
+      depositAmount: optimisticDepositAmount,
+      paidAmount: optimisticPaidAmount,
+      remainingAmount: optimisticRemainingAmount,
+      paymentStatus: optimisticPaymentStatus,
+      updatedAt: optimisticTime,
+    });
+    const optimisticPayment = {
+      paymentId: `temp-${orderId}-${Date.now()}`,
+      orderId,
+      createdAt: optimisticTime,
+      amount,
+      method: String(paymentMethod || "cash").trim().toLowerCase(),
+      note: String(paymentNote || "").trim(),
+      createdBy: String(authUser?.email || "admin").trim(),
+    };
+
+    setPendingAction(orderId, {
+      actionKey: "payment:add",
+      label: "Đang lưu thanh toán...",
+      kind: "payment",
+      startedAt: Date.now(),
+    });
+
     try {
-      setActing(true);
-      await addPayment({
-        orderId: detail.order.orderId,
+      if (snapshot.detail) {
+        applyDetailSnapshot(
+          {
+            ...snapshot.detail,
+            order: optimisticOrder,
+            payments: [...snapshot.detail.payments, optimisticPayment],
+          },
+          { resetForms: false },
+        );
+      } else {
+        applyOrderSummaryLocally(optimisticOrder);
+      }
+
+      const response = await addPayment({
+        orderId,
         amount,
         method: paymentMethod,
         note: paymentNote,
         paymentKind,
       });
+
+      const resolvedOrder = attachDerivedOrderState(
+        response.updatedOrder
+          ? response.updatedOrder
+          : {
+              ...optimisticOrder,
+              paidAmount: response.paidAmount ?? optimisticPaidAmount,
+              remainingAmount:
+                response.remainingAmount ?? optimisticRemainingAmount,
+              paymentStatus:
+                response.paymentStatus || optimisticPaymentStatus,
+            },
+      );
+      const currentDetail = detailCacheRef.current[orderId] || snapshot.detail;
+      if (currentDetail) {
+        const confirmedPayment = response.createdPayment || optimisticPayment;
+        const mergedPayments = [
+          ...currentDetail.payments.filter(
+            (item) => item.paymentId !== optimisticPayment.paymentId,
+          ),
+          confirmedPayment,
+        ];
+
+        applyDetailSnapshot(
+          {
+            ...currentDetail,
+            order: resolvedOrder,
+            payments: mergedPayments,
+          },
+          {
+            dataVersion: response.dataVersion,
+            resetForms: false,
+          },
+        );
+      } else {
+        applyOrderSummaryLocally(resolvedOrder, {
+          dataVersion: response.dataVersion,
+        });
+      }
+
+      setPaymentAmount("");
+      setPaymentNote("");
+      setPaymentKind(resolvedOrder.paidAmount > 0 ? "partial" : "deposit");
       showToast("Đã ghi nhận thanh toán", "success");
-      await refreshSelected(detail.order.orderId);
+      revalidateOrderInBackground(orderId);
     } catch (error) {
+      restoreOrderSnapshot(snapshot);
       showToast(
         String(
           (error as any)?.message || error || "Không thêm được thanh toán",
@@ -596,22 +1332,29 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         "error",
       );
     } finally {
-      setActing(false);
+      clearPendingAction(orderId);
     }
   };
 
   const handleSaveDeliveryInfo = async () => {
     if (!detail?.order) return;
+    const orderId = String(detail.order.orderId || "").trim();
+
+    setPendingAction(orderId, {
+      actionKey: "delivery:save",
+      label: "Đang lưu thông tin giao hàng...",
+      kind: "delivery",
+      startedAt: Date.now(),
+    });
 
     try {
-      setActing(true);
-      const didSave = await persistDeliveryInfoIfNeeded(detail.order.orderId);
-      if (!didSave) {
+      const result = await persistDeliveryInfoIfNeeded(orderId);
+      if (!result.didSave) {
         showToast("Thông tin giao hàng không thay đổi", "success");
         return;
       }
       showToast("Đã lưu thông tin giao hàng", "success");
-      await refreshSelected(detail.order.orderId);
+      revalidateOrderInBackground(orderId);
     } catch (error) {
       showToast(
         String(
@@ -622,38 +1365,100 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         "error",
       );
     } finally {
-      setActing(false);
+      clearPendingAction(orderId);
     }
   };
 
-  const performChangeStatus = async (
-    orderId: string,
-    status: OrderStatus,
-    reason?: string,
-  ) => {
-    try {
-      setActing(true);
-      await updateOrderStatus({
-        orderId,
-        status,
-        reason: String(reason || "").trim(),
+  const performChangeStatus = React.useCallback(
+    async (
+      orderId: string,
+      status: OrderStatus,
+      options?: {
+        reason?: string;
+        pendingLabel?: string;
+        preservePending?: boolean;
+      },
+    ) => {
+      const safeOrderId = String(orderId || "").trim();
+      if (!safeOrderId) {
+        throw new Error("Thiếu mã đơn hàng");
+      }
+
+      const snapshot = {
+        ...getCurrentOrderSnapshot(safeOrderId),
+        deliveryForm:
+          selectedOrderIdRef.current === safeOrderId
+            ? normalizeDeliveryForm(deliveryForm)
+            : undefined,
+      };
+      const baseOrder = snapshot.order;
+      if (!baseOrder) {
+        throw new Error("Không tìm thấy dữ liệu đơn để cập nhật trạng thái");
+      }
+
+      const shouldOwnPending = !options?.preservePending;
+      if (shouldOwnPending) {
+        setPendingAction(safeOrderId, {
+          actionKey: `status:${status}`,
+          label: options?.pendingLabel || getStatusPendingLabel(baseOrder, status),
+          kind: "status",
+          startedAt: Date.now(),
+        });
+      }
+
+      const optimisticOrder = attachDerivedOrderState({
+        ...baseOrder,
+        orderStatus: status,
+        updatedAt: formatOptimisticDateTime(),
       });
-      showToast("Đã cập nhật trạng thái đơn", "success");
-      await refreshSelected(orderId);
-    } catch (error) {
-      showToast(
-        String(
-          (error as any)?.message || error || "Không cập nhật được trạng thái",
-        ),
-        "error",
-      );
-    } finally {
-      setActing(false);
-    }
-  };
+      applyOrderSummaryLocally(optimisticOrder);
+
+      try {
+        const response = await updateOrderStatus({
+          orderId: safeOrderId,
+          status,
+          reason: String(options?.reason || "").trim(),
+        });
+        const resolvedOrder = attachDerivedOrderState(
+          response.updatedOrder
+            ? response.updatedOrder
+            : {
+                ...optimisticOrder,
+                orderStatus: response.orderStatus || status,
+                paymentStatus:
+                  response.paymentStatus || optimisticOrder.paymentStatus,
+              },
+        );
+
+        applyOrderSummaryLocally(resolvedOrder, {
+          dataVersion: response.dataVersion,
+        });
+        revalidateOrderInBackground(safeOrderId);
+        return resolvedOrder;
+      } catch (error) {
+        restoreOrderSnapshot(snapshot);
+        throw error;
+      } finally {
+        if (shouldOwnPending) {
+          clearPendingAction(safeOrderId);
+        }
+      }
+    },
+    [
+      applyOrderSummaryLocally,
+      clearPendingAction,
+      deliveryForm,
+      getCurrentOrderSnapshot,
+      restoreOrderSnapshot,
+      revalidateOrderInBackground,
+      setPendingAction,
+    ],
+  );
 
   const handleChangeStatus = async (status: OrderStatus) => {
     if (!detail?.order) return;
+    const orderId = String(detail.order.orderId || "").trim();
+    const pendingLabel = getStatusPendingLabel(detail.order, status);
 
     const safeDelivery = normalizeDeliveryForm(deliveryForm);
     if (
@@ -668,15 +1473,27 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
       return;
     }
 
+    setPendingAction(orderId, {
+      actionKey: `status:${status}`,
+      label: pendingLabel,
+      kind: "status",
+      startedAt: Date.now(),
+    });
+
     try {
       if (status === "delivering" || status === "active") {
-        await persistDeliveryInfoIfNeeded(detail.order.orderId);
+        await persistDeliveryInfoIfNeeded(orderId);
       }
       await performChangeStatus(
-        detail.order.orderId,
+        orderId,
         status,
-        status === "cancelled" ? cancelReason : "",
+        {
+          reason: status === "cancelled" ? cancelReason : "",
+          pendingLabel,
+          preservePending: true,
+        },
       );
+      showToast("Đã cập nhật trạng thái đơn", "success");
     } catch (error) {
       showToast(
         String(
@@ -684,6 +1501,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         ),
         "error",
       );
+    } finally {
+      clearPendingAction(orderId);
     }
   };
 
@@ -704,7 +1523,19 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
       return;
     }
 
-    await performChangeStatus(order.orderId, nextStatus);
+    try {
+      await performChangeStatus(order.orderId, nextStatus, {
+        pendingLabel: getStatusPendingLabel(order, nextStatus),
+      });
+      showToast("Đã cập nhật trạng thái đơn", "success");
+    } catch (error) {
+      showToast(
+        String(
+          (error as any)?.message || error || "Không cập nhật được trạng thái",
+        ),
+        "error",
+      );
+    }
   };
 
   return (
@@ -751,16 +1582,19 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
             <p className="mt-1 text-sm text-slate-500">
               Quản lý vòng đời đơn hàng, thanh toán và trạng thái khóa cây.
             </p>
-            <p className="mt-1 text-xs text-emerald-600">
-              Tự đồng bộ gần real-time mỗi ~2.5 giây bằng version check nhẹ khi
-              tab đang mở.
+            <p
+              className={`mt-1 text-xs ${listRefreshing ? "text-amber-600" : "text-emerald-600"}`}
+            >
+              {listRefreshing
+                ? "Đang đồng bộ danh sách đơn ở nền..."
+                : "Cache list/detail được giữ lại để mở đơn nhanh hơn, rồi đồng bộ nền bằng version check nhẹ mỗi ~2.5 giây."}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo mã đơn / tên / email / điện thoại"
+              placeholder="Tìm theo mã đơn / tên / email / điện thoại / địa chỉ"
               className="h-11 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-amber-400"
             />
             <select
@@ -783,9 +1617,10 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
             <button
               type="button"
               onClick={() => void refreshSelected()}
-              className="h-11 rounded-xl border border-slate-300 px-5 font-semibold text-slate-700 transition hover:bg-slate-50"
+              disabled={loading || listRefreshing}
+              className="h-11 rounded-xl border border-slate-300 px-5 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Làm mới
+              {loading || listRefreshing ? "Đang làm mới..." : "Làm mới"}
             </button>
           </div>
         </div>
@@ -821,6 +1656,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                       order.paymentStatus,
                       order.orderType,
                     );
+                  const rowPendingAction =
+                    pendingActionsByOrderId[order.orderId] || null;
+                  const rowIsPending = !!rowPendingAction;
                   return (
                     <tr key={order.orderId}>
                       <Td>
@@ -834,14 +1672,88 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                         </div>
                       </Td>
                       <Td>
-                        <div>
-                          <div className="font-medium text-slate-900">
-                            {order.customerName}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {order.customerEmail}
-                          </div>
-                        </div>
+                        {(() => {
+                          const rowAddressText = getCopyableOrderAddressText(
+                            order.addressSnapshot,
+                            order.deliveryInfo.address,
+                          );
+                          const rowMapUrl = buildOrderAddressMapUrl(
+                            order.addressSnapshot,
+                            order.deliveryInfo.address,
+                          );
+                          const rowTone = getOrderAddressTone(
+                            order.addressSnapshot,
+                          );
+                          const rowCopyKey = `row:${order.orderId}`;
+
+                          return (
+                            <div>
+                              <div className="font-medium text-slate-900">
+                                {order.customerName}
+                              </div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {order.customerEmail}
+                              </div>
+                              {rowAddressText && (
+                                <div
+                                  className={`mt-3 rounded-xl border p-3 ${rowTone.containerClass}`}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${rowTone.badgeClass}`}
+                                    >
+                                      <span>{rowTone.icon}</span>
+                                      <span>{rowTone.accuracyLabel}</span>
+                                    </span>
+                                    <span className="inline-flex items-center rounded-full border border-white/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                                      {rowTone.mapLabel}
+                                    </span>
+                                  </div>
+                                  {rowMapUrl ? (
+                                    <a
+                                      href={rowMapUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`mt-2 block whitespace-pre-line text-xs leading-relaxed ${rowTone.linkClass}`}
+                                    >
+                                      {rowAddressText}
+                                    </a>
+                                  ) : (
+                                    <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-slate-700">
+                                      {rowAddressText}
+                                    </p>
+                                  )}
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    {rowMapUrl && (
+                                      <a
+                                        href={rowMapUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${rowTone.actionClass}`}
+                                      >
+                                        Mở map ↗
+                                      </a>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void copyOrderAddress(
+                                          rowAddressText,
+                                          rowCopyKey,
+                                        )
+                                      }
+                                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${rowTone.actionClass}`}
+                                    >
+                                      {copiedAddressKey === rowCopyKey
+                                        ? "Đã copy"
+                                        : "Copy địa chỉ"}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </Td>
                       <Td>{formatTransactionTypeLabel(order.orderType)}</Td>
                       <Td>
@@ -868,6 +1780,11 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                       </Td>
                       <Td className="text-right">
                         <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                          {rowPendingAction && (
+                            <span className="mr-1 text-xs font-semibold text-amber-600">
+                              {rowPendingAction.label}
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={() => void handleOpenDetail(order.orderId)}
@@ -878,45 +1795,57 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           {rowTransitions.includes("confirmed") && (
                             <button
                               type="button"
+                              disabled={rowIsPending}
                               onClick={() =>
                                 void handleQuickTransition(order, "confirmed")
                               }
-                              className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+                              className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {getStatusActionLabel(order, "confirmed")}
+                              {rowPendingAction?.actionKey === "status:confirmed"
+                                ? rowPendingAction.label
+                                : getStatusActionLabel(order, "confirmed")}
                             </button>
                           )}
                           {rowTransitions.includes("delivering") && (
                             <button
                               type="button"
+                              disabled={rowIsPending}
                               onClick={() =>
                                 void handleQuickTransition(order, "delivering")
                               }
-                              className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-medium text-orange-700 transition hover:bg-orange-50"
+                              className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-medium text-orange-700 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {getStatusActionLabel(order, "delivering")}
+                              {rowPendingAction?.actionKey === "status:delivering"
+                                ? rowPendingAction.label
+                                : getStatusActionLabel(order, "delivering")}
                             </button>
                           )}
                           {rowTransitions.includes("active") && (
                             <button
                               type="button"
+                              disabled={rowIsPending}
                               onClick={() =>
                                 void handleQuickTransition(order, "active")
                               }
-                              className="rounded-lg border border-violet-300 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
+                              className="rounded-lg border border-violet-300 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {getStatusActionLabel(order, "active")}
+                              {rowPendingAction?.actionKey === "status:active"
+                                ? rowPendingAction.label
+                                : getStatusActionLabel(order, "active")}
                             </button>
                           )}
                           {rowTransitions.includes("completed") && (
                             <button
                               type="button"
+                              disabled={rowIsPending}
                               onClick={() =>
                                 void handleQuickTransition(order, "completed")
                               }
-                              className="rounded-lg border border-green-300 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50"
+                              className="rounded-lg border border-green-300 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {getStatusActionLabel(order, "completed")}
+                              {rowPendingAction?.actionKey === "status:completed"
+                                ? rowPendingAction.label
+                                : getStatusActionLabel(order, "completed")}
                             </button>
                           )}
                         </div>
@@ -949,6 +1878,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                     selectedSummary?.orderId ||
                     "Đơn hàng"}
                 </h2>
+                <p
+                  className={`mt-1 text-xs ${detailRefreshing ? "text-amber-600" : "text-slate-500"}`}
+                >
+                  {detailRefreshing
+                    ? "Đang đồng bộ chi tiết mới nhất ở nền..."
+                    : "Mở lại đơn đã xem sẽ ưu tiên data cache trước, rồi refresh nền nếu cần."}
+                </p>
               </div>
               <button
                 type="button"
@@ -1047,27 +1983,55 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                             sheet.
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          disabled={acting || !deliveryInfoDirty}
-                          onClick={() => void handleSaveDeliveryInfo()}
-                          className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          Lưu thông tin giao hàng
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {detailMapUrl && (
+                            <a
+                              href={detailMapUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+                            >
+                              Mở Google Maps ↗
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            disabled={acting || !deliveryInfoDirty}
+                            onClick={() => void handleSaveDeliveryInfo()}
+                            className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {selectedPendingAction?.actionKey === "delivery:save"
+                              ? selectedPendingAction.label
+                              : "Lưu thông tin giao hàng"}
+                          </button>
+                        </div>
                       </div>
 
-                      {hasOrderAddressSnapshot(detail.order.addressSnapshot) && (
-                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+                      {(hasOrderAddressSnapshot(detail.order.addressSnapshot) ||
+                        detailAddressText) && (
+                        <div
+                          className={`mt-4 rounded-2xl border p-4 ${detailAddressTone.containerClass}`}
+                        >
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-amber-900">
+                            <p className="text-sm font-semibold text-slate-900">
                               Địa chỉ snapshot lúc khách đặt đơn
                             </p>
-                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
-                              {getOrderAddressSnapshotSourceLabel(
-                                detail.order.addressSnapshot,
-                              )}
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${detailAddressTone.badgeClass}`}
+                            >
+                              <span>{detailAddressTone.icon}</span>
+                              <span>{detailAddressTone.accuracyLabel}</span>
                             </span>
+                            <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                              {detailAddressTone.mapLabel}
+                            </span>
+                            {hasOrderAddressSnapshot(detail.order.addressSnapshot) && (
+                              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                {getOrderAddressSnapshotSourceLabel(
+                                  detail.order.addressSnapshot,
+                                )}
+                              </span>
+                            )}
                             {detail.order.addressSnapshot.label && (
                               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
                                 {detail.order.addressSnapshot.label}
@@ -1079,6 +2043,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                               </span>
                             )}
                           </div>
+                          <p className={`mt-2 ${detailAddressTone.hintClass}`}>
+                            {detailAddressTone.hintText}
+                          </p>
                           <div className="mt-3 grid gap-4 sm:grid-cols-2">
                             <div>
                               <p className="text-sm text-slate-500">
@@ -1104,11 +2071,66 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                               <p className="text-sm text-slate-500">
                                 Địa chỉ đã chốt lúc checkout
                               </p>
-                              <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
-                                {formatOrderAddressSnapshot(
-                                  detail.order.addressSnapshot,
-                                ) || "--"}
-                              </p>
+                              {detailMapUrl ? (
+                                <div className="mt-1 space-y-2">
+                                  <a
+                                    href={detailMapUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`inline whitespace-pre-line leading-relaxed ${detailAddressTone.linkClass}`}
+                                  >
+                                    {detailAddressText || "--"}
+                                  </a>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <a
+                                      href={detailMapUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${detailAddressTone.actionClass}`}
+                                    >
+                                      Mở Google Maps ↗
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void copyOrderAddress(
+                                          detailAddressText,
+                                          `detail:${detail.order.orderId}`,
+                                        )
+                                      }
+                                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${detailAddressTone.actionClass}`}
+                                    >
+                                      {copiedAddressKey ===
+                                      `detail:${detail.order.orderId}`
+                                        ? "Đã copy"
+                                        : "Copy địa chỉ"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-1 space-y-2">
+                                  <p className="whitespace-pre-line leading-relaxed text-slate-700">
+                                    {detailAddressText || "--"}
+                                  </p>
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void copyOrderAddress(
+                                          detailAddressText,
+                                          `detail:${detail.order.orderId}`,
+                                        )
+                                      }
+                                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${detailAddressTone.actionClass}`}
+                                    >
+                                      {copiedAddressKey ===
+                                      `detail:${detail.order.orderId}`
+                                        ? "Đã copy"
+                                        : "Copy địa chỉ"}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {detail.order.addressSnapshot.note && (
                               <div className="sm:col-span-2">
@@ -1323,6 +2345,11 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                       <p className="mt-1 text-sm leading-relaxed text-slate-500">
                         {getLifecycleHelpText(selectedOrderForActions)}
                       </p>
+                      {selectedPendingAction && (
+                        <p className="mt-2 text-sm font-semibold text-amber-600">
+                          {selectedPendingAction.label}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-3">
@@ -1347,10 +2374,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           onClick={() => void handleChangeStatus("confirmed")}
                           className="rounded-2xl border border-blue-300 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {getStatusActionLabel(
-                            selectedOrderForActions,
-                            "confirmed",
-                          )}
+                          {selectedPendingAction?.actionKey ===
+                          "status:confirmed"
+                            ? selectedPendingAction.label
+                            : getStatusActionLabel(
+                                selectedOrderForActions,
+                                "confirmed",
+                              )}
                         </button>
                         <button
                           type="button"
@@ -1360,10 +2390,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           onClick={() => void handleChangeStatus("delivering")}
                           className="rounded-2xl border border-orange-300 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {getStatusActionLabel(
-                            selectedOrderForActions,
-                            "delivering",
-                          )}
+                          {selectedPendingAction?.actionKey ===
+                          "status:delivering"
+                            ? selectedPendingAction.label
+                            : getStatusActionLabel(
+                                selectedOrderForActions,
+                                "delivering",
+                              )}
                         </button>
                         <button
                           type="button"
@@ -1373,10 +2406,12 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           onClick={() => void handleChangeStatus("active")}
                           className="rounded-2xl border border-violet-300 px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {getStatusActionLabel(
-                            selectedOrderForActions,
-                            "active",
-                          )}
+                          {selectedPendingAction?.actionKey === "status:active"
+                            ? selectedPendingAction.label
+                            : getStatusActionLabel(
+                                selectedOrderForActions,
+                                "active",
+                              )}
                         </button>
                         <button
                           type="button"
@@ -1386,10 +2421,13 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           onClick={() => void handleChangeStatus("completed")}
                           className="rounded-2xl border border-green-300 px-4 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {getStatusActionLabel(
-                            selectedOrderForActions,
-                            "completed",
-                          )}
+                          {selectedPendingAction?.actionKey ===
+                          "status:completed"
+                            ? selectedPendingAction.label
+                            : getStatusActionLabel(
+                                selectedOrderForActions,
+                                "completed",
+                              )}
                         </button>
                       </div>
                       <button
@@ -1400,7 +2438,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                         onClick={() => void handleChangeStatus("cancelled")}
                         className="w-full rounded-2xl border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        Hủy đơn
+                        {selectedPendingAction?.actionKey === "status:cancelled"
+                          ? selectedPendingAction.label
+                          : "Hủy đơn"}
                       </button>
                     </div>
 
@@ -1478,7 +2518,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           onClick={() => void handleAddPayment()}
                           className="w-full rounded-2xl bg-amber-400 px-5 py-3 font-bold text-amber-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Thêm thanh toán
+                          {selectedPendingAction?.actionKey === "payment:add"
+                            ? selectedPendingAction.label
+                            : "Thêm thanh toán"}
                         </button>
                       </div>
                     </div>

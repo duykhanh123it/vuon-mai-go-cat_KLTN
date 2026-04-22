@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   AuthUser,
   UserAddress,
+  getLocationDisplayInfo,
   normalizeAuthUser,
   normalizeUserAddress,
+  type LocationConfidence,
+  type LocationSource,
 } from "../types";
 import {
   deleteAddressBookEntry,
@@ -12,6 +15,8 @@ import {
   setDefaultAddressBookEntry,
 } from "../utils/productsApi";
 import { useToast } from "./Toast";
+import MapPinPicker from "./MapPinPicker";
+import { getProvinceSuggestions, getWardSuggestions } from "../utils/vnAdministrative";
 
 const API_URL = import.meta.env.VITE_PRODUCTS_API_BASE;
 
@@ -30,6 +35,10 @@ type AddressDraft = {
   province: string;
   ward: string;
   line1: string;
+  lat: number | null;
+  lng: number | null;
+  locationSource: LocationSource;
+  locationConfidence: LocationConfidence;
   isDefault: boolean;
 };
 
@@ -38,6 +47,45 @@ const formatAddressText = (address: Partial<UserAddress>) =>
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .join(", ");
+
+const hasPinnedCoordinates = (
+  value:
+    | Pick<Partial<UserAddress>, "lat" | "lng">
+    | Pick<AddressDraft, "lat" | "lng">,
+) =>
+  typeof value.lat === "number" &&
+  Number.isFinite(value.lat) &&
+  typeof value.lng === "number" &&
+  Number.isFinite(value.lng);
+
+const formatPinnedCoordinates = (
+  value:
+    | Pick<Partial<UserAddress>, "lat" | "lng">
+    | Pick<AddressDraft, "lat" | "lng">,
+) =>
+  hasPinnedCoordinates(value)
+    ? `${value.lat!.toFixed(6)}, ${value.lng!.toFixed(6)}`
+    : "";
+
+const getLocationBadgeClassName = (confidence: "high" | "medium" | "low") => {
+  if (confidence === "high") {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (confidence === "medium") {
+    return "bg-sky-100 text-sky-800";
+  }
+  return "bg-slate-200 text-slate-700";
+};
+
+const getLocationPanelClassName = (confidence: "high" | "medium" | "low") => {
+  if (confidence === "high") {
+    return "border-emerald-200 bg-emerald-50";
+  }
+  if (confidence === "medium") {
+    return "border-sky-200 bg-sky-50";
+  }
+  return "border-slate-200 bg-slate-50";
+};
 
 const buildEmptyAddressDraft = (options?: {
   name?: string;
@@ -51,6 +99,10 @@ const buildEmptyAddressDraft = (options?: {
   province: "",
   ward: "",
   line1: "",
+  lat: null,
+  lng: null,
+  locationSource: "text_only",
+  locationConfidence: "low",
   isDefault: Boolean(options?.isDefault),
 });
 
@@ -81,6 +133,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [addressLoading, setAddressLoading] = useState(true);
   const [addressSaving, setAddressSaving] = useState(false);
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() =>
     buildEmptyAddressDraft({
@@ -100,6 +153,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     () => formatAddressText(addressDraft),
     [addressDraft],
   );
+  const draftLocationInfo = useMemo(
+    () => getLocationDisplayInfo(addressDraft),
+    [addressDraft],
+  );
+
+  const provinceSuggestions = useMemo(
+    () => getProvinceSuggestions(addressDraft.province, 12),
+    [addressDraft.province],
+  );
+
+  const wardSuggestions = useMemo(
+    () => getWardSuggestions(addressDraft.province, addressDraft.ward, 18),
+    [addressDraft.province, addressDraft.ward],
+  );
 
   const resetAddressForm = (options?: {
     nextAddresses?: UserAddress[];
@@ -109,6 +176,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       ? options?.nextAddresses
       : addressBook;
     setEditingAddressId(null);
+    setIsMapPickerOpen(false);
     setIsAddressFormOpen(Boolean(options?.keepOpen));
     setAddressDraft(
       buildEmptyAddressDraft({
@@ -225,6 +293,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   useEffect(() => {
     if (isAddressFormOpen) return;
 
+    setIsMapPickerOpen(false);
     setAddressDraft(
       buildEmptyAddressDraft({
         name: fullName || user.name,
@@ -425,6 +494,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const handleOpenCreateAddress = () => {
     setEditingAddressId(null);
+    setIsMapPickerOpen(false);
     setIsAddressFormOpen(true);
     setAddressDraft(
       buildEmptyAddressDraft({
@@ -439,6 +509,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     const normalized = normalizeUserAddress(address);
     setEditingAddressId(normalized.id);
     setIsAddressFormOpen(true);
+    setIsMapPickerOpen(hasPinnedCoordinates(normalized));
     setAddressDraft({
       id: normalized.id,
       label: normalized.label,
@@ -447,6 +518,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       province: normalized.province,
       ward: normalized.ward,
       line1: normalized.line1,
+      lat: normalized.lat ?? null,
+      lng: normalized.lng ?? null,
+      locationSource: normalized.locationSource || "text_only",
+      locationConfidence: normalized.locationConfidence || "low",
       isDefault: normalized.isDefault,
     });
   };
@@ -462,6 +537,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
         province: addressDraft.province,
         ward: addressDraft.ward,
         line1: addressDraft.line1,
+        lat: addressDraft.lat,
+        lng: addressDraft.lng,
+        locationSource: addressDraft.locationSource,
+        locationConfidence: addressDraft.locationConfidence,
         isDefault: Boolean(addressDraft.isDefault),
       });
 
@@ -702,25 +781,51 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-base font-semibold text-slate-900 break-words">
-                            {address.label || "Địa chỉ giao hàng"}
-                          </h4>
-                          {address.isDefault && (
-                            <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-950">
-                              Mặc định
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-700 mt-2">
-                          {address.recipientName || fullName || "Người nhận"}
-                          {address.recipientPhone
-                            ? ` • ${address.recipientPhone}`
-                            : ""}
-                        </p>
-                        <p className="text-sm leading-6 text-slate-600 mt-1 break-words">
-                          {formatAddressText(address)}
-                        </p>
+                        {(() => {
+                          const locationInfo = getLocationDisplayInfo(address);
+
+                          return (
+                            <>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-base font-semibold text-slate-900 break-words">
+                                  {address.label || "Địa chỉ giao hàng"}
+                                </h4>
+                                {address.isDefault && (
+                                  <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-950">
+                                    Mặc định
+                                  </span>
+                                )}
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${getLocationBadgeClassName(
+                                    locationInfo.confidence,
+                                  )}`}
+                                >
+                                  {locationInfo.icon} {locationInfo.sourceLabel}
+                                </span>
+                                <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 border border-slate-200">
+                                  {locationInfo.confidenceLabel}
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-700 mt-2">
+                                {address.recipientName || fullName || "Người nhận"}
+                                {address.recipientPhone
+                                  ? ` • ${address.recipientPhone}`
+                                  : ""}
+                              </p>
+                              <p className="text-sm leading-6 text-slate-600 mt-1 break-words">
+                                {formatAddressText(address)}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {locationInfo.helperText}
+                              </p>
+                              {hasPinnedCoordinates(address) && (
+                                <p className="mt-1 text-xs font-medium text-slate-700">
+                                  Tọa độ: {formatPinnedCoordinates(address)}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
                       <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -838,6 +943,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                     </label>
                     <input
                       type="text"
+                      list="vmgc-profile-province-suggestions"
                       value={addressDraft.province}
                       onChange={(e) =>
                         setAddressDraft((prev) => ({
@@ -856,6 +962,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                     </label>
                     <input
                       type="text"
+                      list="vmgc-profile-ward-suggestions"
                       value={addressDraft.ward}
                       onChange={(e) =>
                         setAddressDraft((prev) => ({
@@ -867,6 +974,23 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                       className="w-full h-11 rounded-xl bg-slate-100 px-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
                     />
                   </div>
+
+                  <div className="sm:col-span-2 -mt-1 text-xs leading-relaxed text-slate-500">
+                    Gõ gần đúng tên Tỉnh / Thành phố hoặc Xã / Phường để xem gợi ý.
+                    Khi mở map, hệ thống sẽ tự focus nhanh hơn theo địa chỉ hành chính bạn đã nhập.
+                  </div>
+
+                  <datalist id="vmgc-profile-province-suggestions">
+                    {provinceSuggestions.map((province) => (
+                      <option key={province.code} value={province.fullName} />
+                    ))}
+                  </datalist>
+
+                  <datalist id="vmgc-profile-ward-suggestions">
+                    {wardSuggestions.map((ward) => (
+                      <option key={ward.code} value={ward.fullName} />
+                    ))}
+                  </datalist>
 
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-slate-800 mb-2">
@@ -884,6 +1008,85 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                       placeholder="Ví dụ: 12A Nguyễn Trãi, Ấp 3"
                       className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-amber-400 resize-y"
                     />
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          Ghim vị trí trên map (không bắt buộc)
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                          Khi có tọa độ, đơn hàng và admin sẽ mở đúng vị trí
+                          trên map thay vì tìm theo text.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsMapPickerOpen((prev) => !prev)}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        {isMapPickerOpen
+                          ? "Ẩn bản đồ"
+                          : hasPinnedCoordinates(addressDraft)
+                            ? "Chỉnh lại vị trí"
+                            : "Ghim vị trí"}
+                      </button>
+                    </div>
+
+                    <div
+                      className={`mt-3 rounded-xl border px-3 py-3 text-sm ${getLocationPanelClassName(
+                        draftLocationInfo.confidence,
+                      )}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-800">
+                          {draftLocationInfo.icon} {draftLocationInfo.statusLabel}
+                        </span>
+                        <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {draftLocationInfo.sourceLabel}
+                        </span>
+                        <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {draftLocationInfo.confidenceLabel}
+                        </span>
+                      </div>
+                      <p className="mt-2 leading-relaxed text-slate-600">
+                        {draftLocationInfo.helperText}
+                      </p>
+                      {hasPinnedCoordinates(addressDraft) && (
+                        <p className="mt-2 text-xs font-medium text-slate-700">
+                          Tọa độ: {formatPinnedCoordinates(addressDraft)}
+                        </p>
+                      )}
+                    </div>
+
+                    {isMapPickerOpen && (
+                      <div className="mt-4">
+                        <MapPinPicker
+                          lat={addressDraft.lat}
+                          lng={addressDraft.lng}
+                          locationSource={addressDraft.locationSource}
+                          locationConfidence={addressDraft.locationConfidence}
+                          province={addressDraft.province}
+                          ward={addressDraft.ward}
+                          onChange={({
+                            lat,
+                            lng,
+                            locationSource,
+                            locationConfidence,
+                          }) =>
+                            setAddressDraft((prev) => ({
+                              ...prev,
+                              lat,
+                              lng,
+                              locationSource,
+                              locationConfidence,
+                            }))
+                          }
+                          mapHeightClassName="h-72"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   formatOrderAddressSnapshot,
+  getLocationDisplayInfo,
   getOrderAddressSnapshotSourceLabel,
   hasOrderAddressSnapshot,
   normalizeOrderAddressSnapshot,
@@ -8,6 +9,8 @@ import {
 import type {
   AuthUser,
   CartItem,
+  LocationConfidence,
+  LocationSource,
   OrderAddressSnapshot,
   OrderCustomer,
   OrderDeliveryInfo,
@@ -20,6 +23,19 @@ import {
   formatTransactionTypeLabel,
 } from "../utils/shopFormat";
 import { useToast } from "../components/Toast";
+import MapPinPicker from "../components/MapPinPicker";
+import SearchableCombobox, {
+  type ComboboxOption,
+} from "../components/SearchableCombobox";
+import {
+  findProvinceMatch,
+  getProvinceSuggestions,
+  getWardSuggestions,
+} from "../utils/vnAdministrative";
+import {
+  getUserOrdersCacheScope,
+  putOrdersInteractionDetail,
+} from "../utils/ordersInteractionCache";
 
 interface CheckoutPageProps {
   authUser?: AuthUser | null;
@@ -39,6 +55,10 @@ type ManualAddressForm = {
   province: string;
   ward: string;
   line1: string;
+  lat: number | null;
+  lng: number | null;
+  locationSource: LocationSource;
+  locationConfidence: LocationConfidence;
 };
 
 const DEFAULT_CUSTOMER: OrderCustomer = {
@@ -63,6 +83,10 @@ const buildManualAddressDraft = (
   province: "",
   ward: "",
   line1: "",
+  lat: null,
+  lng: null,
+  locationSource: "text_only",
+  locationConfidence: "low",
 });
 
 const validateCustomer = (customer: OrderCustomer) => {
@@ -91,6 +115,10 @@ const buildSnapshotFromSavedAddress = (
     note,
     isDefault: address.isDefault,
     source: "saved_address",
+    lat: address.lat ?? null,
+    lng: address.lng ?? null,
+    locationSource: address.locationSource,
+    locationConfidence: address.locationConfidence,
   });
 
 const buildSnapshotFromManualAddress = (
@@ -108,6 +136,10 @@ const buildSnapshotFromManualAddress = (
     note,
     isDefault: false,
     source: "manual_input",
+    lat: manualAddress.lat ?? null,
+    lng: manualAddress.lng ?? null,
+    locationSource: manualAddress.locationSource,
+    locationConfidence: manualAddress.locationConfidence,
   });
 
 const validateAddressSnapshot = (address: OrderAddressSnapshot) => {
@@ -126,6 +158,53 @@ const validateAddressSnapshot = (address: OrderAddressSnapshot) => {
   }
   return "";
 };
+
+const hasPinnedCoordinates = (value: {
+  lat?: number | null;
+  lng?: number | null;
+}) =>
+  typeof value.lat === "number" &&
+  Number.isFinite(value.lat) &&
+  typeof value.lng === "number" &&
+  Number.isFinite(value.lng);
+
+const formatPinnedCoordinates = (value: {
+  lat?: number | null;
+  lng?: number | null;
+}) =>
+  hasPinnedCoordinates(value)
+    ? `${value.lat!.toFixed(6)}, ${value.lng!.toFixed(6)}`
+    : "";
+
+const getLocationBadgeClassName = (confidence: "high" | "medium" | "low") => {
+  if (confidence === "high") {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (confidence === "medium") {
+    return "bg-sky-100 text-sky-800";
+  }
+  return "bg-slate-200 text-slate-700";
+};
+
+const getLocationPanelClassName = (confidence: "high" | "medium" | "low") => {
+  if (confidence === "high") {
+    return "border-emerald-200 bg-emerald-50";
+  }
+  if (confidence === "medium") {
+    return "border-sky-200 bg-sky-50";
+  }
+  return "border-slate-200 bg-slate-50";
+};
+
+const toComboboxOptions = <T extends { code: string; fullName: string; type?: string }>(
+  items: T[],
+): ComboboxOption[] =>
+  items.map((item) => ({
+    key: item.code,
+    value: item.fullName,
+    label: item.fullName,
+    description: item.type,
+  }));
 
 const CheckoutPage: React.FC<CheckoutPageProps> = ({
   authUser,
@@ -152,6 +231,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
     savedAddresses.length ? "saved" : "manual",
   );
   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState("");
+  const [isManualMapPickerOpen, setIsManualMapPickerOpen] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -212,7 +292,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
   useEffect(() => {
     setManualAddress((prev) => ({
       ...prev,
-      recipientName: prev.recipientName || customer.name || authUser?.name || "",
+      recipientName:
+        prev.recipientName || customer.name || authUser?.name || "",
       recipientPhone:
         prev.recipientPhone || customer.phone || authUser?.phone || "",
     }));
@@ -253,6 +334,40 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
     () => formatOrderAddressSnapshot(resolvedAddressSnapshot),
     [resolvedAddressSnapshot],
   );
+  const manualLocationInfo = useMemo(
+    () => getLocationDisplayInfo(manualAddress),
+    [manualAddress],
+  );
+  const resolvedLocationInfo = useMemo(
+    () => getLocationDisplayInfo(resolvedAddressSnapshot),
+    [resolvedAddressSnapshot],
+  );
+  const matchedProvince = useMemo(
+    () => findProvinceMatch(manualAddress.province),
+    [manualAddress.province],
+  );
+
+  const manualProvinceBrowseOptions = useMemo(
+    () => toComboboxOptions(getProvinceSuggestions("", 40)),
+    [],
+  );
+
+  const manualProvinceFilteredOptions = useMemo(
+    () => toComboboxOptions(getProvinceSuggestions(manualAddress.province, 40)),
+    [manualAddress.province],
+  );
+
+  const manualWardBrowseOptions = useMemo(() => {
+    if (!matchedProvince) return [];
+    return toComboboxOptions(getWardSuggestions(matchedProvince.fullName, "", 120));
+  }, [matchedProvince]);
+
+  const manualWardFilteredOptions = useMemo(() => {
+    if (!matchedProvince) return [];
+    return toComboboxOptions(
+      getWardSuggestions(matchedProvince.fullName, manualAddress.ward, 120),
+    );
+  }, [manualAddress.ward, matchedProvince]);
 
   if (!authUser?.email) {
     return (
@@ -314,7 +429,10 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
 
     if (addressMode === "saved" && !selectedSavedAddress) {
-      showToast("Vui lòng chọn một địa chỉ đã lưu hoặc chuyển sang nhập mới.", "error");
+      showToast(
+        "Vui lòng chọn một địa chỉ đã lưu hoặc chuyển sang nhập mới.",
+        "error",
+      );
       return;
     }
 
@@ -337,7 +455,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
           note: deliveryInfo.note,
         },
       });
-      onOrderCreated(response.orderId, customer.email.trim().toLowerCase());
+      const normalizedCustomerEmail = customer.email.trim().toLowerCase();
+      if (response.detail && normalizedCustomerEmail) {
+        putOrdersInteractionDetail(
+          getUserOrdersCacheScope(normalizedCustomerEmail),
+          response.detail,
+          {
+            selectedOrderId: response.orderId,
+            dataVersion: response.dataVersion,
+          },
+        );
+      }
+      onOrderCreated(response.orderId, normalizedCustomerEmail);
     } catch (error) {
       showToast(
         String((error as any)?.message || error || "Không thể tạo đơn hàng"),
@@ -363,8 +492,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
               Hoàn tất thông tin để tạo đơn
             </h1>
             <p className="mt-2 text-slate-500">
-              Tạo đơn chỉ ghi nhận nhu cầu ban đầu. Cây chỉ được giữ khi admin
-              xác nhận đơn ở trạng thái <strong>confirmed</strong>.
+              Đơn được tạo ở trạng thái <strong>new</strong>. Cây chỉ được giữ
+              khi admin xác nhận.
             </p>
           </div>
           <button
@@ -386,7 +515,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 Thông tin khách hàng
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Email này sẽ là đầu mối để tra cứu lịch sử đơn hàng của bạn.
+                Đơn hàng sẽ gắn với email tài khoản hiện tại.
               </p>
             </div>
 
@@ -428,8 +557,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   placeholder="ban@email.com"
                 />
                 <span className="mt-2 block text-xs text-slate-500">
-                  Đơn sẽ gắn với email tài khoản đang đăng nhập để truy vết đúng
-                  người tạo đơn.
+                  Dùng email này để tra cứu đơn hàng về sau.
                 </span>
               </label>
             </div>
@@ -440,8 +568,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   Thông tin giao / bàn giao cây
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Địa chỉ được snapshot vào đơn tại thời điểm checkout để đơn cũ
-                  không bị đổi theo Address Book sau này.
+                  Địa chỉ này sẽ được lưu cố định theo đơn.
                 </p>
               </div>
 
@@ -476,13 +603,19 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {addressMode === "saved" ? (
                       <div className="grid gap-3">
                         {savedAddresses.map((address) => {
-                          const isActive = address.id === selectedSavedAddress?.id;
-                          const addressText = formatOrderAddressSnapshot(address);
+                          const isActive =
+                            address.id === selectedSavedAddress?.id;
+                          const addressText =
+                            formatOrderAddressSnapshot(address);
+                          const locationInfo = getLocationDisplayInfo(address);
+
                           return (
                             <button
                               key={address.id}
                               type="button"
-                              onClick={() => setSelectedSavedAddressId(address.id)}
+                              onClick={() =>
+                                setSelectedSavedAddressId(address.id)
+                              }
                               className={`rounded-2xl border px-4 py-4 text-left transition ${
                                 isActive
                                   ? "border-amber-300 bg-amber-50 shadow-sm"
@@ -498,9 +631,21 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                                     Mặc định
                                   </span>
                                 )}
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLocationBadgeClassName(
+                                    locationInfo.confidence,
+                                  )}`}
+                                >
+                                  {locationInfo.icon} {locationInfo.sourceLabel}
+                                </span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
+                                  {locationInfo.confidenceLabel}
+                                </span>
                               </div>
                               <p className="mt-2 text-sm font-medium text-slate-700">
-                                {address.recipientName || customer.name || "Người nhận"}
+                                {address.recipientName ||
+                                  customer.name ||
+                                  "Người nhận"}
                                 {address.recipientPhone
                                   ? ` • ${address.recipientPhone}`
                                   : ""}
@@ -508,6 +653,11 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               <p className="mt-2 text-sm leading-relaxed text-slate-500">
                                 {addressText || "Chưa đủ địa chỉ"}
                               </p>
+                              {hasPinnedCoordinates(address) && (
+                                <p className="mt-1 text-xs font-medium text-slate-700">
+                                  Tọa độ: {formatPinnedCoordinates(address)}
+                                </p>
+                              )}
                             </button>
                           );
                         })}
@@ -516,8 +666,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-                    Tài khoản này chưa có địa chỉ đã lưu. Bạn có thể nhập trực tiếp
-                    bên dưới, hoặc thêm vào hồ sơ ở phần tài khoản sau.
+                    Chưa có địa chỉ đã lưu. Bạn có thể nhập nhanh ngay bên dưới.
                   </div>
                 )}
 
@@ -575,34 +724,63 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <span className="mb-2 block text-sm font-semibold text-slate-700">
                         Tỉnh / Thành phố trực thuộc Trung ương
                       </span>
-                      <input
+                      <SearchableCombobox
                         value={manualAddress.province}
-                        onChange={(e) =>
+                        onChange={(nextValue) =>
                           setManualAddress((prev) => ({
                             ...prev,
-                            province: e.target.value,
+                            province: nextValue,
+                            ward: nextValue.trim() ? prev.ward : "",
                           }))
                         }
-                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        placeholder="TP.HCM"
+                        onSelect={(option) =>
+                          setManualAddress((prev) => ({
+                            ...prev,
+                            province: option.value,
+                            ward:
+                              prev.province.trim().toLowerCase() ===
+                              option.value.trim().toLowerCase()
+                                ? prev.ward
+                                : "",
+                          }))
+                        }
+                        allOptions={manualProvinceBrowseOptions}
+                        filteredOptions={manualProvinceFilteredOptions}
+                        placeholder="Chọn hoặc gõ để lọc tỉnh / thành"
+                        emptyText="Không tìm thấy tỉnh / thành phù hợp."
                       />
                     </label>
                     <label className="block">
                       <span className="mb-2 block text-sm font-semibold text-slate-700">
                         Xã / Phường / Đặc khu
                       </span>
-                      <input
+                      <SearchableCombobox
                         value={manualAddress.ward}
-                        onChange={(e) =>
+                        onChange={(nextValue) =>
                           setManualAddress((prev) => ({
                             ...prev,
-                            ward: e.target.value,
+                            ward: nextValue,
                           }))
                         }
-                        className="h-12 w-full rounded-2xl border border-slate-300 px-4 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        placeholder="Phường Bến Thành"
+                        allOptions={manualWardBrowseOptions}
+                        filteredOptions={manualWardFilteredOptions}
+                        placeholder={
+                          matchedProvince
+                            ? "Chọn hoặc gõ để lọc xã / phường"
+                            : "Chọn tỉnh / thành trước"
+                        }
+                        emptyText={
+                          matchedProvince
+                            ? "Không tìm thấy xã / phường phù hợp."
+                            : "Chọn đúng tỉnh / thành trước để xem danh sách xã / phường."
+                        }
+                        disabled={!matchedProvince}
                       />
                     </label>
+                    <div className="sm:col-span-2 -mt-1 text-xs text-slate-500">
+                      Click để mở danh sách, hoặc gõ để lọc nhanh.
+                    </div>
+
                     <label className="block sm:col-span-2">
                       <span className="mb-2 block text-sm font-semibold text-slate-700">
                         Số nhà + đường / thôn / xóm / ấp
@@ -623,6 +801,85 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         }
                       />
                     </label>
+
+                    <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            Ghim map (không bắt buộc)
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            Có tọa độ thì admin mở đúng điểm giao hơn.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setIsManualMapPickerOpen((prev) => !prev)
+                          }
+                          className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          {isManualMapPickerOpen
+                            ? "Ẩn map"
+                            : hasPinnedCoordinates(manualAddress)
+                              ? "Xem / sửa map"
+                              : "Mở map"}
+                        </button>
+                      </div>
+
+                      {!isManualMapPickerOpen && (
+                        <div
+                          className={`mt-3 rounded-xl border px-3 py-3 text-sm ${getLocationPanelClassName(
+                            manualLocationInfo.confidence,
+                          )}`}
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-slate-800">
+                              {manualLocationInfo.icon} {manualLocationInfo.statusLabel}
+                            </span>
+                            <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {manualLocationInfo.sourceLabel}
+                            </span>
+                            <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {manualLocationInfo.confidenceLabel}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xs text-slate-600">
+                            {hasPinnedCoordinates(manualAddress)
+                              ? `Tọa độ: ${formatPinnedCoordinates(manualAddress)}`
+                              : "Bạn có thể bỏ qua bước này và lưu bằng địa chỉ text."}
+                          </p>
+                        </div>
+                      )}
+
+                      {isManualMapPickerOpen && (
+                        <div className="mt-4">
+                          <MapPinPicker
+                            lat={manualAddress.lat}
+                            lng={manualAddress.lng}
+                            locationSource={manualAddress.locationSource}
+                            locationConfidence={manualAddress.locationConfidence}
+                            province={manualAddress.province}
+                            ward={manualAddress.ward}
+                            onChange={({
+                              lat,
+                              lng,
+                              locationSource,
+                              locationConfidence,
+                            }) =>
+                              setManualAddress((prev) => ({
+                                ...prev,
+                                lat,
+                                lng,
+                                locationSource,
+                                locationConfidence,
+                              }))
+                            }
+                            mapHeightClassName="h-72"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -645,6 +902,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                   {hasOrderAddressSnapshot(resolvedAddressSnapshot) ? (
                     <div className="mt-3 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLocationBadgeClassName(
+                            resolvedLocationInfo.confidence,
+                          )}`}
+                        >
+                          {resolvedLocationInfo.icon} {resolvedLocationInfo.sourceLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          {resolvedLocationInfo.confidenceLabel}
+                        </span>
+                      </div>
                       <p className="font-semibold text-slate-900">
                         {resolvedAddressSnapshot.recipientName || customer.name}
                         {resolvedAddressSnapshot.recipientPhone
@@ -654,16 +923,15 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <p className="whitespace-pre-line leading-relaxed text-slate-700">
                         {resolvedAddressText}
                       </p>
-                      {resolvedAddressSnapshot.note && (
-                        <p className="text-sm text-slate-500">
-                          Ghi chú địa chỉ: {resolvedAddressSnapshot.note}
+                      {hasPinnedCoordinates(resolvedAddressSnapshot) && (
+                        <p className="text-xs font-medium text-slate-600">
+                          Tọa độ: {formatPinnedCoordinates(resolvedAddressSnapshot)}
                         </p>
                       )}
                     </div>
                   ) : (
                     <p className="mt-3 text-sm text-slate-500">
-                      Chọn một địa chỉ đã lưu hoặc nhập địa chỉ mới để hệ thống
-                      snapshot vào đơn hàng.
+                      Chọn địa chỉ để xem phần snapshot của đơn.
                     </p>
                   )}
                 </div>
@@ -691,7 +959,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {deliveryAddressLabel}
                   </p>
                   <p className="mt-2 leading-relaxed text-slate-600">
-                    {resolvedAddressText || "Địa chỉ đầy đủ sẽ hiện ở đây sau khi bạn chọn hoặc nhập xong."}
+                    {resolvedAddressText ||
+                      "Địa chỉ đầy đủ sẽ hiện ở đây sau khi bạn chọn hoặc nhập xong."}
                   </p>
                 </div>
                 <label className="block sm:col-span-2">
@@ -727,44 +996,9 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </label>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
-              <p className="font-semibold text-slate-900">
-                Luồng vận hành sau khi tạo đơn
-              </p>
-              <ul className="mt-2 space-y-2">
-                <li>
-                  • Đơn mới tạo ở trạng thái <strong>new</strong>.
-                </li>
-                <li>
-                  • Đơn mới chỉ ghi nhận nhu cầu và chờ admin kiểm tra thực tế.
-                </li>
-                <li>
-                  • Chỉ khi admin xác nhận <strong>confirmed</strong>, cây mới
-                  chuyển sang trạng thái giữ chỗ <strong>reserved</strong>.
-                </li>
-                <li>
-                  • Với đơn bán, admin sẽ cập nhật thông tin giao hàng rồi
-                  chuyển đơn sang <strong>delivering</strong> trước khi hoàn tất
-                  giao.
-                </li>
-                <li>
-                  • Với đơn thuê, sau khi bàn giao cây, admin sẽ chuyển đơn sang
-                  <strong>active</strong> và cây chuyển thành
-                  <strong>rented_out</strong>.
-                </li>
-                <li>
-                  • Khi khách trả cây và admin xác nhận hoàn tất đơn thuê,
-                  inventory sẽ tự mở lại về <strong>available</strong> để cây có
-                  thể được đặt cho giao dịch mới.
-                </li>
-                <li>
-                  • Nếu đơn <strong>confirmed</strong> không được hoàn tất trong
-                  khoảng <strong>30 phút</strong>, lock giữ cây sẽ tự hết hiệu
-                  lực. Riêng đơn <strong>delivering</strong> sẽ tiếp tục khóa
-                  cây cho tới khi giao xong hoặc trả về{" "}
-                  <strong>confirmed</strong>.
-                </li>
-              </ul>
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+              Đơn tạo xong ở trạng thái <strong>new</strong>. Admin xác nhận thì
+              cây mới được giữ chỗ.
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

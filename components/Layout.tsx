@@ -36,7 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement | null>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const navItems: Array<{ id: Page; label: string; icon: string }> = [
     { id: "home", label: "Trang Chủ", icon: "🏠" },
@@ -92,17 +93,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [drawerOpen]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+    const handleClickOutside = (event: MouseEvent | PointerEvent) => {
+      const target = event.target as Node;
+
+      const insideMobile = mobileDropdownRef.current?.contains(target) ?? false;
+
+      const insideDesktop =
+        desktopDropdownRef.current?.contains(target) ?? false;
+
+      if (!insideMobile && !insideDesktop) {
         setUserMenuOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () =>
+      document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   const navBtnBase =
@@ -182,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Mobile User Button - Avatar */}
               {authUser ? (
-                <div ref={dropdownRef} className="relative">
+                <div ref={mobileDropdownRef} className="relative">
                   <img
                     src={authUser.avatarUrl || "/no-avatar.png"}
                     alt="avatar"
@@ -312,7 +318,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Desktop User Button - Avatar + Name */}
             {authUser ? (
-              <div ref={dropdownRef} className="relative">
+              <div ref={desktopDropdownRef} className="relative">
                 <img
                   src={authUser.avatarUrl || "/no-avatar.png"}
                   alt="avatar"

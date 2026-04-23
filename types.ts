@@ -9,6 +9,7 @@ export type Page =
   | "checkout"
   | "my-orders"
   | "contact"
+  | "policy"
   | "admin";
 
 export type AdminTab = "products" | "orders" | "bookings" | "users";

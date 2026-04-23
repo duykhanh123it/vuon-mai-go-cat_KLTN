@@ -53,6 +53,14 @@ export interface UpdateOrderStatusResponse {
   dataVersion?: string;
 }
 
+export interface SendPaymentReminderResponse {
+  ok: boolean;
+  message?: string;
+  sentAt?: string;
+  updatedOrder?: OrderSummary;
+  dataVersion?: string;
+}
+
 const getApiBase = () => {
   const base = import.meta.env.VITE_PRODUCTS_API_BASE;
   if (!base) {
@@ -302,6 +310,13 @@ export const createOrder = async (params: {
   note?: string;
   deliveryInfo?: Partial<OrderDeliveryInfo>;
   addressSnapshot?: Partial<OrderAddressSnapshot>;
+  policyAcceptance?: {
+    accepted?: boolean;
+    version?: string;
+    acceptedAt?: string;
+    scope?: "buy" | "rent";
+    source?: string;
+  };
 }): Promise<CreateOrderResponse> => {
   const items = Array.isArray(params.items) ? params.items : [];
   if (!items.length) {
@@ -333,6 +348,15 @@ export const createOrder = async (params: {
       note: String(params.deliveryInfo?.note || ""),
     },
     addressSnapshot: normalizeOrderAddressSnapshot(params.addressSnapshot),
+    policyAcceptance: params.policyAcceptance
+      ? {
+          accepted: !!params.policyAcceptance.accepted,
+          version: String(params.policyAcceptance.version || "").trim(),
+          acceptedAt: String(params.policyAcceptance.acceptedAt || "").trim(),
+          scope: params.policyAcceptance.scope || undefined,
+          source: String(params.policyAcceptance.source || "").trim(),
+        }
+      : undefined,
     items: items.map((item) => ({
       productCode: item.productId,
       productType: item.productCategory,
@@ -459,6 +483,31 @@ export const updateOrderStatus = async (params: {
     message: data.message,
     orderStatus: data.orderStatus,
     paymentStatus: data.paymentStatus,
+    updatedOrder: data.updatedOrder
+      ? normalizeOrderSummary(data.updatedOrder)
+      : undefined,
+    dataVersion: String(data.dataVersion || "").trim() || undefined,
+  };
+};
+
+export const sendPaymentReminder = async (params: {
+  orderId: string;
+}): Promise<SendPaymentReminderResponse> => {
+  const data = await postJson<{
+    ok: boolean;
+    message?: string;
+    sentAt?: string;
+    updatedOrder?: any;
+    dataVersion?: string;
+  }>({
+    api: "sendPaymentReminder",
+    orderId: String(params.orderId || "").trim(),
+  });
+
+  return {
+    ok: !!data.ok,
+    message: data.message,
+    sentAt: String(data.sentAt || "").trim() || undefined,
     updatedOrder: data.updatedOrder
       ? normalizeOrderSummary(data.updatedOrder)
       : undefined,

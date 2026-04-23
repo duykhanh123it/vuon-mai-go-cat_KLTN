@@ -5,6 +5,7 @@ import {
   formatTransactionTypeLabel,
 } from "../utils/shopFormat";
 import { getCartMode, getCartTotal } from "../utils/cart";
+import { buildPolicyHref, getMinimumRentalDeposit } from "../utils/policy";
 
 interface CartPageProps {
   items: CartItem[];
@@ -26,6 +27,10 @@ const CartPage: React.FC<CartPageProps> = ({
 }) => {
   const mode = useMemo(() => getCartMode(items), [items]);
   const totalAmount = useMemo(() => getCartTotal(items), [items]);
+  const rentDepositMinimum = useMemo(
+    () => (mode === "rent" ? getMinimumRentalDeposit(totalAmount) : 0),
+    [mode, totalAmount],
+  );
 
   if (!items.length) {
     return (
@@ -188,6 +193,19 @@ const CartPage: React.FC<CartPageProps> = ({
                 <span className="text-2xl font-bold text-amber-600">
                   {formatCurrencyVnd(totalAmount)}
                 </span>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
+              <p className="font-semibold text-amber-950">{mode === "rent" ? "Chính sách thuê đang áp dụng" : "Chính sách mua đang áp dụng"}</p>
+              <p className="mt-2">
+                {mode === "rent"
+                  ? `Đơn thuê chỉ được giữ cây khi admin xác nhận và đã thu tối thiểu ${formatCurrencyVnd(rentDepositMinimum)} tiền cọc. Giá thuê niêm yết áp dụng cho 1 chu kỳ 5 - 10 ngày.`
+                  : "Đơn mua tạo xong vẫn ở trạng thái new. Cây chỉ được giữ khi admin xác nhận và đơn chỉ hoàn tất khi giao xong, thanh toán đủ."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href={buildPolicyHref(mode === "rent" ? "rent" : "buy")} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100">Đọc chi tiết ↗</a>
+                <a href={buildPolicyHref()} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100">Xem trang chính sách ↗</a>
               </div>
             </div>
 

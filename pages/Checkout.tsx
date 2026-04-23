@@ -36,6 +36,12 @@ import {
   getUserOrdersCacheScope,
   putOrdersInteractionDetail,
 } from "../utils/ordersInteractionCache";
+import {
+  SHOP_POLICY_VERSION,
+  buildPolicyHref,
+  getMinimumRentalDeposit,
+  getPolicyAgreementLabel,
+} from "../utils/policy";
 
 interface CheckoutPageProps {
   authUser?: AuthUser | null;
@@ -234,9 +240,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isManualMapPickerOpen, setIsManualMapPickerOpen] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
   const mode = useMemo(() => getCartMode(items), [items]);
   const totalAmount = useMemo(() => getCartTotal(items), [items]);
+  const policyDetailHref = useMemo(
+    () => buildPolicyHref(mode === "rent" ? "rent" : "buy"),
+    [mode],
+  );
+  const minimumRentalDeposit = useMemo(
+    () => (mode === "rent" ? getMinimumRentalDeposit(totalAmount) : 0),
+    [mode, totalAmount],
+  );
 
   useEffect(() => {
     setCustomer((prev) => ({
@@ -442,6 +457,16 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
+    if (!mode) {
+      showToast("Không xác định được loại giao dịch của đơn hàng.", "error");
+      return;
+    }
+
+    if (!agreedToPolicy) {
+      showToast("Bạn cần đọc và đồng ý Chính Sách Thuê & Mua trước khi tạo đơn.", "error");
+      return;
+    }
+
     try {
       setSubmitting(true);
       const response = await createOrder({
@@ -453,6 +478,13 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
           address: resolvedAddressText,
           scheduledAt: deliveryInfo.scheduledAt,
           note: deliveryInfo.note,
+        },
+        policyAcceptance: {
+          accepted: true,
+          version: SHOP_POLICY_VERSION,
+          acceptedAt: new Date().toISOString(),
+          scope: mode,
+          source: "checkout",
         },
       });
       const normalizedCustomerEmail = customer.email.trim().toLowerCase();
@@ -993,6 +1025,23 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   className="min-h-[120px] w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                   placeholder="Ví dụ: cần tư vấn thêm về dáng cây, khách muốn trao đổi lại giá, cần xuất hóa đơn..."
                 />
+              </label>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5">
+              <p className="text-sm font-bold text-amber-950">Chính sách áp dụng cho đơn {mode === "rent" ? "thuê" : "mua"}</p>
+              <p className="mt-2 text-sm leading-relaxed text-amber-900">
+                {mode === "rent"
+                  ? `Giá thuê niêm yết áp dụng cho 1 chu kỳ 5 - 10 ngày. Đơn chỉ được giữ khi admin xác nhận và đã thu tối thiểu ${formatCurrencyVnd(minimumRentalDeposit)} tiền cọc.`
+                  : "Đơn mua được tạo ở trạng thái new. Cây chỉ được giữ khi admin xác nhận và chỉ hoàn tất khi giao xong, thanh toán đủ."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href={policyDetailHref} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100">Đọc chính sách chi tiết ↗</a>
+                <a href={buildPolicyHref()} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100">Xem trang chính sách ↗</a>
+              </div>
+              <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white/80 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                <input type="checkbox" checked={agreedToPolicy} onChange={(e) => setAgreedToPolicy(e.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-400" />
+                <span>{getPolicyAgreementLabel(mode === "rent" ? "rent" : "buy")}</span>
               </label>
             </div>
 

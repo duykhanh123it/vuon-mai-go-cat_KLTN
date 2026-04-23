@@ -30,6 +30,7 @@ import Booking from "./pages/Booking";
 import CartPage from "./pages/Cart";
 import CheckoutPage from "./pages/Checkout";
 import Contact from "./pages/Contact";
+import PolicyPage from "./pages/Policy";
 import MyOrdersPage from "./pages/MyOrders";
 import AdminPage from "./pages/admin/AdminPage";
 import NotFound from "./pages/NotFound";
@@ -175,6 +176,10 @@ const parseHashRoute = (hash: string): AppRouteState => {
     return { page: "contact", productsPage: 1 };
   }
 
+  if (parts[0] === "chinh-sach-thue-mua") {
+    return { page: "policy", productsPage: 1 };
+  }
+
   if (parts[0] === "admin") {
     const tabPart = parts[1];
     return {
@@ -223,6 +228,8 @@ const buildHashRoute = (route: AppRouteState) => {
     }
     case "contact":
       return "#/lien-he";
+    case "policy":
+      return "#/chinh-sach-thue-mua";
     case "admin": {
       const tab =
         route.adminTab && isAdminTab(route.adminTab)
@@ -458,6 +465,10 @@ const App: React.FC = () => {
     navigateHash(buildHashRoute({ page: "contact", productsPage: 1 }));
   }, [navigateHash]);
 
+  const goPolicy = useCallback(() => {
+    navigateHash(buildHashRoute({ page: "policy", productsPage: 1 }));
+  }, [navigateHash]);
+
   const goCart = useCallback(() => {
     navigateHash(buildHashRoute({ page: "cart", productsPage: 1 }));
   }, [navigateHash]);
@@ -524,6 +535,9 @@ const App: React.FC = () => {
         case "contact":
           goContact();
           return;
+        case "policy":
+          goPolicy();
+          return;
         case "admin":
           goAdmin();
           return;
@@ -546,6 +560,7 @@ const App: React.FC = () => {
       goContact,
       goHome,
       goMyOrders,
+      goPolicy,
       goProductDetail,
       goProducts,
       route,
@@ -750,6 +765,9 @@ const App: React.FC = () => {
 
       case "contact":
         return <Contact setCurrentPage={navigateByPage} />;
+
+      case "policy":
+        return <PolicyPage />;
 
       case "booking":
         return <Booking authUser={authUser} />;

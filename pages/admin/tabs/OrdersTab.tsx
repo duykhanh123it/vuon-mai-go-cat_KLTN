@@ -21,6 +21,7 @@ import {
   fetchOrderDetail,
   fetchOrders,
   fetchOrdersMeta,
+  sendPaymentReminder,
   updateOrderDelivery,
   updateOrderStatus,
 } from "../../../utils/ordersApi";
@@ -50,6 +51,7 @@ import {
   upsertOrdersInteractionOrder,
 } from "../../../utils/ordersInteractionCache";
 import { StatCard, Th, Td } from "../shared";
+import { getMinimumRentalDeposit } from "../../../utils/policy";
 
 interface OrdersTabProps {
   authUser?: AuthUser | null;
@@ -63,7 +65,7 @@ const ORDERS_ITEMS_PER_PAGE = 10;
 type PendingOrderAction = {
   actionKey: string;
   label: string;
-  kind: "status" | "payment" | "delivery";
+  kind: "status" | "payment" | "delivery" | "reminder";
   startedAt: number;
 };
 
@@ -152,12 +154,36 @@ const getStatusActionLabel = (
   return formatOrderStatusLabel(nextStatus);
 };
 
+const canSendPaymentReminder = (
+  order: Pick<
+    OrderSummary,
+    | "customerEmail"
+    | "paymentStatus"
+    | "remainingAmount"
+    | "orderStatus"
+  > | null | undefined,
+) => {
+  if (!order) return false;
+  const email = String(order.customerEmail || "").trim();
+  if (!email || !email.includes("@")) return false;
+  if (Number(order.remainingAmount || 0) <= 0) return false;
+  if (order.paymentStatus === "paid") return false;
+  if (order.orderStatus === "cancelled" || order.orderStatus === "completed") {
+    return false;
+  }
+  return true;
+};
+
 const getLifecycleHelpText = (order: OrderSummary | null | undefined) => {
   if (!order) {
     return "Backend sẽ kiểm tra rule chuyển trạng thái, khóa cây và đồng bộ inventory trước khi ghi xuống sheet.";
   }
 
   if (order.orderType === "rent") {
+    const minDepositText = formatCurrencyVnd(
+      getMinimumRentalDeposit(order.totalAmount),
+    );
+
     if (order.orderStatus === "confirmed") {
       return "Đơn thuê đã cọc và đang giữ cây. Khi bàn giao xong, chuyển sang active để cây thành rented_out.";
     }
@@ -167,7 +193,7 @@ const getLifecycleHelpText = (order: OrderSummary | null | undefined) => {
     if (order.orderStatus === "completed") {
       return "Đơn thuê đã khép vòng đời. Inventory của cây trong đơn đã được mở lại để sẵn sàng cho giao dịch mới.";
     }
-    return "Đơn thuê đi theo luồng new → confirmed → active → completed. new chưa lock cây, confirmed bắt đầu giữ cây thật.";
+    return `Đơn thuê đi theo luồng new → confirmed → active → completed. new chưa lock cây, confirmed chỉ khả dụng khi đã thu tối thiểu ${minDepositText} tiền cọc.`;
   }
 
   if (order.orderStatus === "confirmed") {
@@ -258,6 +284,132 @@ const sortOrdersByNewest = (list: OrderSummary[]) =>
     String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
   );
 
+const InlineSpinner: React.FC<{
+  className?: string;
+}> = ({ className = "h-4 w-4 border-2" }) => (
+  <span
+    aria-hidden="true"
+    className={`inline-block animate-spin rounded-full border-current border-r-transparent ${className}`}
+  />
+);
+
+const OrdersStatCardsSkeleton: React.FC = () => (
+  <>
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div
+        key={`orders-stat-skeleton-${index}`}
+        className="h-full min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 h-10 w-20 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 h-4 w-32 animate-pulse rounded bg-slate-100" />
+      </div>
+    ))}
+  </>
+);
+
+const OrdersTableSkeletonRows: React.FC<{
+  rowCount?: number;
+}> = ({ rowCount = 6 }) => (
+  <>
+    {Array.from({ length: rowCount }).map((_, index) => (
+      <tr key={`orders-row-skeleton-${index}`} className="animate-pulse">
+        <Td>
+          <div className="h-4 w-8 rounded bg-slate-200" />
+        </Td>
+        <Td>
+          <div className="space-y-2">
+            <div className="h-4 w-24 rounded bg-slate-200" />
+            <div className="h-3 w-28 rounded bg-slate-100" />
+          </div>
+        </Td>
+        <Td>
+          <div className="space-y-2">
+            <div className="h-4 w-28 rounded bg-slate-200" />
+            <div className="h-3 w-36 rounded bg-slate-100" />
+          </div>
+        </Td>
+        <Td>
+          <div className="h-6 w-20 rounded-full bg-slate-100" />
+        </Td>
+        <Td>
+          <div className="h-6 w-24 rounded-full bg-slate-100" />
+        </Td>
+        <Td>
+          <div className="h-6 w-24 rounded-full bg-slate-100" />
+        </Td>
+        <Td>
+          <div className="space-y-2">
+            <div className="h-4 w-24 rounded bg-slate-200" />
+            <div className="h-3 w-20 rounded bg-slate-100" />
+          </div>
+        </Td>
+        <Td className="text-right">
+          <div className="ml-auto h-10 w-28 rounded-xl bg-slate-100" />
+        </Td>
+      </tr>
+    ))}
+  </>
+);
+
+const OrderDetailSkeleton: React.FC = () => (
+  <div className="space-y-6 p-6 animate-pulse">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={`orders-detail-stat-skeleton-${index}`}
+          className="rounded-2xl bg-slate-50 p-4"
+        >
+          <div className="h-4 w-24 rounded bg-slate-200" />
+          <div className="mt-4 h-6 w-28 rounded bg-slate-200" />
+        </div>
+      ))}
+    </div>
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 p-5">
+          <div className="h-5 w-48 rounded bg-slate-200" />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="h-3 w-20 rounded bg-slate-100" />
+              <div className="h-4 w-40 rounded bg-slate-200" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 w-20 rounded bg-slate-100" />
+              <div className="h-4 w-32 rounded bg-slate-200" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <div className="h-3 w-16 rounded bg-slate-100" />
+              <div className="h-4 w-56 rounded bg-slate-200" />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200 p-5">
+          <div className="h-5 w-52 rounded bg-slate-200" />
+          <div className="mt-4 space-y-3">
+            <div className="h-10 rounded-xl bg-slate-100" />
+            <div className="h-10 rounded-xl bg-slate-100" />
+            <div className="h-24 rounded-2xl bg-slate-100" />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 p-5">
+          <div className="h-5 w-36 rounded bg-slate-200" />
+          <div className="mt-4 h-44 rounded-2xl bg-slate-100" />
+        </div>
+        <div className="rounded-2xl border border-slate-200 p-5">
+          <div className="h-5 w-32 rounded bg-slate-200" />
+          <div className="mt-4 space-y-3">
+            <div className="h-10 rounded-xl bg-slate-100" />
+            <div className="h-10 rounded-xl bg-slate-100" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const upsertOrderInList = (list: OrderSummary[], nextOrder: OrderSummary) => {
   const safeOrderId = String(nextOrder?.orderId || "").trim();
   if (!safeOrderId) return list;
@@ -313,6 +465,7 @@ const attachDerivedOrderState = (order: OrderSummary): OrderSummary => ({
     order.orderStatus,
     order.paymentStatus,
     order.orderType,
+    order,
   ),
 });
 
@@ -360,6 +513,11 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
   const [ordersReady, setOrdersReady] = useState(initialOrders.length > 0);
   const [ordersPage, setOrdersPage] = useState(1);
   const [ordersPageInput, setOrdersPageInput] = useState("1");
+  const [paymentReminderTarget, setPaymentReminderTarget] =
+    useState<OrderSummary | null>(null);
+
+  const isInitialListLoading = loading && orders.length === 0;
+  const isListBusy = isInitialListLoading || listRefreshing;
 
   const latestOrdersVersionRef = React.useRef(
     initialCachedAdminView.dataVersion || "",
@@ -1112,6 +1270,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
         detail.order.orderStatus,
         detail.order.paymentStatus,
         detail.order.orderType,
+        detail.order,
       )
     );
   }, [detail?.order]);
@@ -1386,6 +1545,73 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
     }
   };
 
+  const handleOpenPaymentReminderModal = (
+    orderInput?: OrderSummary | null,
+  ) => {
+    const order = orderInput || detail?.order || null;
+    if (!order) return;
+    if (!canSendPaymentReminder(order)) {
+      showToast("Đơn này không còn đủ điều kiện gửi nhắc thanh toán", "error");
+      return;
+    }
+    setPaymentReminderTarget(order);
+  };
+
+  const handleConfirmSendPaymentReminder = async () => {
+    const order = paymentReminderTarget;
+    if (!order) return;
+    if (!canSendPaymentReminder(order)) {
+      setPaymentReminderTarget(null);
+      showToast("Đơn này không còn đủ điều kiện gửi nhắc thanh toán", "error");
+      return;
+    }
+
+    const orderId = String(order.orderId || "").trim();
+
+    setPendingAction(orderId, {
+      actionKey: "payment:reminder",
+      label: "Đang gửi email nhắc thanh toán...",
+      kind: "reminder",
+      startedAt: Date.now(),
+    });
+
+    try {
+      const response = await sendPaymentReminder({ orderId });
+      if (response.updatedOrder) {
+        applyOrderSummaryLocally(response.updatedOrder, {
+          dataVersion: response.dataVersion,
+        });
+        if (detail?.order?.orderId === response.updatedOrder.orderId) {
+          setDetail((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  order: attachDerivedOrderState(response.updatedOrder),
+                }
+              : prev,
+          );
+        }
+      }
+      setPaymentReminderTarget(null);
+      showToast(
+        response.message || "Đã gửi email nhắc thanh toán cho khách",
+        "success",
+      );
+      revalidateOrderInBackground(orderId);
+    } catch (error) {
+      showToast(
+        String(
+          (error as any)?.message ||
+            error ||
+            "Không gửi được email nhắc thanh toán",
+        ),
+        "error",
+      );
+    } finally {
+      clearPendingAction(orderId);
+    }
+  };
+
   const handleSaveDeliveryInfo = async () => {
     if (!detail?.order) return;
     const orderId = String(detail.order.orderId || "").trim();
@@ -1588,37 +1814,43 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-        <StatCard
-          title="Tổng đơn"
-          value={String(stats.total)}
-          note="Orders sheet"
-        />
-        <StatCard
-          title="Đơn mới"
-          value={String(stats.newCount)}
-          note="Chờ xác nhận"
-        />
-        <StatCard
-          title="Đơn confirmed"
-          value={String(stats.confirmed)}
-          note="Đang giữ cây"
-        />
-        <StatCard
-          title="Đơn delivering"
-          value={String(stats.deliveringCount)}
-          note="Đang giao hàng"
-        />
-        <StatCard
-          title="Đơn active"
-          value={String(stats.activeCount)}
-          note="Đang cho thuê"
-        />
-        <StatCard
-          title="Công nợ còn lại"
-          value={formatCurrencyVnd(stats.outstanding)}
-          note="Tổng remainingAmount"
-          valueClassName="text-[clamp(1.5rem,1.8vw,2rem)]"
-        />
+        {isInitialListLoading ? (
+          <OrdersStatCardsSkeleton />
+        ) : (
+          <>
+            <StatCard
+              title="Tổng đơn"
+              value={String(stats.total)}
+              note="Orders sheet"
+            />
+            <StatCard
+              title="Đơn mới"
+              value={String(stats.newCount)}
+              note="Chờ xác nhận"
+            />
+            <StatCard
+              title="Đơn confirmed"
+              value={String(stats.confirmed)}
+              note="Đang giữ cây"
+            />
+            <StatCard
+              title="Đơn delivering"
+              value={String(stats.deliveringCount)}
+              note="Đang giao hàng"
+            />
+            <StatCard
+              title="Đơn active"
+              value={String(stats.activeCount)}
+              note="Đang cho thuê"
+            />
+            <StatCard
+              title="Công nợ còn lại"
+              value={formatCurrencyVnd(stats.outstanding)}
+              note="Tổng remainingAmount"
+              valueClassName="text-[clamp(1.5rem,1.8vw,2rem)]"
+            />
+          </>
+        )}
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1630,20 +1862,30 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
             <p className="mt-1 text-sm text-slate-500">
               Quản lý vòng đời đơn hàng, thanh toán và trạng thái khóa cây.
             </p>
-            <p
-              className={`mt-1 text-xs ${listRefreshing ? "text-amber-600" : "text-emerald-600"}`}
+            <div
+              className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${isListBusy ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
             >
-              {listRefreshing
-                ? "Đang đồng bộ danh sách đơn ở nền..."
-                : "chờ ~2.5 giây."}
-            </p>
+              {isListBusy ? (
+                <InlineSpinner className="h-3.5 w-3.5 border-[1.5px]" />
+              ) : (
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              )}
+              <span>
+                {isInitialListLoading
+                  ? "Đang tải danh sách đơn hàng..."
+                  : listRefreshing
+                    ? "Đang đồng bộ danh sách đơn ở nền..."
+                    : "chờ ~2.5 giây."}
+              </span>
+            </div>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm theo mã đơn / tên / email / điện thoại / địa chỉ"
-              className="h-11 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-amber-400"
+              disabled={isInitialListLoading}
+              className="h-11 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-amber-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             />
             <select
               value={statusFilter}
@@ -1652,7 +1894,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                   (e.target.value || "all") as OrderStatus | "all",
                 )
               }
-              className="h-11 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-amber-400"
+              disabled={isInitialListLoading}
+              className="h-11 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-amber-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="new">new</option>
@@ -1666,14 +1909,35 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
               type="button"
               onClick={() => void refreshSelected()}
               disabled={loading || listRefreshing}
-              className="h-11 whitespace-nowrap rounded-xl border border-slate-300 px-5 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-300 px-5 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading || listRefreshing ? "Đang làm mới..." : "Làm mới"}
+              {loading || listRefreshing ? (
+                <>
+                  <InlineSpinner className="h-4 w-4 border-2" />
+                  <span>Đang làm mới...</span>
+                </>
+              ) : (
+                "Làm mới"
+              )}
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {isListBusy && (
+          <div className="mb-4 overflow-hidden rounded-xl border border-amber-200 bg-amber-50">
+            <div className="h-1 w-full animate-pulse bg-amber-300" />
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-amber-700">
+              <InlineSpinner className="h-3.5 w-3.5 border-[1.5px]" />
+              <span>
+                {isInitialListLoading
+                  ? "Đang dựng dữ liệu danh sách đơn lần đầu..."
+                  : "Đang làm mới dữ liệu mới nhất nhưng vẫn giữ danh sách hiện tại để không giật màn hình."}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-x-auto" aria-busy={isListBusy}>
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
               <tr className="text-left">
@@ -1688,10 +1952,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <Td colSpan={8}>Đang tải dữ liệu...</Td>
-                </tr>
+              {isInitialListLoading ? (
+                <OrdersTableSkeletonRows rowCount={6} />
               ) : filteredOrders.length === 0 ? (
                 <tr>
                   <Td colSpan={8}>Không có đơn hàng phù hợp.</Td>
@@ -1704,6 +1966,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                       order.orderStatus,
                       order.paymentStatus,
                       order.orderType,
+                      order,
                     );
                   const rowPendingAction =
                     pendingActionsByOrderId[order.orderId] || null;
@@ -1844,6 +2107,19 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                           >
                             Xem
                           </button>
+                          {canSendPaymentReminder(order) && (
+                            <button
+                              type="button"
+                              disabled={rowIsPending}
+                              onClick={() => handleOpenPaymentReminderModal(order)}
+                              className="rounded-lg border border-amber-300 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {rowPendingAction?.actionKey ===
+                              "payment:reminder"
+                                ? rowPendingAction.label
+                                : "Nhắc thanh toán"}
+                            </button>
+                          )}
                           {rowTransitions.includes("confirmed") && (
                             <button
                               type="button"
@@ -1973,13 +2249,22 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                         selectedSummary?.orderId ||
                         "Đơn hàng"}
                     </h2>
-                    <p
-                      className={`mt-1 text-xs ${detailRefreshing ? "text-amber-600" : "text-slate-500"}`}
+                    <div
+                      className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${detailRefreshing || detailLoading ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}
                     >
-                      {detailRefreshing
-                        ? "Đang đồng bộ chi tiết mới nhất ở nền..."
-                        : "Mở lại đơn đã xem sẽ ưu tiên data cache trước, rồi refresh nền nếu cần."}
-                    </p>
+                      {detailRefreshing || detailLoading ? (
+                        <InlineSpinner className="h-3.5 w-3.5 border-[1.5px]" />
+                      ) : (
+                        <span className="inline-flex h-2 w-2 rounded-full bg-slate-400" />
+                      )}
+                      <span>
+                        {detailLoading
+                          ? "Đang tải chi tiết đơn hàng..."
+                          : detailRefreshing
+                            ? "Đang đồng bộ chi tiết mới nhất ở nền..."
+                            : "Mở lại đơn đã xem sẽ ưu tiên data cache trước, rồi refresh nền nếu cần."}
+                      </span>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -1991,9 +2276,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                 </div>
 
                 {detailLoading || !detail ? (
-                  <div className="p-8 text-center text-slate-500">
-                    Đang tải chi tiết đơn hàng...
-                  </div>
+                  <OrderDetailSkeleton />
                 ) : (
                   <div className="space-y-6 p-6">
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -2070,6 +2353,11 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                                 <p className="mt-1 whitespace-pre-line leading-relaxed text-slate-700">
                                   {detail.order.note}
                                 </p>
+                              </div>
+                            )}
+                            {detail.order.orderType === "rent" && (
+                              <div className="sm:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
+                                Cần thu tối thiểu {formatCurrencyVnd(getMinimumRentalDeposit(detail.order.totalAmount))} tiền cọc trước khi chuyển đơn thuê từ new sang confirmed.
                               </div>
                             )}
                           </div>
@@ -2653,12 +2941,131 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ authUser }) => {
                                 ? selectedPendingAction.label
                                 : "Thêm thanh toán"}
                             </button>
+                            {canSendPaymentReminder(detail.order) && (
+                              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                                <p className="font-semibold">
+                                  Gửi email nhắc khách còn nợ
+                                </p>
+                                <p className="mt-2 leading-6 text-amber-800/90">
+                                  Hệ thống sẽ gửi email về {detail.order.customerEmail} với số tiền còn thiếu là {formatCurrencyVnd(detail.order.remainingAmount)}.
+                                </p>
+                                <button
+                                  type="button"
+                                  disabled={acting}
+                                  onClick={() => handleOpenPaymentReminderModal()}
+                                  className="mt-3 w-full rounded-2xl border border-amber-300 bg-white px-5 py-3 font-semibold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {selectedPendingAction?.actionKey ===
+                                  "payment:reminder"
+                                    ? selectedPendingAction.label
+                                    : "Gửi email nhắc thanh toán"}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </aside>
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {paymentReminderTarget &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+            <div
+              className="absolute inset-0"
+              onClick={() => setPaymentReminderTarget(null)}
+            />
+            <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+              <div className="border-b border-slate-200 bg-gradient-to-r from-amber-50 via-white to-white px-6 py-5">
+                <div className="inline-flex items-center rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
+                  Nhắc thanh toán
+                </div>
+                <h3 className="mt-3 text-2xl font-bold text-slate-900">
+                  Xác nhận gửi email cho khách
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Hệ thống sẽ gửi email nhắc thanh toán với thông tin công nợ hiện tại của đơn hàng này.
+                </p>
+              </div>
+
+              <div className="space-y-4 px-6 py-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Mã đơn
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-slate-900">
+                      {paymentReminderTarget.orderId}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Email khách
+                    </p>
+                    <p className="mt-2 break-all text-sm font-bold text-slate-900">
+                      {paymentReminderTarget.customerEmail || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">
+                        Công nợ còn lại
+                      </p>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-amber-950">
+                        {formatCurrencyVnd(paymentReminderTarget.remainingAmount)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Đã thanh toán
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-slate-900">
+                        {formatCurrencyVnd(paymentReminderTarget.paidAmount)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-amber-900/80">
+                    Sau khi xác nhận, hệ thống sẽ gửi email nhắc khách kiểm tra khoản công nợ còn thiếu và liên hệ lại với Vườn Mai Gò Cát nếu đã chuyển khoản.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPaymentReminderTarget(null)}
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    !!pendingActionsByOrderId[
+                      String(paymentReminderTarget.orderId || "").trim()
+                    ]
+                  }
+                  onClick={() => void handleConfirmSendPaymentReminder()}
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-amber-400 px-5 font-bold text-amber-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pendingActionsByOrderId[
+                    String(paymentReminderTarget.orderId || "").trim()
+                  ]?.actionKey === "payment:reminder"
+                    ? pendingActionsByOrderId[
+                        String(paymentReminderTarget.orderId || "").trim()
+                      ]?.label
+                    : "Gửi email nhắc thanh toán"}
+                </button>
               </div>
             </div>
           </div>,

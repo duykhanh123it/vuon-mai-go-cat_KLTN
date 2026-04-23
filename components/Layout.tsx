@@ -43,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: "home", label: "Trang Chủ", icon: "🏠" },
     { id: "products", label: "Sản Phẩm", icon: "🌼" },
     { id: "booking", label: "Đặt Lịch Hẹn", icon: "📅" },
+    { id: "policy", label: "Chính Sách", icon: "📘" },
     { id: "contact", label: "Liên Hệ", icon: "📞" },
   ];
 
@@ -582,6 +583,15 @@ export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({
                 className="hover:text-amber-400 transition-colors cursor-pointer select-none"
               >
                 Liên hệ
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => setCurrentPage("policy")}
+                className="hover:text-amber-400 transition-colors cursor-pointer select-none"
+              >
+                Chính Sách Thuê & Mua
               </button>
             </li>
           </ul>

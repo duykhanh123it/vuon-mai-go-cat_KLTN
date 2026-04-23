@@ -3,6 +3,7 @@ import type {
   OrderTransactionType,
   PaymentStatus,
 } from "../types";
+import { getMinimumRentalDeposit } from "./policy";
 
 const ORDER_LIFECYCLE_BY_TYPE: Record<
   OrderTransactionType,
@@ -79,10 +80,25 @@ export const getOrderStatusClassName = (status: OrderStatus) => {
   }
 };
 
+type PaymentSnapshotLike = {
+  totalAmount?: number | null;
+  paidAmount?: number | null;
+};
+
+const hasMinimumRentalDepositCollected = (
+  payment?: PaymentSnapshotLike | null,
+) => {
+  if (!payment) return false;
+  const paidAmount = Number(payment.paidAmount || 0);
+  if (!Number.isFinite(paidAmount) || paidAmount <= 0) return false;
+  return paidAmount >= getMinimumRentalDeposit(payment.totalAmount);
+};
+
 export const getAllowedOrderTransitions = (
   current: OrderStatus,
   paymentStatus?: PaymentStatus,
   orderType: OrderTransactionType = "buy",
+  payment?: PaymentSnapshotLike | null,
 ): OrderStatus[] => {
   if (orderType === "buy") {
     if (current === "delivering") {
@@ -93,6 +109,17 @@ export const getAllowedOrderTransitions = (
     }
 
     return ORDER_LIFECYCLE_BY_TYPE.buy[current] || [];
+  }
+
+  if (current === "new") {
+    const base = ORDER_LIFECYCLE_BY_TYPE.rent[current] || [];
+    if (payment && !hasMinimumRentalDepositCollected(payment)) {
+      return base.filter((status) => status !== "confirmed");
+    }
+    if (!payment && paymentStatus === "unpaid") {
+      return base.filter((status) => status !== "confirmed");
+    }
+    return base;
   }
 
   if (current === "active") {
@@ -110,4 +137,5 @@ export const canTransitionOrderStatus = (
   next: OrderStatus,
   paymentStatus?: PaymentStatus,
   orderType: OrderTransactionType = "buy",
-) => getAllowedOrderTransitions(current, paymentStatus, orderType).includes(next);
+  payment?: PaymentSnapshotLike | null,
+) => getAllowedOrderTransitions(current, paymentStatus, orderType, payment).includes(next);

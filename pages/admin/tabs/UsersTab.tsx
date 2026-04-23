@@ -1,7 +1,18 @@
 import React from "react";
 import type { AuthUser } from "../../../types";
 import { formatGender } from "../helpers";
-import { StatCard, Th, Td } from "../shared";
+import { Badge, StatCard, Th, Td } from "../shared";
+
+
+const getUserTeamLabel = (user: AuthUser) => {
+  const isAdminTeam =
+    user.role === "admin" ||
+    (Array.isArray(user.permissions) && user.permissions.length > 0);
+
+  return isAdminTeam
+    ? { text: "Quản trị viên", tone: "amber" as const }
+    : { text: "User thường", tone: "green" as const };
+};
 
 interface UsersTabProps {
   userStats: {
@@ -63,8 +74,8 @@ const UsersTab: React.FC<UsersTabProps> = ({
               Danh sách người dùng
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Hiển thị đầy đủ email, tên, số điện thoại và giới tính từ
-              sheet Users.
+              Hiển thị đầy đủ email, tên, số điện thoại, giới tính và nhóm
+              quyền từ sheet Users.
             </p>
           </div>
           <input
@@ -89,35 +100,43 @@ const UsersTab: React.FC<UsersTabProps> = ({
                 <Th>Họ tên</Th>
                 <Th>Số điện thoại</Th>
                 <Th>Giới tính</Th>
+                <Th>Nhóm quyền</Th>
                 <Th className="text-right">Thao tác</Th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <Td colSpan={6} className="text-center text-slate-500 py-8">
+                  <Td colSpan={7} className="text-center text-slate-500 py-8">
                     Không có người dùng phù hợp.
                   </Td>
                 </tr>
               ) : (
-                paginatedUsers.map((u, index) => (
-                  <tr key={u.email}>
-                    <Td>{(userPage - 1) * itemsPerPage + index + 1}</Td>
-                    <Td>{u.email}</Td>
-                    <Td>{u.name || "--"}</Td>
-                    <Td>{u.phone || "--"}</Td>
-                    <Td>{formatGender(u.gender)}</Td>
-                    <Td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => onOpenPermission(u)}
-                        className="px-3 py-2 rounded-lg border border-amber-300 text-sm text-amber-800"
-                      >
-                        Phân quyền
-                      </button>
-                    </Td>
-                  </tr>
-                ))
+                paginatedUsers.map((u, index) => {
+                  const userTeam = getUserTeamLabel(u);
+
+                  return (
+                    <tr key={u.email}>
+                      <Td>{(userPage - 1) * itemsPerPage + index + 1}</Td>
+                      <Td>{u.email}</Td>
+                      <Td>{u.name || "--"}</Td>
+                      <Td>{u.phone || "--"}</Td>
+                      <Td>{formatGender(u.gender)}</Td>
+                      <Td>
+                        <Badge text={userTeam.text} tone={userTeam.tone} />
+                      </Td>
+                      <Td className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => onOpenPermission(u)}
+                          className="px-3 py-2 rounded-lg border border-amber-300 text-sm text-amber-800"
+                        >
+                          Phân quyền
+                        </button>
+                      </Td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

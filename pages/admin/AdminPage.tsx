@@ -50,6 +50,12 @@ interface AdminPageProps {
 
 const ADMIN_META_POLL_MS = 20_000;
 
+const USER_PERMISSION_OPTIONS = [
+  { value: "products", label: "Quản trị sản phẩm" },
+  { value: "bookings", label: "Quản trị lịch hẹn" },
+  { value: "orders", label: "Quản trị đơn hàng" },
+] as const;
+
 const AdminPage: React.FC<AdminPageProps> = ({
   authUser,
   activeTab,
@@ -2008,44 +2014,36 @@ const AdminPage: React.FC<AdminPageProps> = ({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedPermissions.includes("products")}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedPermissions([
-                            ...selectedPermissions,
-                            "products",
-                          ]);
-                        } else {
-                          setSelectedPermissions(
-                            selectedPermissions.filter((p) => p !== "products"),
-                          );
-                        }
-                      }}
-                    />
-                    Quản trị sản phẩm
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedPermissions.includes("bookings")}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedPermissions([
-                            ...selectedPermissions,
-                            "bookings",
-                          ]);
-                        } else {
-                          setSelectedPermissions(
-                            selectedPermissions.filter((p) => p !== "bookings"),
-                          );
-                        }
-                      }}
-                    />
-                    Quản trị lịch hẹn
-                  </label>
+                  {USER_PERMISSION_OPTIONS.map((permissionOption) => (
+                    <label
+                      key={permissionOption.value}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPermissions.includes(
+                          permissionOption.value,
+                        )}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPermissions((prev) =>
+                              prev.includes(permissionOption.value)
+                                ? prev
+                                : [...prev, permissionOption.value],
+                            );
+                          } else {
+                            setSelectedPermissions((prev) =>
+                              prev.filter(
+                                (permission) =>
+                                  permission !== permissionOption.value,
+                              ),
+                            );
+                          }
+                        }}
+                      />
+                      {permissionOption.label}
+                    </label>
+                  ))}
                 </div>
                 <input
                   type="password"

@@ -3,6 +3,7 @@
 
 <head>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- ================= Basic ================= -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -36,26 +37,12 @@
         "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
     }
 
-    /* OVERRIDE Tailwind font-serif (loại bỏ ui-serif gây lệch dấu) */
     .font-serif {
       font-family: "Merriweather", Georgia, "Times New Roman", Times, serif !important;
       letter-spacing: normal;
       text-transform: none;
     }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
-    }
-
-    /* OVERRIDE Tailwind font-serif (loại bỏ ui-serif gây lệch dấu) */
-    .font-serif {
-      font-family: "Merriweather", Georgia, "Times New Roman", Times, serif !important;
-      letter-spacing: normal;
-      text-transform: none;
-    }
-
-    /* ====== Floating buttons: zoom nhẹ nhàng ====== */
     @keyframes zoomSoft {
 
       0%,
@@ -68,7 +55,6 @@
       }
     }
 
-    /* Tôn trọng người dùng bật giảm chuyển động */
     @media (prefers-reduced-motion: reduce) {
       .animate-zoom-soft {
         animation: none !important;
@@ -76,7 +62,20 @@
     }
   </style>
 
+  <!-- 🔥 FIX ADMIN DOMAIN → /#/admin -->
+  <script>
+    (function () {
+      const host = window.location.hostname;
 
+      // chỉ áp dụng cho domain admin
+      if (host === "admin.vuonmaigocat.site") {
+        // nếu chưa vào admin thì ép vào
+        if (!window.location.hash.startsWith("#/admin")) {
+          window.location.replace("/#/admin");
+        }
+      }
+    })();
+  </script>
 
   <!-- Import map -->
   <script type="importmap">

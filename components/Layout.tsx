@@ -697,7 +697,7 @@ export const Footer: React.FC<{ setCurrentPage: (page: Page) => void }> = ({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-slate-700 text-center text-slate-500 text-sm">
-        <p>© 2026 Vườn Mai Gò Cát. Developed by Nguyen Duy Khanh.</p>
+        <p>© 2026 Vườn Mai Gò Cát. Developed by Nguyễn Duy Khánh.</p>
       </div>
     </footer>
   );
